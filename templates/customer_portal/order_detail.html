@@ -330,6 +330,12 @@
                                     <td class="text-end">Rs. {{ order.delivery_fee|floatformat:0 }}</td>
                                 </tr>
                                 {% endif %}
+                                {% if order.gst_amount > 0 %}
+                                <tr>
+                                    <td colspan="3" class="text-end text-muted">Includes GST:</td>
+                                    <td class="text-end text-muted">Rs. {{ order.gst_amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
                                 {% if order.discount_value > 0 %}
                                 <tr>
                                     <td colspan="3" class="text-end text-success">Coupon discount:</td>

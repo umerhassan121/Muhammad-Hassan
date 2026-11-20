@@ -1,0 +1,144 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+
+{% block title %}Mart - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_store_detail.css' %}?v=2">
+<style>
+  .mt-hero { background: linear-gradient(135deg,#fff3bf,#ffe066); color: #5c4300; border-radius: 0 0 20px 20px; padding: 16px 16px 14px; }
+  .mt-hero h1 { font-size: 22px; font-weight: 800; margin: 0; }
+  .mt-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 700; }
+  .mt-meta span { background: rgba(255,255,255,.65); border-radius: 999px; padding: 4px 10px; }
+  .mt-aisles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  .mt-aisle { text-align: center; text-decoration: none; color: inherit; font-size: 12px; font-weight: 700; }
+  .mt-aisle i { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1; border-radius: 16px;
+                background: #fff8db; color: #b45309; font-size: 26px; margin-bottom: 4px; }
+  .mt-row-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .mt-row-head a { font-size: 13px; font-weight: 700; color: #d9480f; text-decoration: none; }
+</style>{% endblock %}
+
+{% block content %}
+{% load shop_ui %}
+<div class="sd-wrap">
+{% if not store %}
+  <div class="sd-alert" style="margin-top:16px;"><i class="bi bi-lightning-charge"></i> Mart is not available right now. Please check the stores page.</div>
+  <a href="{% url 'store_list' %}" class="sd-add" style="display:inline-block;text-decoration:none;">Browse stores</a>
+{% else %}
+  <div class="mt-hero">
+    <a class="sd-back" href="{% url 'shop_home' %}" aria-label="Back" style="position:static;display:inline-flex;margin-bottom:8px;"><i class="bi bi-arrow-left"></i></a>
+    <h1>&#9889; {{ store.business_name }}</h1>
+    <div class="mt-meta">
+      <span><i class="bi bi-clock"></i> {{ store.eff_time_min }}-{{ store.eff_time_max }} min</span>
+      <span><i class="bi bi-bicycle"></i> {% if fee_now > 0 %}{{ currency }} {{ fee_now|floatformat:0 }}{% else %}Free delivery{% endif %}</span>
+      {% if store.min_order_amount > 0 %}<span>Min {{ currency }} {{ store.min_order_amount|floatformat:0 }}</span>{% endif %}
+      <span>{% if status == 'open' %}Open{% elif status == 'busy' %}Busy{% else %}Closed{% endif %}</span>
+    </div>
+  </div>
+
+  {% if delivery_area and not in_area %}<div class="sd-alert"><i class="bi bi-geo-alt"></i> This Mart may not deliver to {{ delivery_area }}.{% if other_marts %} Try another Mart below.{% endif %}</div>{% endif %}
+  {% if fee_too_far %}<div class="sd-alert">{{ fee_range_message }}</div>{% endif %}
+  {% if status == 'closed' %}<div class="sd-alert"><i class="bi bi-moon"></i> Mart is closed right now. You can browse and order when it opens.</div>{% endif %}
+  {% if other_marts %}<div class="sd-tabs" style="margin:10px 0;">{% for m in other_marts %}<a class="sd-tab" href="?store={{ m.pk }}">&#9889; {{ m.business_name }}</a>{% endfor %}</div>{% endif %}
+
+  <form class="sd-search" method="get">
+    <input type="hidden" name="store" value="{{ store.pk }}">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+    <input type="text" name="q" value="{{ search }}" placeholder="Search groceries in Mart...">
+    <button type="submit" aria-label="Search"><i class="bi bi-search"></i></button>
+  </form>
+
+  {% if mode == 'home' %}
+    <div class="mt-aisles">
+      {% for a in aisles %}
+      <a class="mt-aisle" href="?store={{ store.pk }}&category={{ a.category_id }}"><i class="bi {{ a.category__name|cat_icon:forloop.counter0 }}"></i>{{ a.category__name }}</a>
+      {% endfor %}
+    </div>
+    {% for sec in sections %}
+      <div class="mt-row-head"><div class="sd-sec" style="margin:14px 0 8px;">{{ sec.title }}</div>
+        {% if sec.category_id %}<a href="?store={{ store.pk }}&category={{ sec.category_id }}">See all ({{ sec.count }})</a>{% endif %}</div>
+      <div class="sd-grid">{% for p in sec.items %}{% include 'customer_portal/_store_card.html' with idp=sec.idp %}{% endfor %}</div>
+    {% empty %}
+      <div class="sd-alert">No products in Mart yet.</div>
+    {% endfor %}
+  {% else %}
+    <div class="sd-tabs" style="margin:10px 0;"><a class="sd-tab" href="?store={{ store.pk }}">&larr; All aisles</a>
+      {% for a in aisles %}<a class="sd-tab {% if selected_category == a.category_id %}on{% endif %}" href="?store={{ store.pk }}&category={{ a.category_id }}">{{ a.category__name }}</a>{% endfor %}</div>
+    <div class="sd-sec">{{ list_title }}</div>
+    {% if products %}
+    <div class="sd-grid">{% for p in products %}{% include 'customer_portal/_store_card.html' %}{% endfor %}</div>
+    {% if page_obj.has_other_pages %}
+    <div class="sd-pager">
+      {% if page_obj.has_previous %}<a href="?store={{ store.pk }}&page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&q={{ search|urlencode }}{% endif %}">&laquo; Previous</a>{% endif %}
+      Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+      {% if page_obj.has_next %}<a href="?store={{ store.pk }}&page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&q={{ search|urlencode }}{% endif %}">Next &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+    {% else %}<div class="sd-alert">Nothing found. Try another word or aisle.</div>{% endif %}
+  {% endif %}
+</div>
+
+<div class="cb" id="cartBar"><div class="cb-in"><div class="cb-min" id="cbMin"></div>
+  <a class="cb-btn" href="{% url 'cart_view' %}"><span><span class="cb-n" id="cbCount">0</span></span><span>View cart</span><span id="cbTotal">{{ currency }} 0</span></a></div></div>
+<div class="sd-toast" id="sdToast" role="status" aria-live="polite"></div>
+
+{{ cart_state|json_script:"cartState" }}
+<script>
+(function () {
+  var CURRENCY = '{{ currency }}';
+  var MIN_ORDER = {{ store.min_order_amount|default:0|stringformat:"f" }};
+  var CART_OTHER = {% if cart_other %}true{% else %}false{% endif %};
+  var cart = JSON.parse(document.getElementById('cartState').textContent || '{}');
+  var URL_ADD = '{% url "add_to_cart" %}', URL_UPD = '{% url "update_cart" %}';
+  var toastTimer = null;
+  function csrf() { var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+  function money(n) { return CURRENCY + ' ' + Math.round(n); }
+  function toast(msg) { var t = document.getElementById('sdToast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2800); }
+  function post(url, body) { return fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }); }
+  function paintAll() {
+    var count = 0, total = 0;
+    Object.keys(cart).forEach(function (k) { count += cart[k].qty; total += cart[k].qty * cart[k].price; });
+    Array.prototype.forEach.call(document.querySelectorAll('.sd-p'), function (el) {
+      var item = cart[el.dataset.id], qty = item ? item.qty : 0, stock = parseInt(el.dataset.stock, 10) || 0;
+      el.classList.toggle('has', qty > 0);
+      var q = el.querySelector('.q'); if (q) q.textContent = qty;
+      var plus = el.querySelector('.plus'); if (plus) plus.disabled = qty >= stock;
+    });
+    var bar = document.getElementById('cartBar');
+    bar.classList.toggle('show', count > 0 && !CART_OTHER);
+    document.body.classList.toggle('has-cart-bar', count > 0 && !CART_OTHER);
+    document.getElementById('cbCount').textContent = count;
+    document.getElementById('cbTotal').textContent = money(total);
+    var min = document.getElementById('cbMin');
+    if (MIN_ORDER > 0 && total < MIN_ORDER) { min.textContent = 'Minimum order ' + money(MIN_ORDER) + '. Add ' + money(MIN_ORDER - total) + ' more.'; min.classList.add('show'); }
+    else { min.classList.remove('show'); }
+  }
+  function lock(id, on) { Array.prototype.forEach.call(document.querySelectorAll('.sd-p[data-id="' + id + '"]'), function (el) { el.classList.toggle('busy-req', on); }); }
+  function priceOf(id) { var el = document.querySelector('.sd-p[data-id="' + id + '"]'); return el ? (parseFloat(el.dataset.price) || 0) : 0; }
+  window.cartAdd = function (id, replace) {
+    lock(id, true);
+    post(URL_ADD, { product_id: id, quantity: 1, replace_cart: !!replace }).then(function (d) {
+      lock(id, false);
+      if (!d.success && d.cart_conflict) { if (confirm(d.message)) { cartAdd(id, true); } return; }
+      if (!d.success && d.needs_options && d.product_url) { location.href = d.product_url; return; }
+      if (!d.success) { toast(d.message || 'Something went wrong'); return; }
+      if (replace) { cart = {}; CART_OTHER = false; }
+      cart[id] = { qty: (cart[id] ? cart[id].qty : 0) + 1, price: priceOf(id) };
+      paintAll();
+    }).catch(function () { lock(id, false); toast('Network error, please try again'); });
+  };
+  window.cartSet = function (id, delta) {
+    var cur = cart[id] ? cart[id].qty : 0, next = cur + delta;
+    if (next < 0) return;
+    lock(id, true);
+    post(URL_UPD, { product_id: id, quantity: next }).then(function (d) {
+      lock(id, false);
+      if (!d.success) { toast(d.message || 'Something went wrong'); return; }
+      if (next === 0) { delete cart[id]; } else { cart[id] = { qty: next, price: cart[id] ? cart[id].price : priceOf(id) }; }
+      paintAll();
+    }).catch(function () { lock(id, false); toast('Network error, please try again'); });
+  };
+  paintAll();
+})();
+</script>
+{% endif %}
+{% endblock %}

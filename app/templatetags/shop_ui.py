@@ -43,3 +43,18 @@ def cat_icon(name, index=0):
         return FALLBACK[int(index) % len(FALLBACK)]
     except (TypeError, ValueError):
         return FALLBACK[0]
+
+
+@register.simple_tag
+def mart_entry():
+    """Home par Mart ki patti ke liye: pehla approved dark store (ya None). Koi galti ho to None."""
+    try:
+        from app.models import Product, VendorProfile
+        st = VendorProfile.objects.filter(
+            is_approved=True, is_dark_store=True,
+            vendor__in=Product.objects.filter(is_active=True, approval_status='approved',
+                                              vendor__isnull=False).values('vendor'),
+        ).first()
+        return st
+    except Exception:
+        return None

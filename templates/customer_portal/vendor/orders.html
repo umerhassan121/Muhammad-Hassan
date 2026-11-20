@@ -115,6 +115,7 @@
 
         {% if SHOP.shop_order_chat_enabled and o.status != 'cancelled' %}<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary"
             onclick="OrderChat.open({{ o.id }}, 'vendor')">💬 {% if LANG_CODE == 'ur' %}گاہک سے بات{% else %}Chat with customer{% endif %}<span class="oc-badge" data-chat-badge="{{ o.id }}" data-chat-channel="vendor"></span></button></div>{% endif %}
+        {% if row.sub_text %}<div class="vo-note info">🔁 If an item is out of stock, the customer chose: <b>{{ row.sub_text }}</b></div>{% endif %}
         {% if o.notes and 'ADDRESS CHANGED' in o.notes %}<div class="vo-note info">📍 Customer ne address badla hai — naya address neeche dekhein.</div>{% endif %}
         <div class="vo-cust">
             <b><i class="bi bi-person"></i> {{ o.customer.name }}</b>
@@ -131,12 +132,28 @@
                     <span>{{ it.qty|floatformat:"-2" }} &times; {{ it.product.name }}{% if it.options_text %}<br><small style="color:#6b7280;">{{ it.options_text }}</small>{% endif %}{% if it.note %}<br><small style="color:#b45309;">📝 {{ it.note }}</small>{% endif %}{% if it.note %}<br><small style="color:#b45309;">📝 {{ it.note }}</small>{% endif %}</span>
                     <span>Rs. {{ it.total_amt|floatformat:0 }}</span>
                 </div>
+                {% if row.can_edit_items %}
+                <details style="margin:0 0 6px;font-size:13px;">
+                    <summary style="cursor:pointer;color:#b45309;font-weight:700;">Out of stock?</summary>
+                    <form method="post" action="{% url 'vendor_order_item' o.pk %}" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;">
+                        {% csrf_token %}<input type="hidden" name="item_id" value="{{ it.pk }}"><input type="hidden" name="tab" value="{{ tab|default:'new' }}">
+                        {% if it.cands %}
+                        <select name="product_id" class="form-select form-select-sm" style="max-width:220px;">
+                            {% for c in it.cands %}<option value="{{ c.id }}">{{ c.name }} &mdash; Rs. {{ c.price|floatformat:0 }}</option>{% endfor %}
+                        </select>
+                        <button type="submit" name="change" value="replace" class="btn btn-sm btn-warning">Replace</button>
+                        {% endif %}
+                        {% if row.items|length > 1 %}<button type="submit" name="change" value="remove" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this item from the order?');">Remove</button>{% endif %}
+                    </form>
+                </details>
+                {% endif %}
             {% endfor %}
         </div>
 
         <div class="vo-sum">
             <div><span>Items</span><span>Rs. {{ row.subtotal|floatformat:0 }}</span></div>
             <div><span>Delivery fee</span><span>Rs. {{ o.delivery_fee|floatformat:0 }}</span></div>
+            {% if o.gst_amount > 0 %}<div><span>Includes GST</span><span>Rs. {{ o.gst_amount|floatformat:2 }}</span></div>{% endif %}
             <div class="tot"><span>Total</span><span>Rs. {{ row.total|floatformat:0 }}</span></div>
             {% if row.wallet_paid > 0 %}<div class="tot"><span>👛 Wallet se ada</span><span>- Rs. {{ row.wallet_paid|floatformat:0 }}</span></div><div class="tot"><span><b>Cash lena hai</b></span><span><b>Rs. {{ row.cash_due|floatformat:0 }}</b></span></div>{% endif %}
         </div>

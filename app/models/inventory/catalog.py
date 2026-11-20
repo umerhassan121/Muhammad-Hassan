@@ -113,6 +113,9 @@ class Product(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.0'), editable=False)
     low_stock_threshold = models.FloatField(default=10.0, help_text="Set minimum stock level for alerts.")
+    gst_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="GST % (this product)",
+        help_text="Khali = shop ka GST rate. 0 = tax se mustasna. Warna is product ka apna rate.")
     discount_percentage = models.DecimalField(
         max_digits=5, 
         decimal_places=2, 

@@ -52,6 +52,8 @@ class SaleOrder(models.Model):
         help_text="Khali = shop ka apna order. Bhara = is store ke dashboard par dikhega."
     )
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    gst_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'),
+                                     help_text="Total mein shamil GST (qeematein tax-inclusive hain)")
     payment_method = models.CharField(max_length=20, blank=True, default='')
     # Offers: wallet se ada hui raqam (cash due = total - wallet) aur Pro se maaf hui delivery fee
     wallet_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -219,6 +221,8 @@ class SaleOrderItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     total_amt = models.DecimalField(max_digits=15, decimal_places=2, editable=False, default=Decimal('0.0'))
     reserved = models.BooleanField(default=False, help_text="Reserve this stock for the order")
+    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
+                                   help_text="Order ke waqt ka GST % (is qeemat mein shamil)")
     # Product options (size / extras): text order mein dikhane ke liye, key = chune hue option ids
     # (ek hi product alag options ke sath ek order mein do line ban sakta hai), extra = price mein jura hissa
     options_text = models.CharField(max_length=255, blank=True, default='')

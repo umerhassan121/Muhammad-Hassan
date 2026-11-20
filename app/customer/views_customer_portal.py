@@ -61,6 +61,8 @@ from . import address_change
 from . import cart_options
 from .voice_terms import q_any
 from . import offers
+from . import substitution
+from . import tax
 from . import coupons as coupon_logic
 from ..models.trade.product_options import resolve_selection
 
@@ -1468,6 +1470,10 @@ def cart_view(request):
         'cart_count': get_cart_count_value(request),
         'offer': offer,
         'coupons_on': shop_flag('shop_coupons_enabled'),
+        'gst': tax.cart_gst(data['cart_items'], offer.get('discount', 0)),
+        'show_sub': substitution.cart_is_mart(cart),
+        'sub_pref': substitution.current(request.session),
+        'sub_choices': substitution.CHOICES,
     }
     return render(request, 'customer_portal/cart.html', context)
 
@@ -1852,6 +1858,7 @@ def place_order(request):
                 f"Delivery: {delivery_type}\n"
                 f"Delivery Charge: Rs. {delivery_charges}\n"
                 f"Time: {cart_data['delivery_info']['time_estimate']}"
+                + substitution.note_line(request.session, cart)
             ),
             **offers.order_fields(summary),
             **drop_pin.order_fields(request.session),
@@ -1900,6 +1907,8 @@ def place_order(request):
         # ✅ Final total with delivery (coupon discount ke baad)
         final_total = total_amount - summary['discount'] + delivery_charges
 
+        from . import tax as _tax
+        _tax.stamp_order(order)
         # ✅ Coupon ka istemal likho, wallet se paisa kato, session saaf
         offers.finalize(order, summary, customer, request.session)
         from .sponsored import record_order        # sponsored click ke baad ka order (galti ho to order nahi rukta)

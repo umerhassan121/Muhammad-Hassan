@@ -46,7 +46,7 @@
         
         <!-- LEFT: Hamburger + Brand -->
         <div class="navbar-left-group">
-            {% if not SHOP_MENU_ON %}
+            {% if not SHOP_MENU_ON and not SHOP_AUTH_PAGE %}
             <button type="button" 
                     class="hamburger-btn-navbar"
                     id="navbarHamburgerBtn"
@@ -207,7 +207,7 @@
     <span id="voiceToastText">Result</span>
 </div>
 
-{% if not SHOP_MENU_ON %}
+{% if not SHOP_MENU_ON and not SHOP_AUTH_PAGE %}
 <!-- ============================================ -->
 <!-- SIDEBAR OVERLAY                              -->
 <!-- ============================================ -->

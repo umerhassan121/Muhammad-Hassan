@@ -168,6 +168,7 @@ def auto_place_order(request, customer):
                 return None, summary['coupon_error'] + ' Coupon removed. Please check the total again.'
             delivery_charges = summary['delivery']
 
+            from . import substitution
             # Step 6: Create order
             order = SaleOrder.objects.create(
                 **{**store_orders.store_order_fields(cart, cart_data, payment_method),
@@ -178,7 +179,8 @@ def auto_place_order(request, customer):
                 status='pending',
                 scheduled_for=scheduled_for,
                 notes=(f"🌐 WEB ORDER (OTP Verified) | Payment: {payment_method} | "
-                       f"Delivery: {delivery_type} Rs. {delivery_charges}"),
+                       f"Delivery: {delivery_type} Rs. {delivery_charges}"
+                       + substitution.note_line(request.session, cart)),
                 **offers.order_fields(summary),
                 advance_payment=Decimal('0.00'),
                 created_by=customer.portal_profile.user,
@@ -217,6 +219,8 @@ def auto_place_order(request, customer):
                     'total': float(item_total),
                 })
             
+            from . import tax as _tax
+            _tax.stamp_order(order)
             # Step 7b: Coupon ka istemal likho, wallet se paisa kato
             offers.finalize(order, summary, customer, request.session)
             from .sponsored import record_order        # sponsored click ke baad ka order

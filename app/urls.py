@@ -48,6 +48,7 @@ from app.customer import views_schedule
 from app.customer import views_push
 from app.customer import push_actions
 from app.customer import views_stores
+from app.customer import views_mart
 from app.security import views_admin_otp
 from app.security import views_security
 from app.security import views_totp
@@ -1168,6 +1169,8 @@ urlpatterns = [
      
      path('shop/', views_customer_portal.shop_home, name='shop_home'),
      path('shop/product/<int:pk>/', views_customer_portal.product_detail, name='shop_product_detail'),
+     path('shop/mart/', views_mart.mart_home, name='mart_home'),
+     path('shop/mart/substitution/', views_mart.mart_substitution, name='mart_substitution'),
      path('shop/stores/', views_stores.store_list, name='store_list'),
      path('shop/stores/<int:pk>/', views_stores.store_detail, name='store_detail'),
      path('shop/cart/', views_customer_portal.cart_view, name='cart_view'),
@@ -1239,6 +1242,7 @@ urlpatterns = [
      path('shop/vendor/pos-api/menu/<int:pk>/availability/', views_vendor_pos.pos_product_availability, name='pos_product_availability'),
      path('shop/vendor/orders/<int:pk>/assign-rider/', views_rider_portal.vendor_assign_rider, name='vendor_assign_rider'),
      path('shop/vendor/orders/<int:pk>/big-vehicle/', views_big_vehicle.vendor_big_vehicle, name='vendor_big_vehicle'),
+     path('shop/vendor/orders/<int:pk>/item/', views_vendor_portal.vendor_order_item, name='vendor_order_item'),
      path('shop/vendor/orders/<int:pk>/<str:action>/', views_vendor_portal.vendor_order_action, name='vendor_order_action'),
      path('shop/vendor/api/orders-poll/', views_vendor_portal.vendor_orders_poll, name='vendor_orders_poll'),
      # ---- Rider portal (Talabat jaisa rider) ----

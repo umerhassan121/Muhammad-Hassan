@@ -31,6 +31,7 @@ FLAGS = {
     'customer_can_rate_orders':      (True,  'Order ratings are currently disabled.'),
     'vendor_can_reply_reviews':      (True,  'Replying to reviews is currently disabled.'),
     'customer_can_dispute_orders':   (True,  'Reporting a problem with an order is currently disabled. Please contact the store.'),
+    'shop_gst_enabled':              (False, ''),
     'shop_stores_enabled':           (True,  'The stores page is currently unavailable.'),
     'shop_banners_enabled':          (True,  ''),
     'shop_distance_fee_enabled':     (False, ''),

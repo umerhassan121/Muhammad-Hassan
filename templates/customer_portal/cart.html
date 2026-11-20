@@ -46,6 +46,36 @@
         
         <div class="col-lg-8">
 
+            {% if show_sub %}
+            <div class="card border-0 shadow-sm mb-3" style="border-radius:14px;">
+                <div class="card-body">
+                    <div class="fw-bold mb-2">&#9889; If an item is out of stock</div>
+                    {% for key, label, hint in sub_choices %}
+                    <label class="d-flex align-items-start gap-2 py-1" style="cursor:pointer;">
+                        <input type="radio" name="subPref" value="{{ key }}" class="mt-1" {% if key == sub_pref %}checked{% endif %}>
+                        <span><span class="fw-semibold">{{ label }}</span><br><small class="text-muted">{{ hint }}</small></span>
+                    </label>
+                    {% endfor %}
+                    <small id="subSaved" class="text-success" style="display:none;">Saved</small>
+                </div>
+            </div>
+            <script>
+            (function () {
+              var saved = document.getElementById('subSaved');
+              function csrf() { var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+              Array.prototype.forEach.call(document.querySelectorAll('input[name=subPref]'), function (r) {
+                r.addEventListener('change', function () {
+                  fetch('{% url "mart_substitution" %}', { method: 'POST',
+                    headers: { 'X-CSRFToken': csrf(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pref: r.value }) })
+                    .then(function (x) { return x.json(); })
+                    .then(function (d) { if (d.success) { saved.style.display = 'inline'; setTimeout(function () { saved.style.display = 'none'; }, 1800); } });
+                });
+              });
+            })();
+            </script>
+            {% endif %}
+
             {% if free_delivery_progress %}
             <div class="free-ship {% if free_delivery_progress.unlocked %}unlocked{% endif %}">
                 {% if free_delivery_progress.unlocked %}
@@ -157,6 +187,12 @@
                     </div>
                     
 {% include 'customer_portal/_offer_rows.html' with part='mid' %}
+                    {% if gst.enabled and gst.amount > 0 %}
+                    <div class="summary-row">
+                        <span class="text-muted"><i class="bi bi-receipt"></i> Includes {{ gst.label }}:</span>
+                        <span>Rs. {{ gst.amount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
                     <div class="summary-row">
                         <span class="text-muted"><i class="bi bi-cash-coin"></i> Payment:</span>
                         <span class="cod-pill">Cash on Delivery</span>

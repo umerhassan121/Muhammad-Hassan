@@ -16,13 +16,18 @@ logger = logging.getLogger(__name__)
 LEGACY_PREFIXES = ('vendor_', 'rider_')
 LEGACY_PATHS = ('/shop/vendor/', '/shop/rider/')
 
+# Vendor / rider ke login-register jaise pages: na neeche ki bar, na customer wala hamburger sidebar
+# (us sidebar mein customer ke links hain: Home, Cart, Orders... jo yahan bekar hain).
+AUTH_PAGES = {'vendor_register', 'vendor_login', 'rider_login', 'rider_register',
+              'rider_forgot_password', 'rider_reset_password'}
+
 # In pages par bar nahi (wahan ek bara Checkout / Place order button hai)
 HIDE_BAR_ON = {'cart_view', 'checkout', 'place_order'}
 
 # url_name -> kaun sa tab active dikhe
 TAB_FOR_URL = {
     'shop_home': 'home', 'shop_product_detail': 'home',
-    'store_list': 'stores', 'store_detail': 'stores',
+    'store_list': 'stores', 'store_detail': 'stores', 'mart_home': 'stores',
     'cart_view': 'cart', 'checkout': 'cart', 'place_order': 'cart',
     'my_orders': 'orders', 'order_detail_customer': 'orders', 'order_success_page': 'orders',
     'track_order': 'orders', 'track_live_public': 'orders',
@@ -64,10 +69,11 @@ def menu_flags(request):
     """Context processor: base_shop.html ko batata hai ke naya menu lagana hai ya purana chrome."""
     try:
         on = is_menu_page(request)
-        return {'SHOP_MENU_ON': on, 'SHOP_BAR_ON': on and not is_bar_hidden(request)}
+        return {'SHOP_MENU_ON': on, 'SHOP_BAR_ON': on and not is_bar_hidden(request),
+                'SHOP_AUTH_PAGE': _url_name(request) in AUTH_PAGES}
     except Exception:
         logger.exception('shop_menu.menu_flags')
-        return {'SHOP_MENU_ON': False, 'SHOP_BAR_ON': False}
+        return {'SHOP_MENU_ON': False, 'SHOP_BAR_ON': False, 'SHOP_AUTH_PAGE': False}
 
 
 def cart_count(request):
