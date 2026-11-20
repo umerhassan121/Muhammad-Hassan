@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}Riders{% endblock %}
+{% block page_title %}🏍️ Riders{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="mb-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'rider_shift_admin' %}">🗓️ Shifts</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'rider_peak_admin' %}">🔥 Peak hours</a>
+    <a class="btn btn-sm {% if sos_n %}btn-danger{% else %}btn-outline-secondary{% endif %}" href="{% url 'rider_sos_admin' %}">🆘 SOS{% if sos_n %} ({{ sos_n }}){% endif %}</a>
+    <a class="btn btn-sm {% if returns_n %}btn-danger{% else %}btn-outline-secondary{% endif %}" href="{% url 'rider_returns_admin' %}">↩️ Failed deliveries{% if returns_n %} ({{ returns_n }}){% endif %}</a>
+    <a class="btn btn-sm {% if support_n %}btn-danger{% else %}btn-outline-secondary{% endif %}" href="{% url 'rider_support_inbox' %}">💬 Support{% if support_n %} ({{ support_n }}){% endif %}</a></div>
+  <div class="row g-3 mb-1">
+    <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body py-2">
+      <div class="text-muted small">COD cash with riders</div><div class="h4 mb-0 text-danger">Rs. {{ total_cash|floatformat:0 }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body py-2">
+      <div class="text-muted small">Earnings payable to riders</div><div class="h4 mb-0 text-primary">Rs. {{ total_due|floatformat:0 }}</div></div></div></div>
+  </div>
+
+  {% if pending_resets %}
+  <div class="alert alert-warning mt-3 mb-0">
+    <div class="fw-bold mb-1">🔑 Password reset requests (tell the rider the code by phone)</div>
+    {% for p in pending_resets %}
+      <div>{{ p.rider.name }} ({{ p.rider.phone }}) &mdash; code: <b class="fs-5">{{ p.code }}</b>
+        <span class="text-muted small">({% t "valid until {}" p.expires_at|time:"H:i" %})</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row g-3 mt-0">
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">➕ New Rider</div>
+        <div class="card-body">
+          <form method="post">{% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="mb-2"><input class="form-control" name="name" placeholder="Name" required></div>
+            <div class="mb-2"><input class="form-control" name="phone" placeholder="Phone (03XX XXXXXXX) — this is the login" required></div>
+            <div class="mb-2">
+              <select class="form-select" name="rider_kind" id="rkind" onchange="document.getElementById('bvno').style.display=this.value==='big_vehicle'?'block':'none'">
+                <option value="bike">🏍️ Bike rider</option>
+                <option value="big_vehicle">🚚 Bari gari (Suzuki / Pickup / Loader)</option>
+              </select>
+            </div>
+            <div class="mb-2"><input class="form-control" name="vehicle" placeholder="Vehicle: bike, or Suzuki / Pickup / Loader (optional)"></div>
+            <div class="mb-2" id="bvno" style="display:none"><input class="form-control" name="vehicle_no" maxlength="30" placeholder="Vehicle number (e.g. LEA-1234)"></div>
+            <div class="mb-2"><input class="form-control" name="fee" value="50" placeholder="Earning per delivery (Rs.)" required></div>
+            <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password (at least 6 characters)" minlength="6" required></div>
+            <button class="btn btn-primary w-100" type="submit">Create rider</button>
+          </form>
+          <div class="small text-muted mt-3">The rider logs in with this link:<br><b>/shop/rider/login/</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">{% t "Riders ({})" riders|length %}</div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Rider</th><th class="text-center">Open</th><th class="text-center">Deliveries</th><th class="text-center">⭐</th>
+                  <th class="text-end">Cash held</th><th class="text-end">Earnings due</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for r in riders %}
+              <tr>
+                <td>
+                  {% if r.approval_status == 'pending' %}<span class="badge bg-warning text-dark">📄 Documents review{% if r.pending_docs %} ({{ r.pending_docs }}){% endif %}</span>
+                  {% elif r.approval_status == 'rejected' %}<span class="badge bg-danger">Rejected</span>
+                  {% elif r.approval_status == 'suspended' %}<span class="badge bg-dark">Suspended</span>
+                  {% elif not r.is_active and not r.last_login_at %}<span class="badge bg-warning text-dark">⏳ New — approval pending</span>
+                  {% elif not r.is_active %}<span class="badge bg-secondary">Inactive</span>
+                  {% elif r.live %}<span class="badge bg-success">🟢 Online</span>
+                  {% else %}<span class="badge bg-light text-dark border">⚫ Offline</span>{% endif %}
+                  <a href="{% url 'rider_detail' r.id %}" class="fw-semibold">{{ r.name }}</a><br>
+                  <small class="text-muted">{% if r.rider_kind == 'big_vehicle' %}🚚 Big vehicle · {% endif %}{{ r.phone }}{% if r.vehicle %} · {{ r.vehicle }}{% endif %}{% if r.vehicle_no %} · {{ r.vehicle_no }}{% endif %} · Rs. {{ r.per_delivery_fee|floatformat:0 }}/delivery</small>
+                </td>
+                <td class="text-center">{{ r.open_count }}</td>
+                <td class="text-center">{{ r.bal.deliveries }}</td>
+                <td class="text-center">{% if r.rating.avg %}{{ r.rating.avg }}{% else %}—{% endif %}</td>
+                <td class="text-end {% if r.bal.cash_in_hand > 0 %}text-danger fw-bold{% endif %}">Rs. {{ r.bal.cash_in_hand|floatformat:0 }}</td>
+                <td class="text-end {% if r.bal.due > 0 %}text-primary fw-bold{% endif %}">Rs. {{ r.bal.due|floatformat:0 }}</td>
+                <td class="text-end text-nowrap">
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'rider_detail' r.id %}">Account</a>
+                  {% if r.pending_payout %}<a class="btn btn-sm btn-success" href="{% url 'rider_detail' r.id %}">🏦 Payout request</a>{% endif %}
+                  <a class="btn btn-sm {% if r.pending_docs %}btn-warning{% else %}btn-outline-dark{% endif %}" href="{% url 'rider_review' r.id %}">📄 Docs</a>
+                  <form method="post" class="d-inline">{% csrf_token %}
+                    <input type="hidden" name="action" value="toggle"><input type="hidden" name="rider_id" value="{{ r.id }}">
+                    <button class="btn btn-sm {% if r.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}">{% if r.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                  </form>
+                  <button class="btn btn-sm btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#pw{{ r.id }}">🔑</button>
+                </td>
+              </tr>
+              <tr class="collapse" id="pw{{ r.id }}">
+                <td colspan="7" class="bg-light">
+                  <form method="post" class="d-flex gap-2">{% csrf_token %}
+                    <input type="hidden" name="action" value="password"><input type="hidden" name="rider_id" value="{{ r.id }}">
+                    <input class="form-control form-control-sm" type="password" name="password" placeholder="New password" minlength="6" required>
+                    <button class="btn btn-sm btn-primary">Change</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No riders yet.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/password_ui.js' %}" defer></script>
+{% endblock %}

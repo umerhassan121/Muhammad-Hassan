@@ -1,0 +1,17 @@
+{% extends 'customer_portal/info/base_info.html' %}
+{% load portal_i18n %}
+{% block page_title %}{% t "Terms &amp; Conditions" %}{% endblock %}
+{% block heading %}<i class="bi bi-file-earmark-text text-primary"></i> {% t "Terms &amp; Conditions" %}{% endblock %}
+{% block subheading %}{% t "Terms for using {}" company_name %}{% endblock %}
+
+{% block info_body %}
+<div class="info-card"><h2>{% t "1. Acceptance" %}</h2><p class="mb-0">{% t "By using this shop you agree to these terms." %}</p></div>
+<div class="info-card"><h2>{% t "2. Account" %}</h2><p class="mb-0">{% t "You are responsible for keeping your account details correct and your password safe." %}</p></div>
+<div class="info-card"><h2>{% t "3. Orders and prices" %}</h2><p class="mb-0">{% t "Prices and stock may change. An order is final only after it is confirmed. If a price or stock is wrong, we may cancel or correct the order." %}</p></div>
+<div class="info-card"><h2>{% t "4. Delivery" %}</h2><p class="mb-0">{% t "Delivery time is an estimate, not a guarantee. You are responsible for giving a correct address and contact number." %}</p></div>
+<div class="info-card"><h2>{% t "5. Returns and refunds" %}</h2><p class="mb-0">{% url 'shop_returns' as u_shop_returns %}{% t "As described in the <a href='{}'>Return Policy</a>." u_shop_returns %}</p></div>
+<div class="info-card"><h2>{% t "6. Sellers" %}</h2><p class="mb-0">{% t "Sellers are responsible for the accuracy and quality of their products. We have the right to remove wrong or prohibited products." %}</p></div>
+<div class="info-card"><h2>{% t "7. Changes" %}</h2><p class="mb-0">{% t "These terms may change over time. Using the shop after a change means you accept the new terms." %}</p></div>
+<div class="info-card"><h2>{% t "Contact" %}</h2><p class="mb-0">{% if company_email %}{{ company_email }}{% endif %}{% if company_contact_number %} | {{ company_contact_number }}{% endif %}</p></div>
+<p class="info-updated">{% t "Last updated" %}: {% now "d M Y" %}</p>
+{% endblock %}

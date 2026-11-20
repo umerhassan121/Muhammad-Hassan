@@ -1,0 +1,182 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ LANG_CODE|default:'en' }}" dir="{{ LANG_DIR|default:'ltr' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}Rider{% endblock %} - {{ company_name }}</title>
+<link rel="stylesheet" href="{% static 'css/rider.css' %}?v=4">
+<script src="{% static 'js/rider_ux.js' %}?v=2"></script>
+    {% include "pwa/_pwa.html" %}
+</head>
+<body{% if SHOP.rider_sos_enabled and rider %} class="has-sos"{% endif %}>
+{% block header %}
+<div class="top">
+  <div class="top-row">
+    <div style="display:flex;align-items:center;gap:10px">{% if company_logo %}<img src="{{ company_logo }}" alt="" style="height:38px;width:38px;object-fit:contain;background:#fff;border-radius:10px;padding:3px">{% endif %}<div><div class="hi">Hello 👋</div><div class="nm">{{ rider.name }}</div></div></div>
+    {% include 'components/lang_switch.html' %}
+    <form method="post" action="{% url 'rider_toggle_online' %}">{% csrf_token %}
+      <button class="sw {% if rider.is_online %}on{% endif %}">{% if rider.is_online %}🟢 Online{% else %}⚫ Offline{% endif %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% for m in messages %}<div class="flash {{ m.tags }}">{{ m }}</div>{% endfor %}
+{% block body %}{% endblock %}
+
+<div class="toast" id="toast"></div>
+{% if SHOP.rider_sos_enabled and rider %}
+<button type="button" class="sosfab" aria-label="SOS" onclick="riderSos(true)">SOS</button>
+<div class="sossheet" id="sosSheet">
+  <div style="font-weight:900;font-size:18px">🆘 Emergency</div>
+  <div style="font-size:14px;color:#4b5563;margin-top:4px">In danger? Call the emergency number first. Then tell the admin with one tap - they get your name, phone and location.</div>
+  <a class="call" href="tel:999" style="background:#fef2f2;color:#b91c1c;border:2px solid #dc2626">📞 Call emergency 999</a>
+  <form method="post" action="{% url 'rider_sos_send' %}" id="sosForm">{% csrf_token %}
+    <input type="hidden" name="lat" id="sosLat"><input type="hidden" name="lng" id="sosLng">
+    <button type="submit" class="go" id="sosGo" style="background:#dc2626;color:#fff">🆘 Alert the admin</button>
+  </form>
+  <button type="button" class="go" style="background:#e5e7eb;color:#111" onclick="riderSos(false)">Cancel</button>
+</div>
+<script>
+(function(){var f=document.getElementById('sosForm');if(!f)return;var sent=false,sh=document.getElementById('sosSheet'),tr=null;
+/* Android back button sheet band kare (riderUx.trap, static/js/rider_ux.js) */
+window.riderSos=function(o){if(o){if(sh.classList.contains('open'))return;sh.classList.add('open');tr=window.riderUx?riderUx.trap('sos',function(){sh.classList.remove('open');tr=null;}):null;}
+else if(tr){tr.close();}else{sh.classList.remove('open');}};
+f.addEventListener('submit',function(e){if(sent)return;e.preventDefault();var b=document.getElementById('sosGo');b.disabled=true;b.textContent='Sending...';
+var done=function(){sent=true;if(tr){tr.leave(function(){f.submit();});}else{f.submit();}};
+if(!navigator.geolocation){done();return;}
+var t=setTimeout(done,4000);
+navigator.geolocation.getCurrentPosition(function(p){clearTimeout(t);document.getElementById('sosLat').value=p.coords.latitude;document.getElementById('sosLng').value=p.coords.longitude;done();},
+function(){clearTimeout(t);done();},{enableHighAccuracy:true,timeout:3500,maximumAge:15000});});})();
+</script>
+{% endif %}
+{% include 'customer_portal/rider/_rider_menu.html' %}
+
+<script>window.RIDER_MSG={locPerm:"{% t 'Location permission is needed. Open Settings?' %}"};</script>
+{% if rider and rider.is_online and active_count or rider and rider.is_online and rider.rider_kind == 'big_vehicle' %}{% include 'customer_portal/rider/_live_location.html' %}{% else %}
+<script>
+/* APK: koi active order nahi / offline - background location watcher (foreground service) band karo */
+(function(){var C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform()||!C.registerPlugin)return;
+try{var id=localStorage.getItem('riderBgId');if(!id)return;
+var BG=(C.Plugins&&C.Plugins.BackgroundGeolocation)||C.registerPlugin('BackgroundGeolocation');
+var done=function(){try{localStorage.removeItem('riderBgId');}catch(e){}};
+BG.removeWatcher({id:id}).then(done,done);}catch(e){}})();
+</script>
+{% endif %}
+<script>
+(function(){
+  var last = null, audioCtx = null;
+  function beep(force){
+    try{ if(localStorage.getItem('riderSound') === 'off') return; }catch(e){}
+    if(!force && window.__pwaAlertAt && Date.now()-window.__pwaAlertAt<20000) return;   // push ki ring abhi baji hai
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state!=='running'){ audioCtx.resume(); }   // lock/background ke baad context suspend ho jata hai
+      [0,.25,.5].forEach(function(t){
+        var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.frequency.value=880; o.connect(g); g.connect(audioCtx.destination);
+        g.gain.setValueAtTime(.25,audioCtx.currentTime+t); o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+.18);
+      });
+    }catch(e){}
+    if(navigator.vibrate){navigator.vibrate([300,150,300,150,300]);}
+  }
+  function toast(t){if(window.riderUx){riderUx.toast(t,false);return;}var el=document.getElementById('toast');el.textContent=t;el.style.display='block';setTimeout(function(){el.style.display='none'},5000);}
+  // browser awaaz tab chalne deta hai jab user ne page ko ek dafa touch kiya ho
+  function unlockAudio(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state!=='running')audioCtx.resume();}catch(e){}}
+  ['touchstart','click'].forEach(function(ev){document.addEventListener(ev,unlockAudio,{passive:true});});   // har touch par (pehle sirf ek dafa)
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)unlockAudio();});
+  // ---------- full-screen offer alert ----------
+  var CSRF = "{{ csrf_token }}", seen = {}, queue = [], cur = null, tick = null, ring = null;
+  try{ seen = JSON.parse(sessionStorage.getItem('riderAlertSeen') || '{}'); }catch(e){}
+  function esc(s){ var d=document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function post(url){
+    var f=document.createElement('form'); f.method='post'; f.action=url; f.style.display='none';
+    var i=document.createElement('input'); i.type='hidden'; i.name='csrfmiddlewaretoken'; i.value=CSRF; f.appendChild(i);
+    document.body.appendChild(f); f.submit();
+  }
+  function isHome(){ return window.location.pathname.replace(/\/$/,'').endsWith('/rider'); }
+  var offerTrap = null;   // Android back button popup ko "Later" ki tarah band kare (riderUx.trap)
+  function closeAlert(){ if(offerTrap){ offerTrap.close(); } else { dismissAlert(); } }
+  function dismissAlert(){
+    offerTrap = null;
+    clearInterval(tick); clearInterval(ring);
+    var el=document.getElementById('offerAlert'); if(el) el.remove();
+    cur = null;
+    if(queue.length){ showNext(); } else if(isHome()){ if(window.riderUx){ riderUx.reloadWhenIdle(300); } else { setTimeout(function(){location.reload()},300); } }
+  }
+  function showNext(){
+    var o = queue.shift(); if(!o) return;
+    cur = o;
+    var secs = o.seconds, left = secs;
+    var el=document.createElement('div'); el.id='offerAlert'; el.className='oa';
+    el.setAttribute('role','alertdialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label','New order');
+    el.innerHTML =
+      '<h2>\uD83C\uDD95 <span>NEW ORDER</span> #'+esc(o.order_no)+'</h2>'+
+      '<div class="ring" id="oaRing"><span id="oaLeft">'+left+'</span></div>'+
+      '<div class="fee">Rs. '+esc(o.fee)+'</div>'+
+      '<div class="det">\uD83D\uDCCD <b>'+esc(o.store)+'</b>'+(o.store_addr?'<br><small>'+esc(o.store_addr)+'</small>':'')+
+        '<br>\uD83C\uDFE0 '+esc(o.cust_addr||'\u2014')+
+        '<br><small>'+esc(o.items)+' <span>item(s)</span>'+(o.dist_km!=null?' \u00B7 \uD83D\uDCCF <span>From store</span> '+esc(o.dist_km)+' km':'')+
+        ' \u00B7 '+(o.is_cod?'\uD83D\uDCB5 <span>COD</span> Rs. '+esc(o.total):'\u2705 <span>Paid</span>')+'</small></div>'+
+      '<button class="big yes" id="oaYes">\u2705 ACCEPT</button>'+
+      '<button class="big no" id="oaNo">Reject</button>'+
+      '<button class="big later" id="oaLater"><span>Later (stays in the list)</span></button>'+
+      '<div class="cnt">'+secs+' <span>seconds until this alert closes</span> \u2014 <span>the order stays in the list</span></div>';
+    document.body.appendChild(el);
+    var ringEl=document.getElementById('oaRing'), leftEl=document.getElementById('oaLeft');
+    // internet band ho to browser ka error page na khule; dabne ke baad sab button band (dobara dabne se bachao)
+    function go(btn,url){
+      if(window.riderUx && !riderUx.isOnline()){ riderUx.error(riderUx.text.offline); return; }
+      clearInterval(tick); clearInterval(ring);
+      ['oaYes','oaNo','oaLater'].forEach(function(id){ var b=document.getElementById(id); if(b){ b.disabled=true; } });
+      btn.classList.add('is-loading');
+      if(offerTrap){ var t=offerTrap; offerTrap=null; t.leave(function(){ post(url); }); } else { post(url); }
+    }
+    var yesB=document.getElementById('oaYes'), noB=document.getElementById('oaNo');
+    yesB.onclick=function(){ go(yesB,o.accept_url); };
+    noB.onclick=function(){ go(noB,o.decline_url); };
+    document.getElementById('oaLater').onclick=closeAlert;
+    document.getElementById('oaYes').focus();
+    offerTrap = window.riderUx ? riderUx.trap('offer', dismissAlert) : null;
+    beep(true);
+    ring = setInterval(function(){ beep(true); }, 3000);
+    var t0 = Date.now();
+    tick = setInterval(function(){
+      left = Math.max(0, secs - Math.floor((Date.now()-t0)/1000));
+      leftEl.textContent = left; ringEl.style.setProperty('--p', (left*100/secs)+'%');
+      if(left<=0) closeAlert();
+    }, 250);
+  }
+  function queueAlerts(list, secs){
+    var added = false;
+    list.forEach(function(o){
+      if(seen[o.id]) return;
+      seen[o.id] = 1; added = true; o.seconds = secs; queue.push(o);
+    });
+    if(added){ try{ sessionStorage.setItem('riderAlertSeen', JSON.stringify(seen)); }catch(e){} }
+    if(!cur && queue.length) showNext();
+    return !!cur || queue.length > 0;
+  }
+  function poll(){
+    fetch("{% url 'rider_poll' %}",{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
+      if(window.riderUx){riderUx.pollOk();}
+      var key = d.offers+'|'+d.assigned;
+      var alerting = (d.offer_list && d.offer_list.length) ? queueAlerts(d.offer_list, d.alert_seconds || 20) : !!cur;
+      if(last!==null && key!==last){
+        if(d.offers>(+last.split('|')[0])){ if(!alerting){beep();toast('🆕 New order available!');} }
+        else if(d.assigned>(+last.split('|')[1])){beep();toast('🏍️ A new order was assigned to you!');}
+        if(isHome() && !alerting){ if(window.riderUx){ riderUx.reloadWhenIdle(1500); } else { setTimeout(function(){location.reload()},1500); } }
+      }
+      last=key;
+      var nb=document.getElementById('navBadge');
+      if(nb){var n=(+d.offers||0)+(+d.active||0); nb.textContent=n; nb.style.display=n>0?'':'none';}
+      if(window.nativeBadge){window.nativeBadge.apply((+d.offers||0)+(+d.assigned||0));}   // APK icon badge
+    }).catch(function(){ if(window.riderUx){riderUx.pollFailed();} });
+  }
+  poll(); setInterval(poll,12000);
+})();
+</script>
+{% include 'components/i18n.html' %}
+{% include 'customer_portal/_native_push.html' %}
+{% include 'customer_portal/_push_prompt.html' %}
+</body>
+</html>

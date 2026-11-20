@@ -1,0 +1,116 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+{% load portal_i18n %}
+{% block title %}Wallet{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_wallet.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<div class="wl-wrap">
+  <div class="wl-hero">
+    <small>Wallet balance</small>
+    <div class="wl-bal">Rs. {{ balance|floatformat:0 }}</div>
+    <small>At checkout, tap "Pay from wallet". Your balance will be applied to the order total.</small>
+  </div>
+
+  {% for m in messages %}<div class="wl-note" style="background:{% if m.tags == 'error' %}#f8d7da;color:#721c24{% else %}#e8f5e9;color:#1b5e20{% endif %};">{{ m }}</div>{% endfor %}
+
+  {% if loyalty %}
+  <div class="wl-card wlx1">
+    <div class="wlx2">⭐ Loyalty points</div>
+    <div class="wlx3">{{ loyalty.balance }} <small class="wlx4">{% t "points ≈ Rs. {}" loyalty.worth|floatformat:0 %}</small></div>
+    <div class="wlx5">{% t "Every Rs. 100 of a delivered order earns {} point(s). At least {} points can be converted; 1 point = Rs. {}." loyalty.per_100|floatformat:"-2" loyalty.min_redeem loyalty.value|floatformat:"-2" %}</div>
+    {% if loyalty.can_redeem %}
+    <form method="post" action="{% url 'loyalty_redeem' %}" style="display:flex;gap:8px;flex-wrap:wrap;">{% csrf_token %}
+      <input type="hidden" name="points" value="all">
+      <button type="submit" class="wlx6">Convert all points to wallet</button>
+    </form>
+    {% else %}
+    <div class="wlx7">{% t "You have fewer than {} points, so they cannot be converted yet." loyalty.min_redeem %}</div>
+    {% endif %}
+    {% if loyalty.rows %}
+    <div class="wlx8">
+      {% for r in loyalty.rows %}
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px solid #f7f7f7;">
+        <span>{{ r.get_kind_display }}{% if r.order %} · #{{ r.order.order_no }}{% endif %}<br><small class="wlx9">{{ r.created_at|date:"d M Y" }}{% if r.note %} · {{ r.note }}{% endif %}</small></span>
+        <b style="color:{% if r.points > 0 %}#198754{% else %}#dc3545{% endif %};">{% if r.points > 0 %}+{% endif %}{{ r.points }}</b>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="wl-note">
+    {% if funds %}💡 Add money below: pay the shop, then send us the transaction ID.{% else %}💡 To add money to your wallet, contact the shop. The shop will top up your account.{% endif %}
+    {% if cashback_percent > 0 %}<br>🎁 {% t "Every delivered order earns <b>{}%</b> cashback in your wallet" cashback_percent|floatformat:"-2" %}{% if cashback_max > 0 %} {% t "(max Rs. {} per order)" cashback_max|floatformat:0 %}{% endif %}.{% endif %}
+    <br>↩️ If an order is cancelled, the money taken from your wallet is returned.
+  </div>
+
+  {% if funds %}
+
+  <div class="wf-card">
+    <h3>🎟️ Redeem a gift card</h3>
+    <form method="post" action="{% url 'gift_card_redeem' %}">{% csrf_token %}
+      <input type="text" name="code" placeholder="GC-XXXX-XXXX" autocomplete="off" autocapitalize="characters" required>
+      <button type="submit" class="wf-btn">Add to my wallet</button>
+    </form>
+  </div>
+
+  <div class="wf-card">
+    <h3>➕ Add money to wallet</h3>
+    {% if funds.payment %}<div class="wf-pay">Send the amount to:{% for k, v in funds.payment.items %}<br><b>{{ k }}:</b> {{ v }}{% endfor %}</div>{% endif %}
+    <form method="post" action="{% url 'wallet_topup_request' %}">{% csrf_token %}
+      <input type="number" name="amount" min="{{ funds.limits.min|floatformat:0 }}" step="1" placeholder="{% t "Amount (min Rs. {})" funds.limits.min|floatformat:0 %}" required>
+      <select name="method"><option value="jazzcash">JazzCash</option><option value="easypaisa">EasyPaisa</option><option value="bank">Bank transfer</option></select>
+      <input type="text" name="reference" maxlength="80" placeholder="Transaction ID" required>
+      <button type="submit" class="wf-btn">Send request</button>
+    </form>
+  </div>
+
+  <div class="wf-card">
+    <h3>🎁 Buy a gift card</h3>
+    <form method="post" action="{% url 'gift_card_buy' %}">{% csrf_token %}
+      <input type="number" name="amount" min="{{ funds.limits.min|floatformat:0 }}" step="1" placeholder="Gift amount" required>
+      <input type="text" name="recipient_name" maxlength="100" placeholder="For (name, optional)">
+      <input type="text" name="message" maxlength="200" placeholder="Message (optional)">
+      <select name="method"><option value="jazzcash">JazzCash</option><option value="easypaisa">EasyPaisa</option><option value="bank">Bank transfer</option></select>
+      <input type="text" name="reference" maxlength="80" placeholder="Transaction ID" required>
+      <button type="submit" class="wf-btn">Buy gift card</button>
+    </form>
+    <div class="wlx10">After we confirm your payment, the code appears below. Send it to anyone: they redeem it into their own wallet.</div>
+  </div>
+
+  {% if funds.cards %}
+  <div class="wf-card"><h3>Your gift cards</h3>
+    {% for c in funds.cards %}
+    <div class="wf-row"><span><span class="wf-code">{{ c.code }}</span><br><small>{% if c.recipient_name %}{% t "For {}" c.recipient_name %} &middot; {% endif %}{% if c.expires_at %}{% t "Valid till {}" c.expires_at|date:"d M Y" %}{% endif %}</small></span>
+      <span class="wlx11"><b>Rs. {{ c.amount|floatformat:0 }}</b><br><span class="wf-tag {{ c.status }}">{{ c.get_status_display }}</span></span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if funds.requests %}
+  <div class="wf-card"><h3>Your requests</h3>
+    {% for r in funds.requests %}
+    <div class="wf-row"><span>{{ r.get_kind_display }} &middot; Rs. {{ r.amount|floatformat:0 }}<br><small>{{ r.created_at|date:"d M, h:i A" }}{% if r.admin_note %} &middot; {{ r.admin_note }}{% endif %}</small></span>
+      <span class="wf-tag {{ r.status }}" style="align-self:flex-start">{{ r.get_status_display }}</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="wl-card">
+    {% for r in rows %}
+    <div class="wl-row">
+      <div class="t">
+        <b>{{ r.get_kind_display }}{% if r.order %} · #{{ r.order.order_no }}{% endif %}</b>
+        <small>{{ r.created_at|date:"d M Y, h:i A" }}{% if r.note %} · {{ r.note }}{% endif %}</small>
+      </div>
+      <span class="{% if r.amount > 0 %}wl-pos{% else %}wl-neg{% endif %}">{% if r.amount > 0 %}+{% endif %}{{ r.amount|floatformat:0 }}</span>
+    </div>
+    {% empty %}
+    {% include 'customer_portal/_empty_state.html' with icon='bi-wallet2' text='No transactions yet.' compact=1 %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

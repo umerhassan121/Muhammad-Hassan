@@ -1,0 +1,172 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}Order {{ order.order_no }} - Tracking{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_order_tracking.css' %}?v=1">{% endblock %}
+
+{% block content %}
+
+
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>
+                <i class="bi bi-truck"></i>
+                {% t "Order #{}" order.order_no %}
+            </h1>
+            <p class="mb-0 mt-2" style="opacity: 0.9; font-size: 0.9rem;">
+                <i class="bi bi-calendar"></i> 
+                {{ order.order_date|date:"d M, Y - h:i A" }}
+            </p>
+        </div>
+        <div>
+            {% if order.status == 'delivered' %}
+                <span class="badge bg-success">🎉 Delivered</span>
+            {% elif order.status == 'cancelled' %}
+                <span class="badge bg-danger">❌ Cancelled</span>
+            {% elif order.status == 'ready' %}
+                <span class="badge bg-warning text-dark">📦 Ready</span>
+            {% elif order.status == 'processing' %}
+                <span class="badge bg-info">⚙️ Processing</span>
+            {% elif order.status == 'confirmed' %}
+                <span class="badge bg-primary">✅ Confirmed</span>
+            {% else %}
+                <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="action-btns">
+        <a href="{% url 'my_orders' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> My Orders
+        </a>
+        <a href="{% url 'order_detail_customer' order.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-receipt"></i> Order Details
+        </a>
+        <a href="{% url 'shop_home' %}" class="btn btn-outline-success">
+            <i class="bi bi-cart"></i> Continue Shopping
+        </a>
+    </div>
+    
+    <!-- Status Summary -->
+    <div class="status-summary">
+        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle"></i> Order Summary</h6>
+        <div class="info-grid">
+            <div class="info-item">
+                <small>Customer</small>
+                <strong>{{ order.customer.name }}</strong>
+            </div>
+            <div class="info-item">
+                <small>Total Amount</small>
+                <strong class="text-success">Rs. {{ order.total_amount|floatformat:0 }}</strong>
+            </div>
+            <div class="info-item">
+                <small>Items</small>
+                <strong>{{ order.items.count }} items</strong>
+            </div>
+            <div class="info-item">
+                <small>Warehouse</small>
+                <strong>{{ order.warehouse.name|default:"-" }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    {% include 'customer_portal/_live_map.html' %}
+    <!-- Rider Card -->
+    {% if delivery_info and delivery_info.rider_name %}
+    <div class="rider-card">
+        <h6><i class="bi bi-person-badge-fill"></i> Your Rider</h6>
+        <div class="rider-info">
+            <i class="bi bi-person-fill"></i>
+            <strong>{{ delivery_info.rider_name }}</strong>
+        </div>
+        <div class="rider-info">
+            <i class="bi bi-telephone-fill"></i>
+            {{ delivery_info.rider_contact }}
+        </div>
+        {% if delivery_info.rider_vehicle %}
+        <div class="rider-info">
+            <i class="bi bi-truck"></i>
+            {{ delivery_info.rider_vehicle }}
+        </div>
+        {% endif %}
+        <a href="tel:{{ delivery_info.rider_contact }}" class="rider-call-btn">
+            <i class="bi bi-telephone-outbound-fill"></i> Call Rider
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Pickup Card -->
+    {% if delivery_info and delivery_info.delivery_type == 'customer_pickup' %}
+    <div class="pickup-card">
+        <h6><i class="bi bi-shop"></i> Pickup Location</h6>
+        <p><i class="bi bi-geo-alt-fill"></i> 
+            {{ delivery_info.pickup_location|default:"Our Store" }}
+        </p>
+        <p><i class="bi bi-clock-fill"></i> Timing: 10 AM - 8 PM</p>
+        <p class="mb-0"><strong>Bring your ID with you.</strong></p>
+    </div>
+    {% endif %}
+    
+    <!-- Timeline -->
+    <div class="timeline-container">
+        <h5>
+            <i class="bi bi-clock-history"></i> Order Timeline
+        </h5>
+        
+        {% if tracking_history %}
+            {% for track in tracking_history %}
+            <div class="timeline-step 
+                        {% if forloop.last %}current completed{% else %}completed{% endif %}">
+                <div class="timeline-icon">
+                    {{ track.icon }}
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-title">
+                        {{ track.get_status_display }}
+                    </div>
+                    <div class="timeline-time">
+                        <i class="bi bi-clock"></i>
+                        {{ track.timestamp|date:"d M, Y - h:i A" }}
+                    </div>
+                    {% if track.description %}
+                    <div class="timeline-desc">{{ track.description }}</div>
+                    {% endif %}
+                    {% if track.location %}
+                    <div class="timeline-meta">
+                        <i class="bi bi-geo-alt-fill"></i> {{ track.location }}
+                    </div>
+                    {% endif %}
+                    {% if track.rider_name %}
+                    <div class="timeline-meta">
+                        <i class="bi bi-person-fill"></i> 
+                        {{ track.rider_name }} ({{ track.rider_contact }})
+                    </div>
+                    {% endif %}
+                    {% if track.proof_photo %}
+                    <div>
+                        <img src="{{ track.proof_photo.url }}" 
+                             class="proof-photo" 
+                             alt="Delivery Proof">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-hourglass-split"></i>
+                <h6>No Tracking Updates</h6>
+                <p>Updates will appear here once order processing starts</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+
+{% endblock %}

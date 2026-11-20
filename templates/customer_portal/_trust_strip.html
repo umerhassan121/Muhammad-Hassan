@@ -1,0 +1,6 @@
+{% load portal_i18n %}
+<div class="trust-strip" aria-label="{% t 'Shopping guarantees' %}">
+    <span><i class="bi bi-shield-lock-fill" aria-hidden="true"></i> {% t 'Secure checkout' %}</span>
+    <a href="{% url 'shop_returns' %}"><i class="bi bi-arrow-return-left" aria-hidden="true"></i> {% t 'Easy returns' %}</a>
+    {% if SHOP.order_tracking_enabled %}<a href="{% url 'track_order' %}"><i class="bi bi-truck" aria-hidden="true"></i> {% t 'Track your order' %}</a>{% else %}<a href="{% url 'shop_help' %}"><i class="bi bi-headset" aria-hidden="true"></i> {% t 'Help when you need it' %}</a>{% endif %}
+</div>

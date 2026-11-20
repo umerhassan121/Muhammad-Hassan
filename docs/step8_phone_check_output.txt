@@ -1,0 +1,62 @@
+== 1. 44px se chhote buttons / links ==
+small-320x568-en: 2
+    a                  English                          65x21
+    a                  اردو                             41x22
+small-320x568-ur: 2
+    a                  English                          58x32
+    a                  اردو                             33x32
+android-360x640-en: 2
+    a                  English                          65x21
+    a                  اردو                             41x22
+android-360x640-ur: 2
+    a                  English                          58x32
+    a                  اردو                             33x32
+iphone-390x844-en: 2
+    a                  English                          65x21
+    a                  اردو                             41x22
+iphone-390x844-ur: 2
+    a                  English                          58x32
+    a                  اردو                             33x32
+
+== 2. Takrao ==
+  koi nahi
+  small-320x568-en: location ki patti: SOS se takra=True, bar se takra=False
+  small-320x568-ur: location ki patti: SOS se takra=True, bar se takra=False
+  android-360x640-en: location ki patti: SOS se takra=True, bar se takra=False
+  android-360x640-ur: location ki patti: SOS se takra=True, bar se takra=False
+  iphone-390x844-en: location ki patti: SOS se takra=True, bar se takra=True
+  iphone-390x844-ur: location ki patti: SOS se takra=True, bar se takra=True
+  small-320x568-en: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['BUTTON', 'SUMMARY', 'Reject']
+  small-320x568-ur: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['note', 'مسترد کریں']
+  android-360x640-en: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['BUTTON', 'SUMMARY', 'Reject']
+  android-360x640-ur: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['note', 'مسترد کریں']
+  iphone-390x844-en: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['BUTTON', 'SUMMARY', 'Reject']
+  iphone-390x844-ur: SOS button in ke upar aa jata hai (scroll ke aakhir par): ['reason', 'note', 'مسترد کریں']
+
+== 3. More sheet ==
+  small-320x568-en: {'top': 129, 'bottom': 568, 'vh': 568, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  small-320x568-ur: {'top': 85.203125, 'bottom': 568, 'vh': 568, 'scrolls': True, 'sosPoint': 'ic', 'minLink': 61}
+  android-360x640-en: {'top': 201, 'bottom': 640, 'vh': 640, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  android-360x640-ur: {'top': 96, 'bottom': 640, 'vh': 640, 'scrolls': True, 'sosPoint': 'ic', 'minLink': 61}
+  iphone-390x844-en: {'top': 371, 'bottom': 844, 'vh': 844, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  iphone-390x844-ur: {'top': 241.9375, 'bottom': 844, 'vh': 844, 'scrolls': False, 'sosPoint': 'ic', 'minLink': 61}
+
+== 4. GPS patti vs Online switch ==
+  small-320x568-en: {'switchTop': 66, 'switchBottom': 122, 'barBottom': 76.671875, 'covered': False, 'langCovered': True}
+  small-320x568-ur: {'switchTop': 93.640625, 'switchBottom': 155.640625, 'barBottom': 38.890625, 'covered': False, 'langCovered': False}
+  android-360x640-en: {'switchTop': 66, 'switchBottom': 122, 'barBottom': 57.78125, 'covered': False, 'langCovered': True}
+  android-360x640-ur: {'switchTop': 93.640625, 'switchBottom': 155.640625, 'barBottom': 38.890625, 'covered': False, 'langCovered': False}
+  iphone-390x844-en: {'switchTop': 66, 'switchBottom': 122, 'barBottom': 104.78125, 'covered': True, 'langCovered': True}
+  iphone-390x844-ur: {'switchTop': 93.640625, 'switchBottom': 155.640625, 'barBottom': 85.890625, 'covered': False, 'langCovered': True}
+
+== 5. Naye order ka popup ==
+  small-320x568: {'vh': 568, 'yesTop': 376, 'yesBottom': 435, 'noBottom': 503, 'laterBottom': 565, 'scrolls': True, 'yesH': 59, 'yesVisible': True}
+  android-360x640: {'vh': 640, 'yesTop': 396, 'yesBottom': 455, 'noBottom': 523, 'laterBottom': 585, 'scrolls': False, 'yesH': 59, 'yesVisible': True}
+  iphone-390x844: {'vh': 844, 'yesTop': 419, 'yesBottom': 478, 'noBottom': 546, 'laterBottom': 608, 'scrolls': False, 'yesH': 59, 'yesVisible': True}
+
+== 6. Urdu: neeche ki bar ke labels kat rahe hain ==
+  small-320x568-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}]
+  android-360x640-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}]
+  iphone-390x844-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}]
+
+Neeche ki bar ki unchai (px): {'small-320x568-en': 57, 'small-320x568-ur': 57, 'android-360x640-en': 57, 'android-360x640-ur': 57, 'iphone-390x844-en': 91, 'iphone-390x844-ur': 91}

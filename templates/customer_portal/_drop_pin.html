@@ -1,0 +1,20 @@
+{% load portal_i18n %}<div style="margin-bottom:12px;padding:10px;border-radius:12px;background:#fff4ec">
+  <button type="button" id="dropPinBtn" class="btn btn-sm btn-primary">📍 Pin my current location</button>
+  <small id="dropPinMsg" style="display:block;margin-top:6px;color:#475569">The rider will get directions straight to your home. The pin stays valid for 3 hours.</small>
+</div>
+<script>
+(function(){
+  var b=document.getElementById('dropPinBtn'), m=document.getElementById('dropPinMsg');
+  b.addEventListener('click',function(){
+    if(!navigator.geolocation){m.textContent='{% t "Your browser does not support location" %}';return;}
+    m.textContent='Location le raha hoon...';
+    navigator.geolocation.getCurrentPosition(function(p){
+      var body=new URLSearchParams(); body.append('lat',p.coords.latitude); body.append('lng',p.coords.longitude);
+      fetch("{% url 'customer_set_drop_location' %}",{method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':"{{ csrf_token }}",'Content-Type':'application/x-www-form-urlencoded'},body:body})
+        .then(function(r){return r.json()}).then(function(d){m.textContent=d.ok?'✅ {% t "Pin saved" %}':'❌ {% t "Pin could not be saved" %}';})
+        .catch(function(){m.textContent='❌ {% t "Network problem" %}';});
+    },function(){m.textContent='❌ {% t "Please allow location access" %}';},{enableHighAccuracy:true,timeout:20000});
+  });
+})();
+</script>

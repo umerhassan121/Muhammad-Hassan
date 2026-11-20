@@ -1,0 +1,261 @@
+"""Frontend views: purchase/vendor_approvals
+
+Admin vendor portal ki approvals yahin se karta hai (pehle sirf Django admin se hoti thin):
+  - Vendor accounts : approve / suspend
+  - Vendor products : approve (shop par live) / reject (reason ke sath)
+"""
+from decimal import Decimal, InvalidOperation
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render
+from django.utils.timezone import now
+from django.views.decorators.http import require_POST
+
+from ...models import CompanyInfo, Product, VendorProfile
+from ...security.permissions import perm_required
+from ...vendor_commission import (
+    MAX_COMMISSION, commission_percent, default_commission, on_vendor_approved, reprice_open_batches,
+    vendor_earnings,
+)
+
+DEFAULT_REJECT_REASON = 'Listing guidelines par poora nahi utarta. Edit karke dobara bhejein.'
+
+
+def _company_name():
+    c = CompanyInfo.objects.first()
+    return c.name if c else 'ERP System'
+
+
+def _docs_summary(profile):
+    """Approvals list ke liye: (text, complete). Branch ke documents parent par hote hain."""
+    from ...customer import vendor_docs
+    store = profile.parent if profile.parent_id else profile
+    ev = vendor_docs.evaluate([{'kind': d.kind, 'status': d.status, 'expiry': d.expiry}
+                               for d in store.documents.all()], now().date())
+    return vendor_docs.summary(ev), ev['complete'], bool(ev['expired'] or ev['rejected'])
+
+
+def _redirect_back(request, tab):
+    """Action ke baad usi tab/filter par wapas."""
+    nxt = request.POST.get('next', '')
+    if nxt.startswith('/vendors/approvals/'):
+        return redirect(nxt)
+    return redirect(f"/vendors/approvals/?tab={tab}")
+
+
+@login_required
+@perm_required('view_vendors')
+def vendor_approvals(request):
+    tab = request.GET.get('tab', 'accounts')
+    if tab not in ('accounts', 'products'):
+        tab = 'accounts'
+    status = request.GET.get('status', 'pending')
+    search = request.GET.get('search', '').strip()
+
+    accounts_qs = VendorProfile.objects.select_related('vendor', 'user')
+    products_qs = Product.objects.filter(vendor__isnull=False).select_related('vendor', 'category')
+
+    # ---- counts (tab badges) ----
+    counts = {
+        'acc_pending': accounts_qs.filter(is_approved=False, approved_at__isnull=True).count(),
+        'acc_approved': accounts_qs.filter(is_approved=True).count(),
+        'acc_suspended': accounts_qs.filter(is_approved=False, approved_at__isnull=False).count(),
+        'prod_pending': products_qs.filter(approval_status='pending').count(),
+        'prod_approved': products_qs.filter(approval_status='approved').count(),
+        'prod_rejected': products_qs.filter(approval_status='rejected').count(),
+    }
+
+    if tab == 'accounts':
+        qs = accounts_qs
+        if status == 'pending':
+            qs = qs.filter(is_approved=False, approved_at__isnull=True)
+        elif status == 'approved':
+            qs = qs.filter(is_approved=True)
+        elif status == 'suspended':
+            qs = qs.filter(is_approved=False, approved_at__isnull=False)
+        else:
+            status = 'all'
+        if search:
+            qs = qs.filter(
+                Q(business_name__icontains=search) | Q(vendor__name__icontains=search) |
+                Q(vendor__contact_number__icontains=search) | Q(user__email__icontains=search) |
+                Q(city__icontains=search) | Q(delivery_areas__icontains=search)
+            )
+        qs = qs.order_by('-created_at')
+    else:
+        qs = products_qs
+        if status in ('pending', 'approved', 'rejected'):
+            qs = qs.filter(approval_status=status)
+        else:
+            status = 'all'
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) | Q(vendor__name__icontains=search) | Q(barcode__icontains=search)
+            )
+        qs = qs.order_by('-id')
+
+    page_obj = Paginator(qs, 25).get_page(request.GET.get('page', 1))
+
+    if tab == 'accounts':
+        for p in page_obj:
+            p.commission_effective = commission_percent(p)
+            p.earn = vendor_earnings(p.vendor)
+            p.docs_summary = _docs_summary(p)
+
+    return render(request, 'vendors/approvals.html', {
+        'company_name': _company_name(),
+        'tab': tab,
+        'status': status,
+        'search': search,
+        'page_obj': page_obj,
+        'counts': counts,
+        'default_reject_reason': DEFAULT_REJECT_REASON,
+        'default_commission': default_commission(),
+    })
+
+
+@login_required
+@perm_required('edit_vendors')
+@require_POST
+def vendor_account_action(request, pk, action):
+    profile = get_object_or_404(VendorProfile.objects.select_related('vendor'), pk=pk)
+
+    if action == 'approve':
+        first_time = profile.approved_at is None and not profile.is_approved   # pehli approval
+        if first_time and profile.parent_id is None:
+            from ...shop_flags import shop_flag
+            if shop_flag('vendor_documents_required'):
+                from ...customer.views_vendor_documents import docs_complete
+                if not docs_complete(profile):
+                    messages.error(request, f'❌ "{profile.business_name}": required documents (CR, owner ID, bank proof) '
+                                            'are not all approved yet. Review them first.')
+                    return redirect('vendor_documents_review', pk=profile.pk)
+        VendorProfile.objects.filter(pk=pk).update(is_approved=True, approved_at=now())
+        promo = on_vendor_approved(profile, first_time)
+        # Sirf wo products dobara live jo suspend ki wajah se hide hue the; vendor ke khud hide kiye hue hide hi rehte hain
+        restored = Product.objects.filter(
+            vendor_id=profile.vendor_id, approval_status='approved', hidden_by_suspend=True
+        ).update(is_active=True, hidden_by_suspend=False)
+        from ...utils.blacklist import unblock_ref
+        freed = unblock_ref(f'vendor:{profile.vendor_id}')      # pehle blacklist hua tha to ab hata do
+        from ...utils.account_log import log_action
+        log_action('vendor', profile.vendor_id, profile.business_name, 'approve', user=request.user,
+                   detail=f'Blacklist se {freed} entries hati' if freed else '')
+        messages.success(request, f'✅ "{profile.business_name}" approve ho gaya. Ab woh products list kar sakta hai.'
+                                  + (f' 🔄 {restored} purane approved product(s) dobara shop par live ho gaye.' if restored else '')
+                                  + (' 🎁 Launch commission offer laga diya gaya.' if promo else ''))
+    elif action == 'suspend':
+        VendorProfile.objects.filter(pk=pk).update(is_approved=False)
+        hidden = Product.objects.filter(vendor_id=profile.vendor_id, is_active=True).update(is_active=False, hidden_by_suspend=True)
+        messages.warning(request, f'⛔ "{profile.business_name}" suspend ho gaya, {hidden} product(s) shop se hata diye.')
+        from ...utils.account_log import log_action
+        log_action('vendor', profile.vendor_id, profile.business_name, 'suspend',
+                   reason=request.POST.get('reason', '').strip(), user=request.user,
+                   detail=('Blacklist: phone+email' + ('+device' if request.POST.get('blacklist_device') else ''))
+                   if request.POST.get('blacklist') else f'{hidden} product(s) hide')
+        if request.POST.get('blacklist'):
+            from ...utils.blacklist import block_account
+            n = block_account(
+                phones=[profile.vendor.contact_number],
+                emails=[profile.user.email],
+                device=profile.signup_device if request.POST.get('blacklist_device') else '',
+                reason=request.POST.get('reason', '').strip()[:255], source='vendor',
+                source_ref=f'vendor:{profile.vendor_id}', user=request.user)
+            messages.warning(request, f'🚫 {n} pehchaan blacklist ho gayin - in se naya account nahi ban sakega.')
+    else:
+        messages.error(request, '❌ Invalid action')
+    return _redirect_back(request, 'accounts')
+
+
+@login_required
+@perm_required('edit_vendors')
+@require_POST
+def vendor_product_action(request, pk, action):
+    product = get_object_or_404(Product, pk=pk, vendor__isnull=False)
+
+    # .update() use hota hai taake Product.save() ka image-processing dobara na chale.
+    if action == 'approve':
+        Product.objects.filter(pk=pk).update(approval_status='approved', is_active=True, rejection_reason='', hidden_by_suspend=False)
+        messages.success(request, f'✅ "{product.name}" approve ho gaya aur shop par live hai.')
+    elif action == 'reject':
+        reason = request.POST.get('reason', '').strip()[:200] or DEFAULT_REJECT_REASON
+        Product.objects.filter(pk=pk).update(approval_status='rejected', is_active=False, rejection_reason=reason)
+        messages.warning(request, f'❌ "{product.name}" reject ho gaya.')
+    else:
+        messages.error(request, '❌ Invalid action')
+    return _redirect_back(request, 'products')
+
+
+@login_required
+@perm_required('edit_vendors')
+@require_POST
+def vendor_approvals_bulk(request):
+    """Selected products ek sath approve/reject."""
+    ids = [i for i in request.POST.getlist('ids') if i.isdigit()]
+    action = request.POST.get('action')
+    qs = Product.objects.filter(pk__in=ids, vendor__isnull=False)
+    if not ids:
+        messages.warning(request, '⚠️ Koi product select nahi kiya.')
+    elif action == 'approve':
+        n = qs.exclude(approval_status='approved').update(
+            approval_status='approved', is_active=True, rejection_reason='', hidden_by_suspend=False)
+        messages.success(request, f'✅ {n} product(s) approve ho gaye aur shop par live hain.')
+    elif action == 'reject':
+        reason = request.POST.get('reason', '').strip()[:200] or DEFAULT_REJECT_REASON
+        n = qs.update(approval_status='rejected', is_active=False, rejection_reason=reason)
+        messages.warning(request, f'❌ {n} product(s) reject ho gaye.')
+    else:
+        messages.error(request, '❌ Invalid action')
+    return _redirect_back(request, 'products')
+
+
+@login_required
+@perm_required('edit_vendors')
+@require_POST
+def vendor_commission_update(request, pk):
+    """Is vendor ka commission % badlo (khali = default). Open batches ka cost naye rate par update hota hai."""
+    profile = get_object_or_404(VendorProfile.objects.select_related('vendor'), pk=pk)
+    raw = request.POST.get('commission', '').strip()
+
+    if raw == '':
+        pct_value = None
+    else:
+        try:
+            pct_value = Decimal(raw).quantize(Decimal('0.01'))
+            if pct_value < 0 or pct_value > MAX_COMMISSION:
+                raise InvalidOperation
+        except InvalidOperation:
+            messages.error(request, f'❌ Commission 0 se {MAX_COMMISSION}% ke darmiyan hona chahiye.')
+            return _redirect_back(request, 'accounts')
+
+    old_pct = commission_percent(profile)
+    profile.commission_percent = pct_value
+    profile.save(update_fields=['commission_percent'])
+    pct = commission_percent(profile)
+    if pct != old_pct and profile.user_id:
+        try:
+            from ...models import Notification
+            Notification.notify('commission_changed', profile.user,
+                                {'percent': pct, 'old_percent': old_pct}, link='/shop/vendor/')
+        except Exception:
+            pass
+
+    failed = []
+    for product in Product.objects.filter(vendor=profile.vendor):
+        base = product.original_price if product.original_price and product.original_price > 0 else product.price
+        try:
+            reprice_open_batches(product, base, product.discount_percentage, pct)
+        except ValidationError as exc:
+            failed.append(f'{product.name}: {"; ".join(exc.messages)}')
+
+    messages.success(request, f'✅ "{profile.business_name}" ka commission {pct}% kar diya gaya.')
+    if failed:
+        messages.warning(
+            request,
+            '⚠️ In products ka cost update nahi ho saka (margin policy): ' + ' | '.join(failed[:5]))
+    return _redirect_back(request, 'accounts')

@@ -1,0 +1,68 @@
+{% load static %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% include 'customer_portal/rider/_nav_css.html' %}
+
+<div class="nv" id="nv">
+  <div class="nv-top">
+    <div class="nv-card">
+      <div class="nv-ic" id="nvIcon" aria-hidden="true"></div>
+      <div class="nv-ct">
+        <div class="nv-big" id="nvBig">&nbsp;</div>
+        <div class="nv-text" id="nvText"></div>
+        <div class="nv-then" id="nvThen"></div>
+      </div>
+    </div>
+    <div class="nv-status" id="nvStatus" role="status"></div>
+  </div>
+
+  {% if has_map %}
+  <div id="nvMap"></div>
+  <div class="nv-fabs">
+    <button type="button" class="nv-fab" id="nvVoice" aria-label="Voice guidance"></button>
+    <button type="button" class="nv-fab" id="nvNight" aria-label="Night mode"></button>
+    <button type="button" class="nv-fab" id="nvOverview" aria-label="Overview"></button>
+    <button type="button" class="nv-fab" id="nvCenter" aria-label="Re-center map"></button>
+  </div>
+  <div class="nv-speed" id="nvSpeed"><b id="nvSpeedV">0</b><small>km/h</small></div>
+  {% else %}
+  <div class="nv-nomap">
+    <p style="font-size:44px;margin:0">🗺️</p>
+    <p><b>{{ dest.name }}</b>{% if dest.addr %}<br><small>{{ dest.addr }}</small>{% endif %}</p>
+    <p style="color:var(--nv-mut);font-size:14px;max-width:320px">This stop has no saved map pin, so in-app navigation is not available. Use Google Maps or Waze below.</p>
+    <div class="nv-ext" style="width:100%;max-width:340px">
+      {% if cfg.ext %}<a href="{{ cfg.ext.google }}" target="_blank" rel="noopener">🗺️ Google Maps</a>
+      <a href="{{ cfg.ext.waze }}" target="_blank" rel="noopener">🚗 Waze</a>{% endif %}
+      <a href="{{ cfg.back_url }}">✖ Exit</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if has_map %}
+  <div class="nv-sheet" id="nvSheet">
+    <button type="button" class="nv-handle" id="nvHandle" aria-label="Stops"><i></i></button>
+    <div class="nv-sum">
+      <div>
+        <div class="nv-eta"><span id="nvMin">--</span><small id="nvMinU">min</small></div>
+        <div class="nv-sub" id="nvSub">&nbsp;</div>
+      </div>
+      <div class="nv-cnt" id="nvCnt"></div>
+    </div>
+    <div class="nv-prog"><i id="nvProg"></i></div>
+    <div class="nv-scroll">
+      <div class="nv-cur" id="nvCur"></div>
+      <div class="nv-act" id="nvAct"></div>
+      <div class="nv-list" id="nvList"></div>
+      <div class="nv-ext" id="nvExt"></div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="nv-toast" id="nvToast" role="status"></div>
+  <div class="nv-done" id="nvDone">
+    <div class="ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2 id="nvDoneT">All stops completed</h2>
+    <a class="nv-btn o" id="nvDoneB" href="{{ cfg.back_url }}" style="max-width:320px;width:100%"></a>
+  </div>
+  <input type="hidden" id="nvCsrf" value="{{ csrf_token }}">
+</div>
+
+{{ cfg|json_script:"navcfg" }}

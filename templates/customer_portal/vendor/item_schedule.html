@@ -1,0 +1,72 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% block title %}Item schedule - {{ company_name }}{% endblock %}
+
+{% block content %}
+{% url 'vendor_product_add' as add_url %}
+<style>
+  .vis-wrap { max-width: 900px; margin: 24px auto; padding: 0 12px; }
+  .vis-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .vis-top h3 { margin: 0; font-weight: 700; }
+  .vis-back { text-decoration: none; border: 1px solid #ddd; background: #fff; border-radius: 10px; padding: 6px 14px; color: #333; }
+  .vis-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.06); padding: 16px; margin-bottom: 12px; }
+  .vis-note { font-size: 13px; color: #6b7280; line-height: 1.6; }
+  .vis-name { font-weight: 700; }
+  .vis-meta { font-size: 12.5px; color: #6b7280; }
+  .vis-pill { padding: 2px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .vis-on { background: #d4edda; color: #155724; }
+  .vis-off { background: #fff3cd; color: #856404; }
+  .vis-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-top: 10px; }
+  .vis-form label { font-size: 12px; font-weight: 600; color: #374151; display: block; margin-bottom: 2px; }
+  .vis-form input[type=time] { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; }
+  .vis-days { display: flex; gap: 4px; flex-wrap: wrap; }
+  .vis-days label { display: inline-flex; align-items: center; gap: 3px; font-weight: 500; border: 1px solid #d1d5db; border-radius: 8px; padding: 3px 7px; cursor: pointer; font-size: 12.5px; }
+  .vis-btn { border: 0; background: #059669; color: #fff; font-weight: 600; padding: 8px 16px; border-radius: 10px; cursor: pointer; }
+  .vis-btn.grey { background: #fff; color: #b91c1c; border: 1px solid #fecaca; }
+</style>
+<div class="vis-wrap">
+  <div class="vis-top">
+    <h3>🕒 Item schedule</h3>
+    <a class="vis-back" href="{% url 'vendor_dashboard' %}">Dashboard</a>
+  </div>
+
+  <div class="vis-card vis-note">
+    {% t "Keep an item available only for some hours or days (for example breakfast only 7-11 am)." %}
+    {% t "Outside the schedule, customers still see the item but it shows “Not available now” and cannot be ordered." %}
+    {% t "Leave the time empty and the item is available all day; if you choose no days, it is available every day." %}
+    Waqt aap ke store ke local waqt ke hisaab se hai.
+  </div>
+
+  {% for r in rows %}
+  <div class="vis-card">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+      <span><span class="vis-name">{{ r.p.name }}</span>
+        <span class="vis-meta">&middot; {{ r.p.category.name|default:"-" }}</span></span>
+      {% if r.s %}
+        <span class="vis-pill {% if r.off_now %}vis-off{% else %}vis-on{% endif %}">{% if r.off_now %}Closed now{% else %}Available now{% endif %} &middot; {{ r.text }}</span>
+      {% else %}
+        <span class="vis-meta">No schedule (all day)</span>
+      {% endif %}
+    </div>
+    <form method="post" class="vis-form">
+      {% csrf_token %}
+      <input type="hidden" name="product_id" value="{{ r.p.pk }}">
+      <div><label>Se</label><input type="time" name="avail_from" value="{{ r.s.avail_from|time:'H:i' }}"></div>
+      <div><label>Tak</label><input type="time" name="avail_to" value="{{ r.s.avail_to|time:'H:i' }}"></div>
+      <div>
+        <label>Din</label>
+        <div class="vis-days">
+          {% for n, name in day_names %}
+            <label><input type="checkbox" name="days" value="{{ n }}" {% if n in r.days %}checked{% endif %}> {{ name }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="vis-btn" type="submit" name="action" value="save">Save</button>
+      {% if r.s %}<button class="vis-btn grey" type="submit" name="action" value="clear">Hata den</button>{% endif %}
+    </form>
+  </div>
+  {% empty %}
+  <div class="vis-card">{% include 'customer_portal/vendor/_vendor_empty.html' with icon='bi-calendar-week' title='No approved items yet' text='Add products first. Once approved, you can set when each item is available.' cta_url=add_url cta_label='Add first product' compact=1 %}</div>
+  {% endfor %}
+</div>
+{% endblock %}

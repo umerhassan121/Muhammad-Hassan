@@ -1,0 +1,98 @@
+{% load static %}
+{% if nav %}
+{# Vendor shared menu: phone par neeche bar (Home, Orders, Menu, Money, More), computer par left side menu #}
+<style>
+  .vnav-side, .vnav-bar, .vnav-sheet, .vnav-back { font-family: inherit; }
+  .vnav-side { display: none; }
+  .vnav-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1035; background: #fff; border-top: 1px solid #e5e7eb;
+      display: flex; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -6px 18px rgba(0,0,0,.06); }
+  .vnav-bar a, .vnav-bar button { flex: 1; min-height: 48px; border: 0; background: none; text-decoration: none; color: #6b7280;
+      font-size: 11.5px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; padding: 4px 0; position: relative; cursor: pointer; }
+  .vnav-bar i { font-size: 22px; line-height: 1; }
+  .vnav-bar .is-active { color: var(--v-primary, #2563eb); }
+  .vnav-badge { position: absolute; top: 0; left: 55%; background: #dc3545; color: #fff; font-size: 10px; font-weight: 700;
+      min-width: 17px; height: 17px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .vnav-back { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1036; }
+  .vnav-sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1037; background: #fff;
+      border-radius: 18px 18px 0 0; padding: 14px 14px calc(70px + env(safe-area-inset-bottom, 0px)); max-height: 80vh; overflow-y: auto; }
+  .vnav-open .vnav-back, .vnav-open .vnav-sheet { display: block; }
+  .vnav-sheet h6 { margin: 12px 4px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+  .vnav-sheet a { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 10px; border-radius: 12px;
+      color: #111827; text-decoration: none; font-weight: 600; }
+  .vnav-sheet a.is-active { background: #eff6ff; color: var(--v-primary-dark, #1d4ed8); }
+  .vnav-sheet a i { font-size: 20px; width: 24px; text-align: center; }
+  body.has-vnav { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+  @media (min-width: 992px) {
+    .vnav-bar, .vnav-sheet, .vnav-back { display: none !important; }
+    body.has-vnav { padding-bottom: 0; }
+    .vnav-side { display: block; position: fixed; top: var(--vnav-top, 64px); left: 0; bottom: 0; width: 220px; overflow-y: auto;
+        background: #fff; border-right: 1px solid #e5e7eb; padding: 12px 10px; z-index: 900; }
+    .vnav-side h6 { margin: 14px 8px 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+    .vnav-side a { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 10px; border-radius: 10px;
+        color: #1f2937; text-decoration: none; font-weight: 600; font-size: 14px; position: relative; }
+    .vnav-side a:hover { background: #f3f4f6; }
+    .vnav-side a.is-active { background: #eff6ff; color: var(--v-primary-dark, #1d4ed8); }
+    .vnav-side .vnav-badge { position: static; margin-left: auto; }
+    body.has-vnav .main-content-wrapper, body.has-vnav .shop-footer { margin-left: 220px; }
+  }
+  [dir="rtl"] .vnav-side { left: auto; right: 0; border-right: 0; border-left: 1px solid #e5e7eb; }
+  @media (min-width: 992px) { [dir="rtl"] body.has-vnav .main-content-wrapper, [dir="rtl"] body.has-vnav .shop-footer { margin-left: 0; margin-right: 220px; } }
+</style>
+
+<aside class="vnav-side" aria-label="Vendor menu">
+  <a href="{% url nav.home.url_name %}" class="{% if nav.home.active %}is-active{% endif %}"><i class="bi {{ nav.home.icon }}"></i> {{ nav.home.label }}</a>
+  {% for g in nav.groups %}
+    <h6>{{ g.label }}</h6>
+    {% for it in g.items %}
+      <a href="{% url it.url_name %}" class="{% if it.active %}is-active{% endif %}"><i class="bi {{ it.icon }}"></i> {{ it.label }}{% if it.badge %}<span class="vnav-badge">{{ it.badge }}</span>{% endif %}</a>
+    {% endfor %}
+  {% endfor %}
+  <h6>&nbsp;</h6>
+  <a href="{% url nav.logout %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</aside>
+
+<nav class="vnav-bar" aria-label="Vendor tabs">
+  {% for t in nav.tabs %}
+    {% if t.key == 'more' %}
+      <button type="button" id="vnavMoreBtn" class="{% if t.active %}is-active{% endif %}" aria-haspopup="true" aria-expanded="false"><i class="bi {{ t.icon }}"></i>{{ t.label }}{% if t.badge %}<span class="vnav-badge">{{ t.badge }}</span>{% endif %}</button>
+    {% else %}
+      <a href="{% url t.url_name %}" class="{% if t.active %}is-active{% endif %}"><i class="bi {{ t.icon }}"></i>{{ t.label }}{% if t.badge %}<span class="vnav-badge">{{ t.badge }}</span>{% endif %}</a>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<div class="vnav-back" id="vnavBack"></div>
+<div class="vnav-sheet" id="vnavSheet" role="dialog" aria-label="More">
+  {% for g in nav.more %}
+    <h6>{{ g.label }}</h6>
+    {% for it in g.items %}
+      <a href="{% url it.url_name %}" class="{% if it.active %}is-active{% endif %}"><i class="bi {{ it.icon }}"></i> {{ it.label }}{% if it.badge %}<span class="vnav-badge" style="position:static;margin-left:auto;">{{ it.badge }}</span>{% endif %}</a>
+    {% endfor %}
+  {% endfor %}
+  <h6>&nbsp;</h6>
+  <a href="{% url nav.logout %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</div>
+
+<script>
+(function () {
+  var body = document.body;
+  body.classList.add('has-vnav');
+  var nb = document.querySelector('.shop-navbar');
+  if (nb) { document.documentElement.style.setProperty('--vnav-top', Math.ceil(nb.getBoundingClientRect().height) + 'px'); }
+  var btn = document.getElementById('vnavMoreBtn');
+  function setOpen(on) {
+    body.classList.toggle('vnav-open', on);
+    if (btn) { btn.setAttribute('aria-expanded', on ? 'true' : 'false'); }
+  }
+  if (btn) { btn.addEventListener('click', function () { setOpen(!body.classList.contains('vnav-open')); }); }
+  var back = document.getElementById('vnavBack');
+  if (back) { back.addEventListener('click', function () { setOpen(false); }); }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); } });
+})();
+</script>
+<script src="{% static 'js/vendor_ux.js' %}?v=2" defer></script>
+{# Naye order ki awaaz har vendor page par (orders page apna ringer pehle laga chuka ho to ye dobara nahi chalta) #}
+{% include 'customer_portal/vendor/_order_ringer.html' %}
+{% endif %}

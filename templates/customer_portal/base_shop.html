@@ -1,0 +1,1713 @@
+{% load static %}
+{% load vendor_nav_tags %}
+{% load shop_menu_tags %}
+{% load portal_i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANG_CODE|default:'en' }}" dir="{{ LANG_DIR|default:'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no{% if SHOP_MENU_ON %}, viewport-fit=cover{% endif %}">
+    <meta name="description" content="{% block meta_description %}{{ company_name }} - Quality products, best prices, fast delivery.{% endblock %}">
+    <title>{% block title %}{{ company_name }}{% endblock %}</title>
+    {% if company_logo %}<link rel="icon" href="{{ company_logo }}">{% endif %}
+    
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+    {% if LANG_DIR == 'rtl' %}<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">{% else %}<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">{% endif %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="{% static 'css/shop.css' %}?v=4">   {# Customer ka ek style (Step 4) #}
+    <link rel="stylesheet" href="{% static 'css/shop_theme.css' %}?v=5">   {# Naya theme: cream + ink + tangerine, editorial layout — shop.css ke baad #}
+    
+    {% if request.path|slice:":13" != "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/shop_theme_pages.css' %}?v=1">{% endif %}   {# Naya theme baqi saare customer pages par (cart, checkout, product, store, auth, account…); vendor par nahi #}
+    {% if request.path|slice:":13" != "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/shop_polish.css' %}?v=12">{% endif %}   {# v10: header, hero, chips, nav pill, trust row, skeleton, Urdu RTL #}
+    {% if LANG_DIR == 'rtl' %}<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600&display=swap" rel="stylesheet">{% endif %}
+    {% if request.path|slice:":13" == "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/vendor.css' %}?v=2">{% endif %}   {# Vendor ka ek style #}
+    {% block extra_css %}{% endblock %}
+{% if not SHOP.shop_search_enabled %}<style>.shop-search-section,.sidebar-search-box,.app-search,form#navbarSearchForm{display:none !important}</style>{% endif %}
+{% if not SHOP.shop_voice_search_enabled %}<style>.mic-btn,#voiceSearchBtn,.voice-indicator,.voice-lang-btn,.st-mic{display:none !important}</style>{% endif %}
+    {% if SHOP_APK_URL %}<script>window.SHOP_APK_URL = "{{ SHOP_APK_URL }}";</script>{% endif %}
+    {% include "pwa/_pwa.html" %}
+</head>
+<body class="{% if SHOP_MENU_ON %}has-shop-menu{% endif %}{% if SHOP_BAR_ON %} has-shop-bar{% endif %}">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<noscript>
+    <div class="alert alert-warning text-center mb-0 rounded-0">Please enable JavaScript for the best shopping experience.</div>
+</noscript>
+
+<!-- ============================================ -->
+<!-- NAVBAR                                       -->
+<!-- ============================================ -->
+<nav class="shop-navbar" aria-label="Main navigation">
+    <div class="container">
+        
+        <!-- LEFT: Hamburger + Brand -->
+        <div class="navbar-left-group">
+            {% if not SHOP_MENU_ON %}
+            <button type="button" 
+                    class="hamburger-btn-navbar"
+                    id="navbarHamburgerBtn"
+                    onclick="toggleShopSidebar()"
+                    aria-label="Open menu"
+                    aria-controls="adminSidebar"
+                    aria-expanded="false">
+                <i class="bi bi-list" id="navbarHamburgerIcon"></i>
+            </button>
+            {% endif %}   {# customer pages par hamburger nahi: neeche ki bar + Account sheet #}
+            
+            <a href="{% url 'shop_home' %}" class="shop-brand" aria-label="{{ company_name }} - Home">
+                {% if company_logo %}
+                <span class="brand-logo-wrap"><img src="{{ company_logo }}" alt="{{ company_name }} logo" class="brand-logo-img"></span>
+                {% else %}
+                <span class="brand-logo-wrap brand-monogram" aria-hidden="true">{{ company_name|slice:":1"|upper }}</span>
+                {% endif %}
+                <span class="brand-name">{{ company_name }}</span>
+            </a>
+        </div>
+
+        <!-- RIGHT: Track, Chat, Voice, User, Cart -->
+        <div class="navbar-right-group">
+            {% include 'components/lang_switch.html' %}
+            {% if SHOP_APK_URL and request.resolver_match.url_name == 'shop_home' %}
+            <a href="{{ SHOP_APK_URL }}" class="nav-install-app" id="navInstallApp" download hidden aria-label="Install app">
+                <i class="bi bi-download" aria-hidden="true"></i><span>Install app</span>
+            </a>
+            <script>
+            (function(){
+                var b=document.getElementById('navInstallApp');
+                var android=/android/i.test(navigator.userAgent);
+                var inApp=window.matchMedia('(display-mode: standalone)').matches||/; wv\)/.test(navigator.userAgent);
+                if(b&&android&&!inApp) b.hidden=false;
+            })();
+            </script>
+            {% endif %}
+            
+            {% if SHOP.order_tracking_enabled %}
+            <a href="{% url 'track_order' %}" class="nav-action-btn d-none d-md-inline-flex">
+                <i class="bi bi-truck"></i>
+                <span>Track</span>
+            </a>
+            {% endif %}
+            
+            <!-- ✅ Voice Toggle - HIDDEN -->
+<!-- 
+<button type="button"
+        class="nav-voice-btn"
+        id="voiceToggleBtn"
+        onclick="toggleVoiceAnnouncement()"
+        title="Voice Feedback OFF (click to enable)"
+        aria-label="Toggle Voice Feedback">
+    <i class="bi bi-volume-mute-fill" id="voiceToggleIcon"></i>
+</button>
+-->
+            
+            {% if user.is_authenticated %}
+                {% if user.vendor_profile %}
+                <a href="{% url 'vendor_dashboard' %}" class="nav-user nav-user--vendor" title="{{ user.vendor_profile.business_name }} (Vendor)">
+                    <span class="nav-user-avatar">{{ user.vendor_profile.business_name|slice:":1"|upper }}</span>
+                    <span class="nav-user-info">
+                        <span class="nav-user-name">{{ user.vendor_profile.business_name }}</span>
+                        <span class="nav-user-role"><i class="bi bi-patch-check-fill"></i> Vendor</span>
+                    </span>
+                </a>
+                {% elif user.vendor_staff %}
+                <a href="{% url 'vendor_dashboard' %}" class="nav-user nav-user--vendor" title="{{ user.vendor_staff.store.business_name }} (Staff)">
+                    <span class="nav-user-avatar">{{ user.vendor_staff.store.business_name|slice:":1"|upper }}</span>
+                    <span class="nav-user-info">
+                        <span class="nav-user-name">{{ user.vendor_staff.store.business_name }}</span>
+                        <span class="nav-user-role"><i class="bi bi-person-badge"></i> Staff</span>
+                    </span>
+                </a>
+                {% elif user.customer_profile %}
+                <a href="{% url 'my_account' %}" class="nav-user" title="{{ user.customer_profile.customer.name }} (Customer)">
+                    <span class="nav-user-avatar">{{ user.customer_profile.customer.name|slice:":1"|upper }}</span>
+                    <span class="nav-user-info">
+                        <span class="nav-user-name">{{ user.customer_profile.customer.name }}</span>
+                        <span class="nav-user-role"><i class="bi bi-person-check-fill"></i> Customer</span>
+                    </span>
+                </a>
+                {% endif %}
+            {% endif %}
+
+            <a href="{% url 'cart_view' %}" class="cart-btn" aria-label="Shopping cart">
+                <i class="bi bi-cart3" aria-hidden="true"></i>
+                <span class="cart-count" aria-live="polite">{{ cart_count|default:0 }}</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+{% shop_menu %}   {# customer pages: neeche 5 tab ki bar + Account sheet (vendor / rider par kuch nahi) #}
+
+<!-- ============================================ -->
+<!-- ✅ SEARCH SECTION (Popular Searches REMOVED)  -->
+<!-- ============================================ -->
+{% block search_section %}
+{% if request.resolver_match.url_name == 'shop_home' %}
+<div class="shop-search-section">
+    <div class="container">
+        <form action="{% url 'shop_home' %}" method="GET" id="navbarSearchForm" role="search">
+            <div class="shop-search-wrapper">
+                <div class="search-input-group" id="searchInputGroup">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" 
+                           name="search" 
+                           id="liveSearchInput"
+                           placeholder="Search products by name, category, or brand..."
+                           aria-label="Search products"
+                           enterkeyhint="search"
+                           value="{{ search|default:'' }}" 
+                           autocomplete="off">
+                    
+                    <div class="search-actions">
+                        <button type="button" 
+                                class="search-action-btn mic-btn" 
+                                id="voiceSearchBtn"
+                                onclick="toggleVoiceSearch()"
+                                title="Voice Search (Speak to search)"
+                                aria-label="Voice Search">
+                            <i class="bi bi-mic-fill" id="micIcon"></i>
+                        </button>
+                        
+                        <button type="button" 
+                                class="search-action-btn clear-btn {% if search %}show{% endif %}" 
+                                id="clearSearchBtn"
+                                onclick="clearSearch()"
+                                aria-label="Clear">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="voice-indicator" id="voiceIndicator">
+                    <div class="voice-dot"></div>
+                    <span id="voiceText">Listening... Speak to search</span>
+                </div>
+            </div>
+            
+            <div class="search-results-count {% if search %}has-text{% endif %}" id="searchResultsCount">
+                {% if search %}
+                    {% t 'Searching for "<strong>{}</strong>"...' search %}
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+<!-- ============================================ -->
+<!-- VOICE TOAST                                   -->
+<!-- ============================================ -->
+<div class="voice-toast" id="voiceToast" role="status" aria-live="polite">
+    <i class="bi bi-volume-up-fill"></i>
+    <span id="voiceToastText">Result</span>
+</div>
+
+{% if not SHOP_MENU_ON %}
+<!-- ============================================ -->
+<!-- SIDEBAR OVERLAY                              -->
+<!-- ============================================ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleShopSidebar()"></div>
+
+<!-- ============================================ -->
+<!-- UNIVERSAL SIDEBAR                            -->
+<!-- ============================================ -->
+<aside class="admin-sidebar" id="adminSidebar" aria-label="Shop menu">
+    
+    <div class="sidebar-profile">
+        <button type="button" class="profile-close-btn" onclick="toggleShopSidebar()" aria-label="Close menu">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        
+        {% if user.is_authenticated and user.customer_profile %}
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
+                    {{ user.customer_profile.customer.name|slice:":1"|upper }}
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">{{ user.customer_profile.customer.name }}</div>
+                    <div class="profile-meta">
+                        <i class="bi bi-phone-fill"></i>
+                        {{ user.customer_profile.customer.contact_number }}
+                    </div>
+                    <div class="profile-meta">
+                        <i class="bi bi-envelope-fill"></i>
+                        {% if user.customer_profile.customer.email %}
+                            {{ user.customer_profile.customer.email|truncatechars:28 }}
+                        {% else %}
+                            <span class="email-missing">⚠ Email not set</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if user.customer_profile.customer.address %}
+            <div class="profile-address">
+                <div class="profile-address-icon">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <div class="profile-address-text">
+                    {{ user.customer_profile.customer.address }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-value">{{ cart_count|default:0 }}</div>
+                    <div class="profile-stat-label">Cart</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value">
+                        {{ user.customer_profile.customer.saleorder_set.count|default:0 }}
+                    </div>
+                    <div class="profile-stat-label">Orders</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value">
+                        #{{ user.customer_profile.customer.customer_code|slice:"-4:" }}
+                    </div>
+                    <div class="profile-stat-label">ID</div>
+                </div>
+            </div>
+        {% else %}
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
+                    <i class="bi bi-person"></i>
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name">Welcome Guest!</div>
+                    <div class="profile-meta">
+                        <i class="bi bi-shop"></i> Please login to continue
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar-search-box">
+        <form method="GET" action="{% url 'shop_home' %}" class="m-0">
+            <div class="sidebar-search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" 
+                       name="search"
+                       id="sidebarSearch"
+                       placeholder="Search products..."
+                       value="{{ search|default:'' }}"
+                       autocomplete="off">
+                <button type="submit" class="sidebar-search-btn" aria-label="Search">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="sidebar-content">
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-grid-1x2"></i> MAIN MENU
+                </div>
+            </div>
+            
+            <a href="{% url 'shop_home' %}" 
+               class="sidebar-menu-item {% if request.resolver_match.url_name == 'shop_home' %}active{% endif %}">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-house-door"></i>
+                </div>
+                <div class="menu-text">
+                    Shop Home
+                    <span class="menu-subtitle">Browse products</span>
+                </div>
+            </a>
+            
+            {% if SHOP.shop_stores_enabled %}
+            <a href="{% url 'store_list' %}" 
+               class="sidebar-menu-item {% if 'store' in request.resolver_match.url_name and 'vendor' not in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box warning">
+                    <i class="bi bi-shop-window"></i>
+                </div>
+                <div class="menu-text">
+                    Stores
+                    <span class="menu-subtitle">Order from local vendors</span>
+                </div>
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'cart_view' %}" 
+               class="sidebar-menu-item {% if 'cart' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box success">
+                    <i class="bi bi-cart3"></i>
+                </div>
+                <div class="menu-text">
+                    My Cart
+                    <span class="menu-subtitle">Items waiting for you</span>
+                </div>
+                {% if cart_count and cart_count > 0 %}
+                <span class="menu-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+            
+            {% if SHOP.order_tracking_enabled %}
+            <a href="{% url 'track_order' %}" 
+               class="sidebar-menu-item {% if 'track' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box info">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div class="menu-text">
+                    Track Order
+                    <span class="menu-subtitle">Where's my order?</span>
+                </div>
+            </a>
+            {% endif %}
+            
+            {% if user.is_authenticated and user.customer_profile %}
+            <a href="{% url 'my_orders' %}" 
+               class="sidebar-menu-item {% if 'my_orders' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div class="menu-text">
+                    My Orders
+                    <span class="menu-subtitle">Order history</span>
+                </div>
+            </a>
+            {% endif %}
+            {% if SHOP.shop_wallet_enabled and user.is_authenticated and user.customer_profile %}
+            <a href="{% url 'wallet_page' %}"
+               class="sidebar-menu-item {% if 'wallet_page' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="menu-text">
+                    Wallet
+                    <span class="menu-subtitle">Balance and history</span>
+                </div>
+            </a>
+            {% endif %}
+            {% if SHOP.shop_pro_enabled and user.is_authenticated and user.customer_profile %}
+            <a href="{% url 'pro_page' %}"
+               class="sidebar-menu-item {% if 'pro_page' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-star"></i>
+                </div>
+                <div class="menu-text">
+                    Pro
+                    <span class="menu-subtitle">Free delivery</span>
+                </div>
+            </a>
+            {% endif %}
+            {% if SHOP.shop_favorites_enabled and user.is_authenticated and user.customer_profile %}
+            <a href="{% url 'favorites_page' %}"
+               class="sidebar-menu-item {% if 'favorites_page' in request.resolver_match.url_name %}active{% endif %}">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-heart"></i>
+                </div>
+                <div class="menu-text">
+                    Favourites
+                    <span class="menu-subtitle">Stores and items you like</span>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+        
+        {% if user.is_authenticated and user.customer_profile or SHOP.customer_login_enabled or SHOP.customer_register_enabled %}
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-person-circle"></i> CUSTOMER
+                </div>
+            </div>
+            
+            {% if user.is_authenticated and user.customer_profile %}
+                <a href="{% url 'my_account' %}" 
+                   class="sidebar-menu-item {% if request.resolver_match.url_name == 'my_account' %}active{% endif %}">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <div class="menu-text">
+                        My Dashboard
+                        <span class="menu-subtitle">Overview & stats</span>
+                    </div>
+                </a>
+                
+                <a href="{% url 'customer_logout' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Logout
+                        <span class="menu-subtitle">Sign out safely</span>
+                    </div>
+                </a>
+            {% else %}
+                {% if SHOP.customer_login_enabled %}
+                <a href="{% url 'customer_login' %}" 
+                   class="sidebar-menu-item {% if 'login' in request.resolver_match.url_name %}active{% endif %}">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Customer Login
+                        <span class="menu-subtitle">Access your account</span>
+                    </div>
+                </a>
+                {% endif %}
+                
+                {% if SHOP.customer_register_enabled %}
+                <a href="{% url 'customer_register' %}" 
+                   class="sidebar-menu-item {% if 'register' in request.resolver_match.url_name %}active{% endif %}">
+                    <div class="menu-icon-box success">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div class="menu-text">
+                        Register as a Customer
+                        <span class="menu-subtitle">Create new account</span>
+                    </div>
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if user.is_authenticated and user.vendor_profile or SHOP.vendor_login_enabled or SHOP.vendor_register_enabled %}
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-shop"></i> SELLER
+                </div>
+            </div>
+            
+            {% if user.is_authenticated and user.vendor_profile %}
+                <a href="{% url 'vendor_dashboard' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <div class="menu-text">
+                        Seller Dashboard
+                        <span class="menu-subtitle">{{ user.vendor_profile.business_name }}</span>
+                    </div>
+                </a>
+                
+                <a href="{% url 'vendor_logout' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Seller Logout
+                        <span class="menu-subtitle">Sign out safely</span>
+                    </div>
+                </a>
+            {% else %}
+                {% if SHOP.vendor_login_enabled %}
+                <a href="{% url 'vendor_login' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Seller Login
+                        <span class="menu-subtitle">Manage your store</span>
+                    </div>
+                </a>
+                {% endif %}
+                
+                {% if SHOP.vendor_register_enabled %}
+                <a href="{% url 'vendor_register' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box success">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <div class="menu-text">
+                        Register as a Seller
+                        <span class="menu-subtitle">Sell on our shop</span>
+                    </div>
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if user.is_authenticated and user.rider_profile or SHOP.rider_login_enabled or SHOP.rider_register_enabled %}
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-bicycle"></i> RIDER
+                </div>
+            </div>
+            
+            {% if user.is_authenticated and user.rider_profile %}
+                <a href="{% url 'rider_home' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <div class="menu-text">
+                        Rider Home
+                        <span class="menu-subtitle">Your deliveries</span>
+                    </div>
+                </a>
+                
+                <a href="{% url 'rider_logout' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Rider Logout
+                        <span class="menu-subtitle">Sign out safely</span>
+                    </div>
+                </a>
+            {% else %}
+                {% if SHOP.rider_login_enabled %}
+                <a href="{% url 'rider_login' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box primary">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <div class="menu-text">
+                        Rider Login
+                        <span class="menu-subtitle">Deliver orders</span>
+                    </div>
+                </a>
+                {% endif %}
+
+                {% if SHOP.rider_register_enabled %}
+                <a href="{% url 'rider_register' %}" class="sidebar-menu-item">
+                    <div class="menu-icon-box success">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div class="menu-text">
+                        Register as a Rider
+                        <span class="menu-subtitle">Earn by delivering</span>
+                    </div>
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-headset"></i> SUPPORT
+                </div>
+            </div>
+            
+            {% if company_whatsapp_url %}
+            <a href="{{ company_whatsapp_url }}?text=Hello%20{{ company_name|urlencode }}" target="_blank" rel="noopener" class="sidebar-menu-item">
+                <div class="menu-icon-box success">
+                    <i class="bi bi-whatsapp"></i>
+                </div>
+                <div class="menu-text">
+                    WhatsApp
+                    <span class="menu-subtitle">Chat with us</span>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if company_contact_number %}
+            <a href="tel:{{ company_contact_number }}" class="sidebar-menu-item">
+                <div class="menu-icon-box info">
+                    <i class="bi bi-telephone-fill"></i>
+                </div>
+                <div class="menu-text">
+                    Call Us
+                    <span class="menu-subtitle">{{ company_contact_number }}</span>
+                </div>
+            </a>
+            {% endif %}
+            
+            {% if company_email %}
+            <a href="mailto:{{ company_email }}" class="sidebar-menu-item">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-envelope-fill"></i>
+                </div>
+                <div class="menu-text">
+                    Email Us
+                    <span class="menu-subtitle">Get in touch</span>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if company_website %}
+            <a href="{{ company_website }}" target="_blank" rel="noopener" class="sidebar-menu-item">
+                <div class="menu-icon-box success">
+                    <i class="bi bi-globe"></i>
+                </div>
+                <div class="menu-text">
+                    Website
+                    <span class="menu-subtitle">{{ company_website|truncatechars:28 }}</span>
+                </div>
+            </a>
+            {% endif %}
+
+            {% if not company_contact_number and not company_email and not company_website %}
+            <div class="sidebar-menu-item" style="cursor:default;">
+                <div class="menu-text">
+                    Support
+                    <span class="menu-subtitle">Contact details coming soon</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-title">
+                <div class="title-text">
+                    <i class="bi bi-shield-check"></i> INFO &amp; POLICIES
+                </div>
+            </div>
+            <a href="{% url 'shop_help' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box info">
+                    <i class="bi bi-life-preserver"></i>
+                </div>
+                <div class="menu-text">
+                    Help Center
+                    <span class="menu-subtitle">Guides &amp; contact</span>
+                </div>
+            </a>
+            <a href="{% url 'shop_faq' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-question-circle"></i>
+                </div>
+                <div class="menu-text">
+                    FAQ
+                    <span class="menu-subtitle">Common questions</span>
+                </div>
+            </a>
+            <a href="{% url 'shop_about' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box primary">
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <div class="menu-text">
+                    About Us
+                    <span class="menu-subtitle">Who we are</span>
+                </div>
+            </a>
+            <a href="{% url 'shop_returns' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box warning">
+                    <i class="bi bi-arrow-return-left"></i>
+                </div>
+                <div class="menu-text">
+                    Return Policy
+                    <span class="menu-subtitle">Returns &amp; refunds</span>
+                </div>
+            </a>
+            <a href="{% url 'shop_terms' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box info">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="menu-text">
+                    Terms &amp; Conditions
+                    <span class="menu-subtitle">Rules of use</span>
+                </div>
+            </a>
+            <a href="{% url 'shop_privacy' %}" class="sidebar-menu-item">
+                <div class="menu-icon-box info">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <div class="menu-text">
+                    Privacy Policy
+                    <span class="menu-subtitle">How we use your data</span>
+                </div>
+            </a>
+        </div>
+        
+    </div>
+    
+    <div class="sidebar-footer">
+        <div class="brand-mini">🛍️ {{ company_name }}</div>
+        <div class="version">v1.0.0 • © {% now "Y" %}</div>
+    </div>
+    
+</aside>
+{% endif %}   {# customer pages par sidebar nahi: uski cheezein Account sheet mein hain #}
+
+{% if messages %}
+<div class="container mt-2 app-alerts" aria-live="polite">
+    {% for message in messages %}
+    {% with level=message.level_tag %}
+    <div class="alert alert-{% if level == 'error' %}danger{% elif level == 'debug' %}secondary{% elif level %}{{ level }}{% else %}info{% endif %} alert-dismissible fade show" role="{% if level == 'error' or level == 'warning' %}alert{% else %}status{% endif %}">
+        <i class="bi {% if level == 'success' %}bi-check-circle-fill{% elif level == 'error' %}bi-x-octagon-fill{% elif level == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}" aria-hidden="true"></i>
+        <div class="alert-body">{{ message }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% vendor_nav %}   {# Vendor pages par shared menu (customer pages par kuch nahi) #}
+<main class="main-content-wrapper" id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="shop-footer" role="contentinfo">
+    <div class="container">
+        <div class="footer-main">
+            <div class="row g-4">
+                <div class="col-12 col-md-5">
+                    <div class="footer-brand">
+                        {% if company_logo %}<img src="{{ company_logo }}" alt="" class="footer-logo">{% endif %}
+                        <span>{{ company_name }}</span>
+                    </div>
+                    <p class="footer-about">{% if company.tagline %}{{ company.tagline }}{% else %}Quality products, best prices and fast delivery.{% endif %}</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <h6 class="footer-title">Quick Links</h6>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'shop_home' %}"><i class="bi bi-shop" aria-hidden="true"></i> Shop</a></li>
+                        <li><a href="{% url 'cart_view' %}"><i class="bi bi-cart3" aria-hidden="true"></i> Cart</a></li>
+                        {% if SHOP.order_tracking_enabled %}
+                        <li><a href="{% url 'track_order' %}"><i class="bi bi-truck" aria-hidden="true"></i> Track Order</a></li>
+                        {% endif %}
+                        {% if user.is_authenticated and user.customer_profile %}
+                        <li><a href="{% url 'my_orders' %}"><i class="bi bi-receipt" aria-hidden="true"></i> My Orders</a></li>
+                        <li><a href="{% url 'repeat_plans' %}"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Repeat Orders</a></li>
+                        {% if SHOP.shop_wallet_enabled %}<li><a href="{% url 'wallet_page' %}"><i class="bi bi-wallet2" aria-hidden="true"></i> Wallet</a></li>{% endif %}
+                        {% if SHOP.shop_pro_enabled %}<li><a href="{% url 'pro_page' %}"><i class="bi bi-star" aria-hidden="true"></i> Pro</a></li>{% endif %}
+                        {% if SHOP.shop_favorites_enabled %}<li><a href="{% url 'favorites_page' %}"><i class="bi bi-heart" aria-hidden="true"></i> Favourites</a></li>{% endif %}
+                        {% else %}
+                        {% if SHOP.customer_login_enabled %}
+                        <li><a href="{% url 'customer_login' %}"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Login</a></li>
+                        {% endif %}
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-6 col-md-4">
+                    <h6 class="footer-title">Contact</h6>
+                    <ul class="footer-links">
+                        {% if company_contact_number %}
+                        <li><a href="tel:{{ company_contact_number }}"><i class="bi bi-telephone-fill" aria-hidden="true"></i> {{ company_contact_number }}</a></li>
+                        {% endif %}
+                        {% if company_email %}
+                        <li><a href="mailto:{{ company_email }}"><i class="bi bi-envelope-fill" aria-hidden="true"></i> {{ company_email }}</a></li>
+                        {% endif %}
+                        {% if not company_contact_number and not company_email %}
+                        <li><i class="bi bi-headset" aria-hidden="true"></i> 24/7 Support</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} {{ company_name }}. All rights reserved.</p>
+            <p><i class="bi bi-shield-lock-fill" aria-hidden="true"></i> Secure shopping</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* Sticky search bar offset = real navbar height (fixes the gap between navbar and search) */
+(function () {
+    var nav = document.querySelector('.shop-navbar');
+    if (!nav) return;
+    function setH() {
+        document.documentElement.style.setProperty('--navbar-h', nav.getBoundingClientRect().height + 'px');
+    }
+    setH();
+    window.addEventListener('resize', setH);
+    window.addEventListener('load', setH);
+    if (window.ResizeObserver) new ResizeObserver(setH).observe(nav);
+})();
+</script>
+
+<script>
+/* Keep aria state of the menu button in sync with the sidebar (no change to existing logic) */
+(function () {
+    var sb = document.getElementById('adminSidebar');
+    var btn = document.getElementById('navbarHamburgerBtn');
+    if (!sb || !btn || !window.MutationObserver) return;
+    new MutationObserver(function () {
+        var open = sb.classList.contains('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }).observe(sb, { attributes: true, attributeFilter: ['class'] });
+})();
+</script>
+
+<script>
+/* ============================================ */
+/* ✅ GLOBAL CSRF TOKEN HELPER                  */
+/* ============================================ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function ajaxPost(url, data) {
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    }).then(r => r.json());
+}
+
+/* ============================================ */
+/* SIDEBAR TOGGLE                               */
+/* ============================================ */
+function toggleShopSidebar() {
+    const sidebar = document.getElementById('adminSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('navbarHamburgerBtn');
+    const icon = document.getElementById('navbarHamburgerIcon');
+    
+    if (!sidebar) return;
+    
+    const isOpen = sidebar.classList.contains('open');
+    
+    if (isOpen) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        if (hamburger) hamburger.classList.remove('active');
+        if (icon) icon.className = 'bi bi-list';
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        if (hamburger) hamburger.classList.add('active');
+        if (icon) icon.className = 'bi bi-x-lg';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function toggleSidebarCollapse(button) {
+    const header = button;
+    const body = header.nextElementSibling;
+    
+    if (!body) return;
+    
+    header.classList.toggle('open');
+    body.classList.toggle('open');
+    
+    const section = header.closest('.sidebar-collapse')?.dataset.section;
+    if (section) {
+        const isOpen = body.classList.contains('open');
+        localStorage.setItem(`sidebar_${section}_open`, isOpen ? 'true' : 'false');
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const sidebar = document.getElementById('adminSidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            toggleShopSidebar();
+        }
+        if (window.voiceRecognitionActive) {
+            stopVoiceSearch();
+        }
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    }
+});
+
+/* ============================================ */
+/* VOICE ANNOUNCEMENT                            */
+/* ============================================ */
+let voiceAnnouncementEnabled = false;
+
+try {
+    const savedPref = localStorage.getItem('voice_announcement_enabled');
+    if (savedPref === 'true') {
+        voiceAnnouncementEnabled = true;
+    }
+} catch (e) {}
+
+function sUxMsg(m) { if (window.shopUx) { shopUx.error(m); } else { alert(m); } }   // vendor pages par shopUx nahi
+const speechSupported = 'speechSynthesis' in window;
+
+function toggleVoiceAnnouncement() {
+    if (!speechSupported) {
+        sUxMsg('{% t "Voice Feedback is not supported in this browser. Please use Chrome, Edge, or Safari." %}');
+        return;
+    }
+    
+    voiceAnnouncementEnabled = !voiceAnnouncementEnabled;
+    
+    try {
+        localStorage.setItem('voice_announcement_enabled', voiceAnnouncementEnabled ? 'true' : 'false');
+    } catch (e) {}
+    
+    updateVoiceToggleUI();
+    
+    if (voiceAnnouncementEnabled) {
+        announceText('Voice feedback enabled');
+        showVoiceToast('Voice Feedback ON');
+    } else {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        showVoiceToast('Voice Feedback OFF');
+    }
+}
+
+function updateVoiceToggleUI() {
+    const btn = document.getElementById('voiceToggleBtn');
+    const icon = document.getElementById('voiceToggleIcon');
+    
+    if (!btn || !icon) return;
+    
+    if (voiceAnnouncementEnabled) {
+        btn.classList.add('active');
+        icon.className = 'bi bi-volume-up-fill';
+        btn.title = 'Voice Feedback ON (click to turn off)';
+    } else {
+        btn.classList.remove('active');
+        icon.className = 'bi bi-volume-mute-fill';
+        btn.title = 'Voice Feedback OFF (click to enable)';
+    }
+}
+
+function announceText(text, options = {}) {
+    if (!voiceAnnouncementEnabled || !speechSupported) return;
+    if (!text || text.trim().length === 0) return;
+    
+    try {
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = options.lang || 'en-US';
+        utterance.rate = options.rate || 1.0;
+        utterance.pitch = options.pitch || 1.0;
+        utterance.volume = options.volume || 1.0;
+        
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'))
+                                || voices.find(v => v.lang.startsWith('en'))
+                                || voices[0];
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+        }
+        
+        window.speechSynthesis.speak(utterance);
+    } catch (e) {
+        console.error('Voice announcement error:', e);
+    }
+}
+
+function showVoiceToast(text, duration = 2500) {
+    const toast = document.getElementById('voiceToast');
+    const toastText = document.getElementById('voiceToastText');
+    
+    if (!toast || !toastText) return;
+    
+    toastText.textContent = text;
+    toast.classList.add('show');
+    
+    clearTimeout(window.voiceToastTimer);
+    window.voiceToastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
+function announceSearchResults(count, query) {
+    if (!voiceAnnouncementEnabled) return;
+    
+    let message = '';
+    if (count === 0) {
+        message = `No products found for ${query}`;
+    } else if (count === 1) {
+        message = `1 product found for ${query}`;
+    } else {
+        message = `${count} products found for ${query}`;
+    }
+    
+    announceText(message);
+    showVoiceToast(message);
+}
+
+function announceClearSearch() {
+    if (!voiceAnnouncementEnabled) return;
+    
+    const message = 'Search cleared. Showing all products.';
+    announceText(message);
+    showVoiceToast(message);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        updateVoiceToggleUI();
+        if (speechSupported) {
+            window.speechSynthesis.getVoices();
+        }
+    }, 100);
+});
+
+if (speechSupported) {
+    window.speechSynthesis.onvoiceschanged = function() {};
+}
+
+window.toggleVoiceAnnouncement = toggleVoiceAnnouncement;
+window.announceText = announceText;
+window.announceSearchResults = announceSearchResults;
+window.announceClearSearch = announceClearSearch;
+window.showVoiceToast = showVoiceToast;
+
+/* ============================================ */
+/* ✅ SMART SEARCH WITH TYPO CORRECTION         */
+/* ============================================ */
+(function() {
+    const input = document.getElementById('liveSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const resultsCountEl = document.getElementById('searchResultsCount');
+    
+    if (!input) return;
+    
+    let debounceTimer = null;
+    let lastAnnouncedQuery = '';
+    let lastAnnouncedCount = -1;
+    let productWordsIndex = [];
+    let correctionCache = {};
+    
+    function buildProductWordsIndex() {
+        const grid = document.getElementById('productsGrid');
+        if (!grid) return;
+        
+        const words = new Set();
+        const cards = grid.querySelectorAll('.product-card');
+        
+        cards.forEach(card => {
+            const name = (card.dataset.name || '').toLowerCase();
+            name.split(/[\s\-_,\.]+/).forEach(word => {
+                if (word.length >= 2) words.add(word);
+            });
+            
+            const category = (card.dataset.category || '').toLowerCase();
+            category.split(/[\s\-_,\.]+/).forEach(word => {
+                if (word.length >= 2) words.add(word);
+            });
+            
+            const brand = (card.dataset.brand || '').toLowerCase();
+            brand.split(/[\s\-_,\.]+/).forEach(word => {
+                if (word.length >= 2) words.add(word);
+            });
+            
+            const serial = (card.dataset.serial || '').toLowerCase();
+            if (serial.length >= 2) words.add(serial);
+            
+            const barcode = (card.dataset.barcode || '').toLowerCase();
+            if (barcode.length >= 2) words.add(barcode);
+        });
+        
+        productWordsIndex = Array.from(words);
+    }
+    
+    function levenshteinDistance(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+        
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+    
+    function getMaxDistance(length) {
+        if (length <= 4) return 1;
+        if (length <= 7) return 2;
+        if (length <= 10) return 3;
+        return Math.ceil(length * 0.3);
+    }
+    
+    function correctTypo(query) {
+        if (!query || query.length < 3) return { corrected: query, original: null };
+        
+        const queryLower = query.toLowerCase().trim();
+        
+        if (correctionCache[queryLower] !== undefined) {
+            return correctionCache[queryLower];
+        }
+        
+        if (productWordsIndex.includes(queryLower)) {
+            const result = { corrected: queryLower, original: null };
+            correctionCache[queryLower] = result;
+            return result;
+        }
+        
+        let bestMatch = null;
+        let bestDistance = Infinity;
+        const maxDistance = getMaxDistance(queryLower.length);
+        
+        for (const word of productWordsIndex) {
+            if (Math.abs(word.length - queryLower.length) > maxDistance) continue;
+            
+            const isPrefixMatch = word.startsWith(queryLower.slice(0, Math.min(3, queryLower.length)));
+            const distance = levenshteinDistance(queryLower, word);
+            const adjustedDistance = isPrefixMatch ? distance - 0.5 : distance;
+            
+            if (adjustedDistance < bestDistance && distance <= maxDistance) {
+                bestDistance = adjustedDistance;
+                bestMatch = word;
+            }
+        }
+        
+        if (!bestMatch) {
+            for (const word of productWordsIndex) {
+                if (word.includes(queryLower) || queryLower.includes(word)) {
+                    if (word.length <= queryLower.length + 2) {
+                        bestMatch = word;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        let result;
+        if (bestMatch) {
+            result = { corrected: bestMatch, original: query };
+        } else {
+            result = { corrected: queryLower, original: null };
+        }
+        
+        correctionCache[queryLower] = result;
+        return result;
+    }
+    
+    window.applyCorrection = function(correctedText) {
+        if (input) {
+            input.value = correctedText;
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        }
+    };
+    
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (clearBtn) {
+            if (query.length > 0) {
+                clearBtn.classList.add('show');
+            } else {
+                clearBtn.classList.remove('show');
+            }
+        }
+        
+        if (resultsCountEl) {
+            if (query.length > 0) {
+                resultsCountEl.classList.add('has-text');
+            } else {
+                resultsCountEl.classList.remove('has-text');
+            }
+        }
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            filterProducts(query);
+        }, 150);
+    });
+    
+    function filterProducts(query) {
+        const grid = document.getElementById('productsGrid');
+        const noResults = document.getElementById('noResultsMessage');
+        
+        if (!grid) {
+            if (resultsCountEl) {
+                if (query) {
+                    resultsCountEl.innerHTML = `Searching for "<strong>${query}</strong>"...`;
+                    resultsCountEl.classList.add('has-text');
+                } else {
+                    resultsCountEl.innerHTML = '';
+                    resultsCountEl.classList.remove('has-text');
+                }
+            }
+            return;
+        }
+        
+        const cards = grid.querySelectorAll('.product-card');
+        
+        if (query.length === 0) {
+            cards.forEach(card => {
+                card.style.display = '';
+                card.classList.remove('search-highlight');
+            });
+            if (noResults) noResults.style.display = 'none';
+            updateResultsCount(0, '', true);
+            
+            lastAnnouncedQuery = '';
+            lastAnnouncedCount = -1;
+            return;
+        }
+        
+        const queryLower = query.toLowerCase();
+        let visibleCount = 0;
+        
+        cards.forEach(card => {
+            const name = (card.dataset.name || '').toLowerCase();
+            const category = (card.dataset.category || '').toLowerCase();
+            const brand = (card.dataset.brand || '').toLowerCase();
+            const serial = (card.dataset.serial || '').toLowerCase();
+            const barcode = (card.dataset.barcode || '').toLowerCase();
+            
+            const isMatch = 
+                name.includes(queryLower) ||
+                category.includes(queryLower) ||
+                brand.includes(queryLower) ||
+                serial.includes(queryLower) ||
+                barcode.includes(queryLower);
+            
+            if (isMatch) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+                card.classList.remove('search-highlight');
+            }
+        });
+        
+        let isTypoCorrected = false;
+        let correctedQuery = query;
+        
+        if (visibleCount === 0 && query.length >= 3) {
+            const typoResult = correctTypo(query);
+            
+            if (typoResult.original) {
+                correctedQuery = typoResult.corrected;
+                isTypoCorrected = true;
+                
+                cards.forEach(card => {
+                    const name = (card.dataset.name || '').toLowerCase();
+                    const category = (card.dataset.category || '').toLowerCase();
+                    const brand = (card.dataset.brand || '').toLowerCase();
+                    const serial = (card.dataset.serial || '').toLowerCase();
+                    const barcode = (card.dataset.barcode || '').toLowerCase();
+                    
+                    const isMatch = 
+                        name.includes(correctedQuery) ||
+                        category.includes(correctedQuery) ||
+                        brand.includes(correctedQuery) ||
+                        serial.includes(correctedQuery) ||
+                        barcode.includes(correctedQuery);
+                    
+                    if (isMatch) {
+                        card.style.display = '';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
+        if (noResults) {
+            if (visibleCount === 0) {
+                noResults.style.display = 'block';
+                updateNoResultsMessage(query);
+            } else {
+                noResults.style.display = 'none';
+            }
+        }
+        
+        if (isTypoCorrected && visibleCount > 0) {
+            if (resultsCountEl) {
+                resultsCountEl.innerHTML = `
+                    <span style="color: var(--gray-500);">Showing results for </span>
+                    <strong class="typo-suggestion" onclick="applyCorrection('${correctedQuery}')">
+                        "${correctedQuery}"
+                    </strong>
+                    <span style="color: var(--gray-400); font-size: 0.72rem;">
+                        (searched for "${query}")
+                    </span>
+                `;
+                resultsCountEl.classList.add('has-text');
+            }
+            
+            if (voiceAnnouncementEnabled && typeof announceText === 'function') {
+                setTimeout(() => {
+                    announceText(`Showing ${visibleCount} products for ${correctedQuery}`);
+                }, 300);
+            }
+        } else if (visibleCount > 0) {
+            updateResultsCount(visibleCount, query);
+            
+            if (query.length >= 2 && (query !== lastAnnouncedQuery || visibleCount !== lastAnnouncedCount)) {
+                setTimeout(() => {
+                    if (typeof announceSearchResults === 'function' && voiceAnnouncementEnabled) {
+                        announceSearchResults(visibleCount, query);
+                    }
+                    lastAnnouncedQuery = query;
+                    lastAnnouncedCount = visibleCount;
+                }, 300);
+            }
+        }
+        
+        if (visibleCount === 1) {
+            const visibleCards = Array.from(cards).filter(c => c.style.display !== 'none');
+            if (visibleCards.length > 0) {
+                const card = visibleCards[0];
+                card.classList.add('search-highlight');
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    }
+    
+    function updateNoResultsMessage(query) {
+        const noResults = document.getElementById('noResultsMessage');
+        if (!noResults) return;
+        
+        const innerDiv = noResults.querySelector('.empty-products');
+        if (!innerDiv) return;
+        
+        let suggestionHTML = '';
+        if (query.length >= 3 && productWordsIndex.length > 0) {
+            const typoResult = correctTypo(query);
+            if (typoResult.original) {
+                suggestionHTML = `
+                    <div style="margin-top: 15px; padding: 12px 18px; background: #fcefe4; border-radius: 10px; display: inline-block;">
+                        <span style="color: #64748b; font-size: 0.85rem;">Did you mean: </span>
+                        <strong style="color: #d9480f; cursor: pointer; font-size: 0.9rem;" 
+                                onclick="applyCorrection('${typoResult.corrected}')">
+                            ${typoResult.corrected}
+                        </strong>
+                        <span style="color: #64748b; font-size: 0.85rem;">?</span>
+                    </div>
+                `;
+            }
+        }
+        
+        innerDiv.innerHTML = `
+            <i class="bi bi-search"></i>
+            <h4>No Products Found</h4>
+            <p>No product matched your search "<strong>${query}</strong>".</p>
+            ${suggestionHTML}
+            <div style="margin-top: 20px;">
+                <button onclick="clearSearch()" class="btn btn-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Clear Search
+                </button>
+            </div>
+        `;
+    }
+    
+    function updateResultsCount(count, query, showAll) {
+        if (!resultsCountEl) return;
+        
+        if (showAll) {
+            resultsCountEl.innerHTML = '';
+            resultsCountEl.classList.remove('has-text');
+            return;
+        }
+        
+        if (query && query.length > 0) {
+            if (count > 0) {
+                resultsCountEl.innerHTML = `Found <strong>${count}</strong> product${count !== 1 ? 's' : ''} for "<strong>${query}</strong>"`;
+            }
+        } else {
+            resultsCountEl.innerHTML = '';
+            resultsCountEl.classList.remove('has-text');
+        }
+    }
+    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.getElementById('navbarSearchForm');
+            if (form) form.submit();
+        }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(buildProductWordsIndex, 300);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search');
+        
+        if (searchQuery && input) {
+            input.value = searchQuery;
+            if (clearBtn) clearBtn.classList.add('show');
+            if (resultsCountEl) resultsCountEl.classList.add('has-text');
+            
+            setTimeout(() => {
+                filterProducts(searchQuery);
+            }, 500);
+        }
+    });
+})();
+
+/* ============================================ */
+/* ✅ CLEAR SEARCH                              */
+/* ============================================ */
+function clearSearch() {
+    const input = document.getElementById('liveSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const resultsCountEl = document.getElementById('searchResultsCount');
+    const noResults = document.getElementById('noResultsMessage');
+    const grid = document.getElementById('productsGrid');
+    
+    if (input) {
+        input.value = '';
+        input.focus();
+        input.dispatchEvent(new Event('input'));
+    }
+    
+    if (clearBtn) clearBtn.classList.remove('show');
+    if (noResults) noResults.style.display = 'none';
+    if (resultsCountEl) {
+        resultsCountEl.innerHTML = '';
+        resultsCountEl.classList.remove('has-text');
+    }
+    
+    if (grid) {
+        grid.querySelectorAll('.product-card').forEach(card => {
+            card.style.display = '';
+            card.classList.remove('search-highlight');
+        });
+    }
+    
+    announceClearSearch();
+    
+    const url = new URL(window.location);
+    url.searchParams.delete('search');
+    window.history.replaceState({}, '', url);
+}
+
+/* ============================================ */
+/* VOICE SEARCH (MIC)                            */
+/* ============================================ */
+let voiceRecognition = null;
+let voiceRecognitionActive = false;
+
+/* Voice language ab site ki zubaan ke saath chalti hai (alag EN/اردو button hata diya). */
+function getVoiceLang() {
+    return '{% if LANG_CODE == 'ur' %}ur-PK{% else %}en-US{% endif %}';   /* ek hi zubaan ka option: header ka English / اردو */
+}
+function refreshVoiceLangButtons() {
+    var ur = getVoiceLang() === 'ur-PK';
+    document.querySelectorAll('[data-voice-lang-btn]').forEach(function (b) { b.textContent = ur ? 'اردو' : 'EN'; });
+}
+function toggleVoiceLang() {
+    var next = getVoiceLang() === 'ur-PK' ? 'en-US' : 'ur-PK';
+    try { localStorage.setItem('shopVoiceLang', next); } catch (e) {}
+    refreshVoiceLangButtons();
+    if (voiceRecognitionActive) stopVoiceSearch();
+}
+document.addEventListener('DOMContentLoaded', refreshVoiceLangButtons);
+
+/* toggleVoiceSearch()                      -> shop home ki search (purane ids)
+   toggleVoiceSearch('stQ', 'stMic', true)  -> kisi bhi search box par; true = bolne ke baad form khud search kare */
+function toggleVoiceSearch(inputId, btnId, autoSubmit) {
+    const micBtn = document.getElementById(btnId || 'voiceSearchBtn');
+    const micIcon = btnId ? null : document.getElementById('micIcon');
+    const voiceIndicator = document.getElementById('voiceIndicator');
+    const voiceText = document.getElementById('voiceText');
+    const input = document.getElementById(inputId || 'liveSearchInput');
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        sUxMsg('{% t "Voice Search is not supported in this browser." %}');
+        return;
+    }
+    
+    if (voiceRecognitionActive) {
+        stopVoiceSearch();
+        return;
+    }
+    
+    if (window.location.protocol !== 'https:' && 
+        window.location.hostname !== 'localhost' && 
+        window.location.hostname !== '127.0.0.1') {
+        sUxMsg('{% t "Voice Search requires HTTPS or localhost." %}');
+        return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    voiceRecognition = new SpeechRecognition();
+    
+    voiceRecognition.lang = getVoiceLang();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = true;
+    voiceRecognition.maxAlternatives = 1;
+    
+    voiceRecognitionActive = true;
+    
+    if (micBtn) micBtn.classList.add('listening');
+    if (micIcon) micIcon.className = 'bi bi-mic-fill';
+    if (voiceIndicator) voiceIndicator.classList.add('show');
+    if (voiceText) voiceText.textContent = 'Listening...';
+    
+    voiceRecognition.onresult = function(event) {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        if (input) {
+            input.value = finalTranscript || interimTranscript;
+            input.dispatchEvent(new Event('input'));
+        }
+        
+        if (voiceText) {
+            voiceText.textContent = `"${finalTranscript || interimTranscript}"`;
+        }
+        
+        if (finalTranscript) {
+            setTimeout(() => {
+                stopVoiceSearch();
+                if (autoSubmit && input && input.form) {
+                    if (input.form.requestSubmit) input.form.requestSubmit(); else input.form.submit();
+                }
+            }, 800);
+        }
+    };
+    
+    voiceRecognition.onerror = function(event) {
+        let errorMsg = 'Error!';
+        if (event.error === 'no-speech') errorMsg = 'No sound was heard.';
+        else if (event.error === 'audio-capture') errorMsg = '{% t "Microphone not found." %}';
+        else if (event.error === 'not-allowed') errorMsg = 'Permission denied.';
+        else if (event.error === 'language-not-supported') errorMsg = '{% t "This language is not supported in this browser. Try English." %}';
+        else if (event.error === 'network') errorMsg = 'Network error.';
+        
+        if (voiceText) voiceText.textContent = errorMsg;
+        
+        setTimeout(() => {
+            stopVoiceSearch();
+        }, 2000);
+    };
+    
+    voiceRecognition.onend = function() {
+        if (voiceRecognitionActive) {
+            stopVoiceSearch();
+        }
+    };
+    
+    try {
+        voiceRecognition.start();
+    } catch (e) {
+        stopVoiceSearch();
+    }
+}
+
+function stopVoiceSearch() {
+    const micIcon = document.getElementById('micIcon');
+    const voiceIndicator = document.getElementById('voiceIndicator');
+    
+    voiceRecognitionActive = false;
+    
+    if (voiceRecognition) {
+        try { voiceRecognition.stop(); } catch (e) {}
+        voiceRecognition = null;
+    }
+    
+    document.querySelectorAll('.mic-btn.listening, .st-mic.listening').forEach(function (b) { b.classList.remove('listening'); });
+    if (micIcon) micIcon.className = 'bi bi-mic-fill';
+    
+    if (voiceIndicator) {
+        setTimeout(() => {
+            voiceIndicator.classList.remove('show');
+        }, 500);
+    }
+}
+
+window.toggleVoiceSearch = toggleVoiceSearch;
+window.toggleVoiceLang = toggleVoiceLang;
+window.stopVoiceSearch = stopVoiceSearch;
+
+/* ============================================ */
+/* PAGE LOAD                                    */
+/* ============================================ */
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.style.overflow = '';
+    
+    document.querySelectorAll('.sidebar-collapse').forEach(function(collapse) {
+        const section = collapse.dataset.section;
+        const body = collapse.querySelector('.sidebar-collapse-body');
+        const header = collapse.querySelector('.sidebar-collapse-header');
+        
+        if (!section || !body || !header) return;
+        
+        const savedState = localStorage.getItem(`sidebar_${section}_open`);
+        const hasActive = header.classList.contains('has-active');
+        
+        if (savedState === 'true' || hasActive) {
+            header.classList.add('open');
+            body.classList.add('open');
+        }
+    });
+    
+    /* Neeche ki bar ka Cart badge upar wale .cart-count ke saath sync rakho */
+    function syncBottomNavCart() {
+        var top = document.querySelector('.shop-navbar .cart-count') || document.querySelector('.cart-count');
+        if (!top) return;
+        var n = parseInt(top.textContent, 10) || 0;
+        document.querySelectorAll('[data-sm-cart]').forEach(function (b) {
+            b.textContent = n;
+            b.hidden = !(n > 0);
+        });
+    }
+    document.querySelectorAll('.cart-count').forEach(function (el) {
+        new MutationObserver(syncBottomNavCart).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    syncBottomNavCart();
+
+    fetch('/shop/api/cart-count/')
+        .then(r => r.json())
+        .then(data => {
+            if (data.cart_count !== undefined) {
+                document.querySelectorAll('.cart-count').forEach(el => {
+                    el.textContent = data.cart_count;
+                });
+                syncBottomNavCart();
+            }
+        })
+        .catch(() => {});
+    window.addEventListener('pageshow', function (e) { if (e.persisted) syncBottomNavCart(); });
+});
+</script>
+
+{% include 'customer_portal/_push_prompt.html' %}
+{% include 'customer_portal/_native_push.html' %}   {# Vendor APK: Firebase push (browser mein kuch nahi karta) #}
+
+{% if request.path|slice:":13" != "/shop/vendor/" %}<script src="{% static 'js/shop_ux.js' %}?v=1"></script><script src="{% static 'js/shop_polish.js' %}?v=1" defer></script>{% endif %}   {# Step 8: internet patti, toast, spinner #}
+
+{% block extra_js %}{% endblock %}
+
+{% include 'components/i18n.html' %}
+</body>
+</html>

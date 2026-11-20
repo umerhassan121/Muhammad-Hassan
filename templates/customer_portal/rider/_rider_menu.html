@@ -1,0 +1,43 @@
+{# Rider ka shared menu: neeche 5 tab ki bar + "More" sheet. CSS: static/css/rider.css (.rnav, .rmore)
+   Flags: rider_earnings_enabled, rider_support_chat_enabled, rider_shift_booking_enabled, rider_hotspots_enabled.
+   Context: nav (kaun sa page), badge_count, support_unread, more_badge (issues + documents warning), dispute_count, doc_warn_n. #}
+<nav class="rnav" aria-label="Main">
+  <a href="{% url 'rider_home' %}" class="{% if nav == 'orders' %}on{% endif %}"><span class="ic">🛵</span><span class="lb">Orders</span><i class="badge" id="navBadge"{% if not badge_count %} style="display:none"{% endif %}>{{ badge_count|default:0 }}</i></a>
+  <a href="{% url 'rider_history' %}" class="{% if nav == 'history' %}on{% endif %}"><span class="ic">🧾</span><span class="lb">History</span></a>
+  {% if SHOP.rider_earnings_enabled %}
+  <a href="{% url 'rider_earnings' %}" class="{% if nav == 'earnings' %}on{% endif %}"><span class="ic">💰</span><span class="lb">Earnings</span></a>
+  {% endif %}
+  {% if SHOP.rider_support_chat_enabled %}
+  <a href="{% url 'rider_support' %}" class="{% if nav == 'support' %}on{% endif %}"><span class="ic">💬</span><span class="lb">Help</span>{% if support_unread %}<i class="badge">{{ support_unread }}</i>{% endif %}</a>
+  {% endif %}
+  <button type="button" id="rMoreBtn" class="{% if nav == 'disputes' or nav == 'documents' or nav == 'shifts' or nav == 'hotspots' or nav == 'settings' %}on{% endif %}" aria-haspopup="dialog" aria-expanded="false" aria-controls="rMore"><span class="ic">☰</span><span class="lb">More</span>{% if more_badge %}<i class="badge">{{ more_badge }}</i>{% endif %}</button>
+</nav>
+<div class="rmore-bg" id="rMoreBg"></div>
+<div class="rmore" id="rMore" role="dialog" aria-label="More">
+  <div class="grab"></div>
+  {% if SHOP.rider_shift_booking_enabled or SHOP.rider_hotspots_enabled %}
+  <h4>Work</h4>
+  {% if SHOP.rider_shift_booking_enabled %}<a href="{% url 'rider_shifts' %}" class="{% if nav == 'shifts' %}on{% endif %}"><span class="ic">🗓️</span><span class="lb">Shifts</span></a>{% endif %}
+  {% if SHOP.rider_hotspots_enabled %}<a href="{% url 'rider_hotspots' %}" class="{% if nav == 'hotspots' %}on{% endif %}"><span class="ic">🔥</span><span class="lb">Demand</span></a>{% endif %}
+  {% endif %}
+  <h4>Help</h4>
+  <a href="{% url 'rider_disputes' %}" class="{% if nav == 'disputes' %}on{% endif %}"><span class="ic">⚠️</span><span class="lb">Issues</span>{% if dispute_count %}<span class="pillb">{{ dispute_count }}</span>{% endif %}</a>
+  <h4>Account</h4>
+  <a href="{% url 'rider_documents' %}" class="{% if nav == 'documents' %}on{% endif %}"><span class="ic">📄</span><span class="lb">My documents</span>{% if doc_warn_n %}<span class="pillb">{{ doc_warn_n }}</span>{% endif %}</a>
+  <a href="{% url 'rider_settings' %}" class="{% if nav == 'settings' %}on{% endif %}"><span class="ic">⚙️</span><span class="lb">Settings</span></a>
+  <a href="{% url 'rider_logout' %}" class="out"><span class="ic">🚪</span><span class="lb">Logout</span></a>
+</div>
+<script>
+(function(){var b=document.getElementById('rMoreBtn'),s=document.getElementById('rMore'),g=document.getElementById('rMoreBg');if(!b||!s||!g)return;
+var tr=null;
+function set(o){s.classList.toggle('open',o);g.classList.toggle('open',o);b.setAttribute('aria-expanded',o?'true':'false');}
+/* Android back button sheet band karta hai (riderUx.trap, static/js/rider_ux.js) */
+function open(){set(true);tr=window.riderUx?riderUx.trap('more',function(){set(false);tr=null;}):null;}
+function close(){if(tr){tr.close();}else{set(false);}}
+b.addEventListener('click',function(){if(s.classList.contains('open')){close();}else{open();}});
+g.addEventListener('click',close);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+Array.prototype.forEach.call(s.querySelectorAll('a'),function(a){a.addEventListener('click',function(e){
+  if(!tr||e.ctrlKey||e.metaKey||e.shiftKey||a.target==='_blank')return;
+  e.preventDefault();var h=a.href;tr.leave(function(){location.href=h;});});});})();
+</script>

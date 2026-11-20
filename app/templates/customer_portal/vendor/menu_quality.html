@@ -1,0 +1,61 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% block title %}Menu quality{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mq-score { display:flex; gap:16px; align-items:center; margin:4px 0 18px; flex-wrap:wrap; }
+  .mq-big { font-size: 48px; font-weight: 700; line-height: 1; }
+  .mq-good { color: var(--v-ok); } .mq-warn { color: var(--v-warn); } .mq-bad { color: var(--v-bad); }
+  .mq-bar { height: 10px; background: #eee; border-radius: 6px; overflow: hidden; width: 260px; max-width: 100%; }
+  .mq-bar > span { display:block; height:100%; background: currentColor; }
+  .mq-chip { display:inline-block; font-size:12px; padding:2px 8px; border-radius:10px; background: var(--v-bad-bg); color: var(--v-bad); margin:0 4px 4px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="v-page">
+  <a class="v-back" href="{% url 'vendor_menu' %}">&larr; Menu</a>
+  <div class="v-card">
+    <div class="v-card-head"><h3>Menu quality</h3></div>
+    <div class="v-card-body">
+{% if summary.score is None %}
+      <p class="v-muted">Add some items first. Your score appears here once you have a menu.</p>
+{% else %}
+      <div class="mq-score">
+        <div class="mq-big mq-{{ summary.tone }}">{{ summary.score }}<span style="font-size:20px">/100</span></div>
+        <div>
+          <div><b>{{ summary.label }}</b> &middot; menu {{ summary.complete_pct }}% complete</div>
+          <div class="mq-bar mq-{{ summary.tone }}"><span style="width:{{ summary.complete_pct }}%"></span></div>
+          <div class="v-muted">{{ summary.complete }} of {{ summary.items }} items have a photo, description and a good name.</div>
+        </div>
+      </div>
+      <div class="v-stats">
+        <div class="v-stat"><b>{{ summary.missing_photo }}</b>items without a photo<br><span class="v-muted">worth {{ weights.photo }} points each</span></div>
+        <div class="v-stat"><b>{{ summary.missing_desc }}</b>items without a description<br><span class="v-muted">worth {{ weights.desc }} points each</span></div>
+        <div class="v-stat"><b>{{ summary.bad_name }}</b>names to fix<br><span class="v-muted">worth {{ weights.name }} points each</span></div>
+      </div>
+
+  {% if weak %}
+      <h5>Fix these first</h5>
+      <div class="v-table-wrap">
+      <table class="v-table">
+        <thead><tr><th>Item</th><th>What is missing</th><th></th></tr></thead>
+        <tbody>
+        {% for w in weak %}
+          <tr>
+            <td>{{ w.product.name }}{% if w.product.category %}<br><span class="v-muted">{{ w.product.category.name }}</span>{% endif %}</td>
+            <td>{% for t in w.issue_text %}<span class="mq-chip">{{ t }}</span>{% endfor %}</td>
+            <td><a href="{% url 'vendor_product_edit' w.product.pk %}">Edit</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+  {% else %}
+      <p><b>Great - every item is complete.</b></p>
+  {% endif %}
+{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

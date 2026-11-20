@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Support - {{ r.name }}{% endblock %}
+{% block page_title %}💬 {{ r.name }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3" style="max-width:720px">
+  <a href="{% url 'rider_support_inbox' %}" class="btn btn-sm btn-outline-secondary mb-3">← Support inbox</a>
+  <div class="mb-2 text-muted small">{{ r.name }} · <a href="tel:{{ r.phone }}">{{ r.phone }}</a> · <a href="{% url 'rider_detail' r.id %}">Account</a></div>
+  {% include 'customer_portal/rider/_support_chat.html' with chat_empty="No messages from this rider yet." %}
+</div>
+{% endblock %}

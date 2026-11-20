@@ -1,0 +1,131 @@
+package __PKG__;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioAttributes;
+import android.net.Uri;
+import android.os.Build;
+
+import androidx.core.app.NotificationCompat;
+
+import com.capacitorjs.plugins.pushnotifications.MessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.Map;
+
+/**
+ * Rider (Accept / Decline) aur Vendor (Accept / Reject) ke naye order ki notification buttons ke saath.
+ * Ek hi file dono APK mein jati hai (workflow __PKG__ badal deta hai).
+ *
+ * Server (push_service.fcm_action_data) is phone ko "data-only" FCM bhejta hai (act=1) taake yehi service
+ * notification banaye. Baqi har message Capacitor ke apne MessagingService (super) ko chala jata hai.
+ */
+public class RiderMessagingService extends MessagingService {
+    static final String CH_ORDERS = "orders_v2";
+    static final String CH_GENERAL = "general";
+
+    @Override
+    public void onMessageReceived(RemoteMessage msg) {
+        try {
+            Map<String, String> d = msg.getData();
+            if (msg.getNotification() == null && d != null && "1".equals(d.get("act"))) {
+                showOffer(d);
+                return;
+            }
+        } catch (Exception e) {
+            // neeche super par chala jaye
+        }
+        super.onMessageReceived(msg);
+    }
+
+    static void ensureChannels(Context c, NotificationManager nm) {
+        if (Build.VERSION.SDK_INT < 26) return;
+        if (nm.getNotificationChannel(CH_ORDERS) == null) {
+            NotificationChannel ch = new NotificationChannel(CH_ORDERS, "Naye orders (ring)", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("Naye order par lambi ring");
+            ch.enableVibration(true);
+            ch.setLockscreenVisibility(1);
+            int raw = c.getResources().getIdentifier("order_ring", "raw", c.getPackageName());
+            if (raw != 0) {
+                AudioAttributes aa = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                ch.setSound(Uri.parse("android.resource://" + c.getPackageName() + "/" + raw), aa);
+            }
+            nm.createNotificationChannel(ch);
+        }
+        if (nm.getNotificationChannel(CH_GENERAL) == null) {
+            NotificationChannel ch = new NotificationChannel(CH_GENERAL, "Aam notifications", NotificationManager.IMPORTANCE_DEFAULT);
+            ch.setDescription("Baqi updates");
+            nm.createNotificationChannel(ch);
+        }
+    }
+
+    static int piFlags() {
+        int f = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) f |= PendingIntent.FLAG_IMMUTABLE;
+        return f;
+    }
+
+    static PendingIntent openAppIntent(Context c, int requestCode) {
+        Intent open = c.getPackageManager().getLaunchIntentForPackage(c.getPackageName());
+        if (open == null) open = new Intent();
+        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        return PendingIntent.getActivity(c, requestCode, open, piFlags());
+    }
+
+    private void showOffer(Map<String, String> d) throws Exception {
+        Context c = getApplicationContext();
+        NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        ensureChannels(c, nm);
+
+        String tag = d.get("tag");
+        if (tag == null || tag.length() == 0) tag = "order";
+        int nid = tag.hashCode();
+        String title = d.get("title") == null ? "New order" : d.get("title");
+        String body = d.get("body") == null ? "" : d.get("body");
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(c, CH_ORDERS)
+                .setSmallIcon(c.getApplicationInfo().icon)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setAutoCancel(true)
+                .setTimeoutAfter(600000L)
+                .setContentIntent(openAppIntent(c, nid));
+
+        if (Build.VERSION.SDK_INT < 26) {
+            int raw = c.getResources().getIdentifier("order_ring", "raw", c.getPackageName());
+            if (raw != 0) b.setSound(Uri.parse("android.resource://" + c.getPackageName() + "/" + raw));
+            b.setVibrate(new long[]{0, 400, 200, 400});
+        }
+
+        JSONArray arr = new JSONArray(d.get("actions") == null ? "[]" : d.get("actions"));
+        for (int i = 0; i < arr.length() && i < 2; i++) {
+            JSONObject a = arr.getJSONObject(i);
+            String token = a.optString("token", "");
+            String label = a.optString("title", "");
+            String act = a.optString("action", "");
+            if (token.length() == 0 || label.length() == 0) continue;
+            Intent in = new Intent(c, RiderActionReceiver.class);
+            in.setAction("__PKG__.ORDER_ACTION." + act + "." + nid);
+            in.putExtra("token", token);
+            in.putExtra("act", act);
+            in.putExtra("nid", nid);
+            PendingIntent pi = PendingIntent.getBroadcast(c, nid + (i + 1), in, piFlags());
+            b.addAction(0, label, pi);
+        }
+        nm.notify(nid, b.build());
+    }
+}

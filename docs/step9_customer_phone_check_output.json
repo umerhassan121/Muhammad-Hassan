@@ -1,0 +1,212 @@
+[
+  {
+    "check": "en 320px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 320px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "en 320px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 320px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=574 bar top=575"
+  },
+  {
+    "check": "en 320px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=556 bar top=575"
+  },
+  {
+    "check": "en 320px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=54.0625 patti=54.0625"
+  },
+  {
+    "check": "en 320px: JS error nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 360px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 360px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "en 360px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 360px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=574 bar top=575"
+  },
+  {
+    "check": "en 360px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=556 bar top=575"
+  },
+  {
+    "check": "en 360px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=54.0625 patti=54.0625"
+  },
+  {
+    "check": "en 360px: JS error nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 390px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 390px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "en 390px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "en 390px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=778 bar top=779"
+  },
+  {
+    "check": "en 390px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=760 bar top=779"
+  },
+  {
+    "check": "en 390px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=35.03125 patti=35.03125"
+  },
+  {
+    "check": "en 390px: JS error nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 320px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 320px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "ur 320px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 320px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=574 bar top=575"
+  },
+  {
+    "check": "ur 320px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=556 bar top=575"
+  },
+  {
+    "check": "ur 320px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=35.03125 patti=35.03125"
+  },
+  {
+    "check": "ur 320px: JS error nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 360px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 360px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "ur 360px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 360px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=574 bar top=575"
+  },
+  {
+    "check": "ur 360px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=556 bar top=575"
+  },
+  {
+    "check": "ur 360px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=35.03125 patti=35.03125"
+  },
+  {
+    "check": "ur 360px: JS error nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 390px: har button 44px ya zyada",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 390px: horizontal scroll nahi",
+    "ok": true,
+    "detail": 0
+  },
+  {
+    "check": "ur 390px: bar ke labels kat te nahi",
+    "ok": true,
+    "detail": []
+  },
+  {
+    "check": "ur 390px: chipakne wali patti bar ke ooper (shop.css rule)",
+    "ok": true,
+    "detail": "patti bottom=778 bar top=779"
+  },
+  {
+    "check": "ur 390px: toast bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=760 bar top=779"
+  },
+  {
+    "check": "ur 390px: internet patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=35.03125 patti=35.03125"
+  },
+  {
+    "check": "ur 390px: JS error nahi",
+    "ok": true,
+    "detail": []
+  }
+]

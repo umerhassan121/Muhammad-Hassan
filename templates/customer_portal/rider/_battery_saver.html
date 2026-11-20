@@ -1,0 +1,20 @@
+<div class="card">
+  <div class="row"><b>🔋 Battery saver</b>
+    <select id="saverSel" class="sel">
+      <option value="auto">Auto (when battery is below 20%)</option>
+      <option value="on">Always ON</option>
+      <option value="off">OFF</option>
+    </select></div>
+  <small class="mut">During delivery, your location is sent less often (about every 20 seconds) and the screen is not kept awake. <span id="saverNow"></span></small>
+</div>
+<script>
+(function(){
+  var sel = document.getElementById('saverSel'), now = document.getElementById('saverNow');
+  try{ sel.value = localStorage.getItem('riderSaver') || 'auto'; }catch(e){}
+  sel.addEventListener('change', function(){
+    try{ localStorage.setItem('riderSaver', sel.value); }catch(e){}
+    window.dispatchEvent(new Event('riderSaverChanged'));
+  });
+  window.addEventListener('riderSaverState', function(e){ now.textContent = e.detail.saver ? '\uD83D\uDFE2 Saver is on now.' : ''; });
+})();
+</script>

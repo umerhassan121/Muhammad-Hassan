@@ -1,0 +1,126 @@
+{% extends 'customer_portal/rider/base.html' %}
+{% load portal_i18n %}
+{% block title %}Orders{% endblock %}
+{% block header %}
+<div class="top">
+  <div class="top-row">
+    <div style="display:flex;align-items:center;gap:10px">{% if company_logo %}<img src="{{ company_logo }}" alt="" style="height:38px;width:38px;object-fit:contain;background:#fff;border-radius:10px;padding:3px">{% endif %}<div><div class="hi">Hello 👋</div><div class="nm">{{ rider.name }}</div></div></div>
+    {% include 'components/lang_switch.html' %}
+  </div>
+  <form method="post" action="{% url 'rider_toggle_online' %}">{% csrf_token %}
+    <button class="hsw {% if rider.is_online %}on{% endif %}" aria-pressed="{% if rider.is_online %}true{% else %}false{% endif %}">
+      <span>{% if rider.is_online %}🟢 You are Online{% else %}⚫ You are Offline{% endif %}<small>{% if rider.is_online %}Tap to go offline{% else %}Tap to go online{% endif %}</small></span>
+      <span class="tg" aria-hidden="true"></span>
+    </button>
+  </form>
+</div>
+{% endblock %}
+{% block body %}
+<div class="stats">
+  <div class="stat"><b>{{ today.deliveries }}</b><small>Today's deliveries</small></div>
+  <div class="stat"><b>Rs. {{ today.earned|floatformat:0 }}</b><small>Today's earnings</small></div>
+  <div class="stat"{% if cash.level == 'over' %} style="background:#fee2e2"{% elif cash.level == 'warn' %} style="background:#fef3c7"{% endif %}><b>Rs. {{ balances.cash_in_hand|floatformat:0 }}</b><small>Cash in hand</small></div>
+</div>
+<div class="wrap">
+  {# ---- Saari alerts ek jagah ---- #}
+  {% if gate_msg or doc_warnings or next_shift or peak_now or cash.level == 'warn' or cash.level == 'over' %}
+  <div class="alerts">
+    {% if gate_msg %}<div class="al warn"><span>{{ gate_msg }}</span>{% if rider.approval_status != 'approved' %}<a href="{% url 'rider_documents' %}">Documents →</a>{% endif %}</div>{% endif %}
+    {% for w in doc_warnings %}<div class="al warn"><span>{{ w }}</span><a href="{% url 'rider_documents' %}">Upload →</a></div>{% endfor %}
+    {% if cash.level == 'over' %}<div class="al over"><span>🚨 {% t "You are holding Rs. {} in cash — over the limit (Rs. {}). Please deposit it with the admin now." cash.cash|floatformat:0 cash.limit|floatformat:0 %}</span></div>
+    {% elif cash.level == 'warn' %}<div class="al warn"><span>⚠️ {% t "Cash Rs. {} / Rs. {} — please deposit it soon." cash.cash|floatformat:0 cash.limit|floatformat:0 %}</span></div>{% endif %}
+    {% if peak_now %}<div class="al peak"><span>🔥 {% t "Peak hour: {} until {} — orders you accept now pay <b>+Rs. {}</b> extra" peak_now.name peak_now.until peak_now.extra|floatformat:0 %}</span></div>{% endif %}
+    {% if next_shift %}<div class="al"><span>🗓️ {% if next_shift.live %}Shift in progress{% else %}Next shift{% endif %}</span><span>{{ next_shift.start|date:"D d M" }} · {{ next_shift.start|time:"H:i" }}–{{ next_shift.end|time:"H:i" }}</span></div>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if is_big_vehicle %}
+  <h3>🚚 Bari gari jobs ({{ bv_jobs|length }})</h3>
+  {% if not rider.is_online %}
+    <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">⚫</div><div class="r-empty__title">You are offline</div><div class="r-empty__text">Go <b>Online</b> using the switch above so stores can see your vehicle as available.</div></div>
+  {% endif %}
+  {% for j in bv_jobs %}
+  <div class="card">
+    <div class="row"><span class="no">#{{ j.order.order_no }}</span><span class="fee">Rs. {{ j.fee|floatformat:0 }}</span></div>
+    <div class="row"><span class="pill {% if j.approved %}g{% endif %}">{% if j.approved %}✅ Customer approved{% else %}⏳ Waiting for customer{% endif %}</span>{% if j.ready %}<span class="pill g">📦 Ready for pickup</span>{% endif %}</div>
+    {% if j.pending %}
+    <div class="row"><small>The store picked your vehicle. Please accept or reject this job.</small></div>
+    <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}">{% csrf_token %}<input type="hidden" name="choice" value="accept"><button class="hb">✅ Accept job</button></form>
+    <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}" onsubmit="return confirm('Reject this job?');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button class="hb l">Reject</button></form>
+    {% elif j.accepted %}
+    <div class="row"><span class="pill g">👍 You accepted</span></div>
+    {% endif %}
+    <div class="row"><span>📍 <b>{{ j.store }}</b>{% if j.store_addr %}<br><small>{{ j.store_addr }}</small>{% endif %}</span></div>
+    {% if j.map_store %}<a class="hb l" href="{{ j.map_store }}" target="_blank" rel="noopener">🗺️ Store location</a>{% endif %}
+    {% if j.store_phone %}<a class="hb l" href="tel:{{ j.store_phone }}">📞 Call store</a>{% endif %}
+    <div class="row"><span>🏠 {{ j.cust_addr|default:"—" }}</span></div>
+    {% if j.map_cust %}<a class="hb l" href="{{ j.map_cust }}" target="_blank" rel="noopener">🗺️ Customer location</a>{% endif %}
+    {% if j.approved %}
+      {% if j.cust_name or j.cust_phone %}<div class="row"><span>👤 {{ j.cust_name }}</span>{% if j.cust_phone %}<a href="tel:{{ j.cust_phone }}">📞 {{ j.cust_phone }}</a>{% endif %}</div>{% endif %}
+      <div class="row"><small>{{ j.items_count }} item(s)</small>{% if j.is_cod %}<span class="pill g">🚚 Customer se kiraya lein: Rs. {{ j.fee|floatformat:0 }}</span>{% else %}<span class="pill">🚚 Kiraya Rs. {{ j.fee|floatformat:0 }}: customer online ada kar chuka</span>{% endif %}</div>
+      {% if j.is_cod and j.items_due %}<div class="row"><small>🏪 Items ka paisa (store ka): Rs. {{ j.items_due|floatformat:0 }}</small></div>{% endif %}
+      {% if j.accepted and j.ready %}
+      <form method="post" action="{% url 'rider_big_vehicle_delivered' j.order.id %}" onsubmit="return confirm('Did you hand the order to the customer{% if j.is_cod %} and take your fare of Rs. {{ j.fee|floatformat:0 }}{% endif %}?');">{% csrf_token %}
+        <button class="hb">🎉 Delivered</button></form>
+      {% elif j.accepted %}
+      <div class="row"><small>Wait for the store to mark the order Ready, then pick it up.</small></div>
+      <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}" onsubmit="return confirm('Cancel your acceptance? The store will pick another vehicle.');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button class="hb l">I cannot take this job</button></form>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% empty %}
+    {% if rider.is_online %}<div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">🚚</div><div class="r-empty__title">No jobs right now</div><div class="r-empty__text">Stay online. When a store picks your vehicle you will get a notification.</div></div>{% endif %}
+  {% endfor %}
+  {% else %}
+  <h3>🛵 {% t "My deliveries ({}/{})" mine|length max_active %}</h3>
+  {% if plan %}
+  <div class="card batch">
+    <div class="navttl">🔗 {% t "Batch route — {} orders together" mine|length %}</div>
+    <ol class="stops">
+      {% for s in plan.stops %}
+      <li><b>{% if s.kind == 'pickup' %}📦 Pick up{% else %}🏠 Drop off{% endif %}:</b> {{ s.label }}
+        <small>({% for n in s.orders %}#{{ n }}{% if not forloop.last %}, {% endif %}{% endfor %})</small></li>
+      {% endfor %}
+    </ol>
+    {% if SHOP.rider_inapp_nav_enabled and SHOP.rider_batch_nav_enabled %}<a class="hb o" href="{% url 'rider_batch_navigate' %}">🧭 Start batch navigation</a>{% endif %}
+    {% if plan.google %}<a class="hb l" href="{{ plan.google }}" target="_blank" rel="noopener">🗺️ Google Maps</a>{% endif %}
+  </div>
+  {% endif %}
+  {% for r in mine %}
+    {% include 'customer_portal/rider/_order_card.html' %}
+  {% empty %}
+    <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">🛵</div><div class="r-empty__title">{% t "No active deliveries" %}</div><div class="r-empty__text">{% t "Orders you accept will show here." %}</div></div>
+  {% endfor %}
+
+  <h3>🆕 New orders</h3>
+  {% if not rider.is_online %}
+    <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">⚫</div><div class="r-empty__title">{% t "You are offline" %}</div><div class="r-empty__text">{% t "To see new orders, go <b>Online</b> using the switch above." %}</div></div>
+  {% else %}
+    {% for o in offers %}
+    <div class="card">
+      <div class="row"><span class="no">#{{ o.order.order_no }}</span><span class="fee">Rs. {{ o.fee|floatformat:0 }}</span></div>
+      {% if o.peak %}<div class="row"><small>🔥 {% t "includes +Rs. {} peak bonus" o.peak|floatformat:0 %}</small></div>{% endif %}
+      {% if o.batch %}<div class="batch-tag">{{ o.batch }}</div>{% endif %}
+      <div class="row"><span>📍 <b>{{ o.store }}</b>{% if o.store_addr %}<br><small>{{ o.store_addr }}</small>{% endif %}</span></div>
+      <div class="row"><span>🏠 {{ o.cust_addr|default:"—" }}</span></div>
+      <div class="row"><small>{% t "{} item(s)" o.items_count %}</small>{% if o.dist_km is not None %}<small>📏 {% t "From store {} km" o.dist_km %}</small>{% endif %}
+        {% if o.is_cod %}<span class="pill">💵 {% t "COD Rs. {}" o.total|floatformat:0 %}</span>{% else %}<span class="pill g">✅ Paid</span>{% endif %}</div>
+      <form method="post" action="{% url 'rider_accept_order' o.order.id %}">{% csrf_token %}
+        <button class="hb">✅ Accept</button></form>
+      <form method="post" action="{% url 'rider_decline_order' o.order.id %}">{% csrf_token %}<button class="hb l">Reject</button></form>
+    </div>
+    {% empty %}
+      <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">🔔</div><div class="r-empty__title">{% t "No new orders right now" %}</div><div class="r-empty__text">{% t "Stay online. You will hear a sound when a new order arrives." %}</div></div>
+    {% endfor %}
+  {% endif %}
+
+  {% endif %}
+
+  {% if goal_list %}
+  <details class="card oc" style="padding:0 14px"><summary>🎯 Goals &amp; bonus</summary>
+    {% include 'customer_portal/rider/_goals.html' with hide_cash=1 %}
+  </details>
+  {% endif %}
+</div>
+{% include 'customer_portal/_order_chat_panel.html' %}
+{% endblock %}

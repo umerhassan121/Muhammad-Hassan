@@ -1,0 +1,377 @@
+/* =====================================================================
+   SHOP THEME v2 — "Market Editorial"
+   Cream kagaz jaisa background, kala (ink) text, tangerine accent, serif headings.
+   Layout bhi badla hai: halki header, pill categories, bento banners, sticker-style cards,
+   kali floating bottom bar. shop.css ke BAAD load hoti hai (base_shop.html).
+   Rang badalne hon to sirf --t-* tokens badlein.
+   ===================================================================== */
+html:root{
+  --t-bg:#fbf7f0; --t-card:#fff; --t-ink:#1c1917; --t-mut:#78716c; --t-line:#e9e1d4;
+  --t-brand:#d9480f; --t-brand-d:#9a3412; --t-amber:#f59e0b; --t-sun:#ffd66b;
+  --t-leaf:#2f7d4f; --t-soft:#fff1e6; --t-paper:#f6efe3;
+  --t-r:16px; --t-hard:3px 3px 0 var(--t-ink);
+
+  --primary:#d9480f; --secondary:#f59e0b; --brand-soft:#fff1e6; --gray-50:#fbf7f0;
+  --shop-brand:#d9480f; --shop-brand2:#f59e0b; --shop-ink:#1c1917; --shop-bg:#fbf7f0; --shop-line:#e9e1d4;
+  --bs-primary:#d9480f; --bs-primary-rgb:217,72,15; --bs-link-color:#d9480f; --bs-link-hover-color:#9a3412;
+}
+
+/* ---------- Base & type ---------- */
+html body{
+  font-family:'DM Sans','Inter','Jameel Noori Nastaleeq',-apple-system,'Segoe UI',sans-serif;
+  background:var(--t-bg)!important; color:var(--t-ink); -webkit-font-smoothing:antialiased;
+}
+html body h1,html body h2,html body h3,html body .shop-brand,html body .promo-card h3,html body .stl-name,html body .hero-copy h1{
+  font-family:'Fraunces','Jameel Noori Nastaleeq',Georgia,serif; letter-spacing:-.015em;
+}
+html body a{color:var(--t-brand)} html body a:hover{color:var(--t-brand-d)}
+html body ::selection{background:var(--t-sun);color:var(--t-ink)}
+html body :focus-visible{outline:2px solid var(--t-ink);outline-offset:2px}
+
+/* ---------- Navbar: simple paper bar ---------- */
+html body .shop-navbar{
+  background:rgba(251,247,240,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-bottom:1.5px solid var(--t-ink); box-shadow:none; padding:9px 0;
+}
+html body .shop-brand{color:var(--t-ink);font-weight:700;font-size:1.2rem}
+html body .shop-brand:hover{color:var(--t-brand)}
+html body .brand-logo-wrap{border-radius:12px;border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink);background:#fff}
+html body .brand-monogram{background:var(--t-sun);color:var(--t-ink)}
+html body .hamburger-btn-navbar{background:var(--t-ink);box-shadow:none;border-radius:12px}
+html body .nav-action-btn{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:999px;font-weight:700}
+html body .nav-action-btn:hover{background:var(--t-ink);color:#fff}
+html body .nav-user{border:1.5px solid var(--t-ink);border-radius:999px;background:#fff;box-shadow:2px 2px 0 var(--t-ink)}
+html body .nav-user-avatar{background:var(--t-sun);color:var(--t-ink)}
+html body .cart-btn{background:var(--t-ink);color:#fff;border:0;box-shadow:none}
+html body .cart-btn:hover{background:var(--t-brand);color:#fff;transform:none}
+html body .cart-count{background:var(--t-sun);color:var(--t-ink);border:2px solid var(--t-bg);font-weight:800;box-shadow:none}
+
+/* ---------- Home header: no colour block, just a bold question ---------- */
+html body .app-header{
+  background:none!important; box-shadow:none!important; border-radius:0!important;
+  padding:16px 16px 6px!important; overflow:visible;
+}
+html body .app-header::before,html body .app-header::after{display:none!important}
+html body .app-location{
+  background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px;
+  backdrop-filter:none;-webkit-backdrop-filter:none;padding:6px 14px;font-size:13px;margin-bottom:16px;
+}
+html body .app-location i.bi-geo-alt-fill{color:var(--t-brand)}
+html body .hero-copy{color:var(--t-ink);margin:0 2px 16px}
+html body .hero-eyebrow{color:var(--t-brand);letter-spacing:.2em;font-size:11px;font-weight:800;text-transform:uppercase}
+html body .hero-eyebrow::before{content:"";display:inline-block;width:22px;height:2px;background:var(--t-brand);margin-right:8px;vertical-align:middle}
+html body .hero-copy h1{font-size:34px;font-weight:700;line-height:1.04;margin:8px 0 8px;color:var(--t-ink)}
+html body .hero-copy h1 em{font-style:italic;color:var(--t-ink);background:linear-gradient(transparent 60%,var(--t-sun) 60%);padding:0 4px}
+html body .hero-copy p{color:var(--t-mut);opacity:1;font-size:15px}
+html body .app-search{
+  background:#fff;border:1.5px solid var(--t-ink);border-radius:16px;height:56px;
+  box-shadow:var(--t-hard);transition:transform .15s,box-shadow .15s;
+}
+html body .app-search:focus-within{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--t-brand)}
+html body .app-search i.search-icon{color:var(--t-ink)}
+html body .app-search .search-action-btn{color:var(--t-ink)}
+html body .app-search .search-action-btn.mic-btn{background:var(--t-sun)}
+html body .app-search .search-action-btn:hover{background:var(--t-ink);color:#fff}
+
+/* ---------- Info strip ---------- */
+html body .info-strip{padding:16px 16px 0}
+html body .info-chip{background:transparent;border:0;box-shadow:none;color:var(--t-mut);font-weight:600;padding:4px 14px 4px 0;border-right:1px solid var(--t-line);border-radius:0}
+html body .info-chip:last-child{border-right:0}
+html body .info-chip i{color:var(--t-leaf)}
+
+/* ---------- Categories: horizontal pills ---------- */
+html body .cat-grid{
+  display:flex!important;flex-wrap:nowrap;overflow-x:auto;gap:10px;margin:16px 0 4px;padding:2px 16px 8px;
+  justify-content:flex-start;scrollbar-width:none;
+}
+html body .cat-grid::-webkit-scrollbar{display:none}
+html body .app-section{padding:0}
+html body .cat-tile{
+  flex:0 0 auto;display:flex;flex-direction:row;align-items:center;gap:9px;
+  padding:7px 18px 7px 7px;border-radius:999px;background:#fff;border:1.5px solid var(--t-ink);box-shadow:none;
+}
+html body .cat-tile:hover{background:var(--t-ink);color:#fff;transform:none;box-shadow:none}
+html body .cat-tile:hover .cat-name{color:#fff}
+html body .cat-icon{width:36px;height:36px;margin:0;border-radius:50%;font-size:18px;border:1.5px solid var(--t-ink)}
+html body .cat-name{color:var(--t-ink);font-size:14px;font-weight:700;padding:0;overflow:visible}
+html body .c1 .cat-icon{background:#ffd66b} html body .c1 i{color:var(--t-ink)}
+html body .c2 .cat-icon{background:#ffb38a} html body .c2 i{color:var(--t-ink)}
+html body .c3 .cat-icon{background:#b7e4c7} html body .c3 i{color:var(--t-ink)}
+html body .c4 .cat-icon{background:#f9c6c9} html body .c4 i{color:var(--t-ink)}
+html body .c5 .cat-icon{background:#fde68a} html body .c5 i{color:var(--t-ink)}
+html body .c6 .cat-icon{background:#bfe3f2} html body .c6 i{color:var(--t-ink)}
+html body .c7 .cat-icon{background:#f5d0fe} html body .c7 i{color:var(--t-ink)}
+html body .c8 .cat-icon{background:#e7e5e4} html body .c8 i{color:var(--t-ink)}
+html body .cat-tag{background:var(--t-brand);color:#fff}
+
+/* ---------- Promo: bento grid (no carousel) ---------- */
+html body .promo-track{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:visible;padding:8px 16px 4px;scroll-snap-type:none;
+}
+html body .promo-card{
+  flex:none;max-width:none;width:auto;min-height:84px;border-radius:16px;padding:10px 12px;
+  border:1.5px solid var(--t-ink);box-shadow:var(--t-hard);color:var(--t-ink);
+  transition:transform .15s,box-shadow .15s;justify-content:flex-end;
+}
+html body .promo-card:first-child{grid-column:1/-1;min-height:92px;padding:12px 14px}
+html body .promo-card:last-child:nth-child(even){grid-column:1/-1}
+html body .promo-card:hover{color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--t-ink)}
+html body .promo-card::after{display:none}
+html body .promo-card h3{font-size:16px;font-weight:700;max-width:80%;color:var(--t-ink);line-height:1.1}
+html body .promo-card:first-child h3{font-size:20px}
+html body .promo-card p{max-width:85%;color:rgba(28,25,23,.75);font-size:11.5px;margin-bottom:6px;opacity:1}
+html body .promo-card .promo-cta{background:var(--t-ink);color:#fff;border-radius:999px;box-shadow:none;font-size:11.5px;padding:4px 11px}
+html body .promo-emoji{color:rgba(28,25,23,.13);font-size:52px;right:8px;top:4px;bottom:auto;filter:none}
+html body .promo-a{background:var(--t-sun)} html body .promo-b{background:#ffb38a}
+html body .promo-c{background:#b7e4c7}      html body .promo-d{background:#f9c6c9}
+html body .promo-e{background:#ffe8a3}
+html body .promo-card.promo-img{padding:0;grid-column:1/-1;min-height:0;background:#fff;aspect-ratio:3/1}
+html body .promo-dots{display:none}
+
+/* ---------- Section headings ---------- */
+html body .row-head{margin:30px 16px 12px}
+html body .row-head h2{
+  background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--t-ink);
+  font-size:24px;font-weight:700;padding-left:0;
+}
+html body .row-head h2::before{display:none}
+html body .row-head a{border:1.5px solid var(--t-ink);color:var(--t-ink);background:#fff;box-shadow:2px 2px 0 var(--t-ink)}
+html body .row-head a:hover{background:var(--t-sun);color:var(--t-ink)}
+
+/* ---------- Deal / reco / reorder / recent ---------- */
+html body .deal-card,html body .reco-card,html body .recently-viewed-card{
+  background:#fff;border:1.5px solid var(--t-line);border-radius:18px;box-shadow:none;transition:transform .15s,box-shadow .15s,border-color .15s;
+}
+html body .deal-card:hover,html body .reco-card:hover,html body .recently-viewed-card:hover{
+  border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:var(--t-hard)}
+html body .deal-off{background:var(--t-brand);color:#fff;border:1.5px solid var(--t-ink);box-shadow:none;border-radius:8px}
+html body .deal-price,html body .reco-price,html body .recently-viewed-price{color:var(--t-ink)}
+html body .rw-card,html body .reco-again{background:var(--t-sun);border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)}
+html body .rw-btn,html body .reco-again button{background:var(--t-ink);box-shadow:none;border-radius:12px}
+html body .rw-head i{color:var(--t-brand)}
+
+/* ---------- Store cards ---------- */
+html body .stl,html body .store-card{
+  background:#fff;border:1.5px solid var(--t-line);border-radius:20px;box-shadow:none;
+  transition:transform .15s,box-shadow .15s,border-color .15s;
+}
+html body .stl:hover,html body .store-card:hover{border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--t-ink)}
+html body .stl-cover,html body .store-cover{background-color:#ffe9d2;background-image:linear-gradient(135deg,#ffe9d2,#ffd66b)}
+html body .stl-logo,html body .store-logo{color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:14px;box-shadow:2px 2px 0 var(--t-ink)}
+html body .stl-free,html body .flag-free{background:var(--t-leaf)}
+html body .stl-name,html body .store-name{color:var(--t-ink);font-weight:700}
+html body .stl-off{color:var(--t-brand)} html body .stl-code{color:var(--t-leaf)}
+html body .store-more{background:var(--t-sun);color:var(--t-ink);border-style:solid;border-color:var(--t-ink)}
+html body .store-more i{color:var(--t-ink)}
+
+/* ---------- Products ---------- */
+html body .products-grid{gap:12px}
+html body .product-card{
+  background:#fff;border:1.5px solid var(--t-line);border-radius:18px;overflow:visible;box-shadow:none;
+  transition:transform .15s,box-shadow .15s,border-color .15s;
+}
+html body .product-card:hover{border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:var(--t-hard)}
+html body .product-card.has-cart-item{border-color:var(--t-leaf);box-shadow:3px 3px 0 var(--t-leaf)}
+html body .product-image{background:var(--t-paper);border-radius:16px 16px 0 0}
+html body .product-image img{filter:none;border-radius:10px;mix-blend-mode:multiply;background:transparent;transition:transform .3s}
+html body .product-card:hover .product-image img{transform:scale(1.05)}
+html body .product-name,html body .product-name a{color:var(--t-ink);font-weight:700}
+html body .product-name a:hover{color:var(--t-brand)}
+html body .product-category{color:var(--t-brand);font-weight:800}
+html body .product-price{color:var(--t-ink);font-weight:800;font-size:1.12rem}
+html body .product-price .currency{color:var(--t-mut);font-weight:600}
+html body .original-price-strike{color:#a8a29e}
+html body .discount-badge{
+  background:var(--t-brand);color:#fff;border:1.5px solid var(--t-ink);border-radius:10px;box-shadow:2px 2px 0 var(--t-ink);
+  transform:rotate(-4deg);top:-6px;left:-6px;z-index:3;
+}
+html body .strip-badge.badge-best{background:var(--t-sun);color:var(--t-ink);border:1px solid var(--t-ink)}
+html body .strip-badge.badge-cart{background:#dcfce7;color:#166534}
+html body .btn-add-cart{background:var(--t-ink);color:#fff;border:1.5px solid var(--t-ink);box-shadow:none;border-radius:12px}
+html body .btn-add-cart:hover{background:var(--t-brand);border-color:var(--t-brand);color:#fff;transform:none}
+html body .btn-add-cart:active{transform:scale(.97)}
+html body .btn-add-cart.success{background:var(--t-leaf);border-color:var(--t-leaf)}
+html body .btn-buy-now{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink);box-shadow:none;border-radius:12px}
+html body .btn-buy-now:hover{background:var(--t-brand);color:#fff}
+html body .product-info .btn-cart-view{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:12px}
+html body .product-info .btn-cart-view:hover{background:var(--t-ink);color:#fff}
+
+/* ---------- Filters / bars / pagination ---------- */
+html body .shop-top-bar,html body .live-visitors-banner,html body .trust-badges-section,html body .recently-viewed-section{
+  background:#fff;border:1.5px solid var(--t-line);border-radius:16px;box-shadow:none}
+html body .filter-chip{background:var(--t-sun);border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px}
+html body .pagination .page-link{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:12px;box-shadow:none}
+html body .pagination .page-item.active .page-link{background:var(--t-ink);color:#fff;border-color:var(--t-ink);box-shadow:none}
+
+/* ---------- Buttons & forms on every other page ---------- */
+html body .btn-primary{
+  --bs-btn-bg:#d9480f;--bs-btn-border-color:#1c1917;--bs-btn-hover-bg:#1c1917;--bs-btn-hover-border-color:#1c1917;
+  --bs-btn-active-bg:#1c1917;--bs-btn-active-border-color:#1c1917;--bs-btn-disabled-bg:#d9480f;--bs-btn-disabled-border-color:#1c1917;
+  background-image:none;border-width:1.5px;border-radius:14px;font-weight:700;box-shadow:3px 3px 0 var(--t-ink);
+}
+html body .btn-primary:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--t-ink)}
+html body .btn-outline-primary{--bs-btn-color:#1c1917;--bs-btn-border-color:#1c1917;--bs-btn-hover-bg:#1c1917;--bs-btn-hover-border-color:#1c1917;--bs-btn-active-bg:#1c1917;border-width:1.5px;border-radius:14px;font-weight:700}
+html body .btn-success{border-radius:14px;font-weight:700}
+html body .form-control:focus,html body .form-select:focus{border-color:var(--t-ink);box-shadow:3px 3px 0 var(--t-sun)}
+html body .form-check-input:checked{background-color:var(--t-ink);border-color:var(--t-ink)}
+html body .card{border:1.5px solid var(--t-line);border-radius:18px;box-shadow:none}
+html body .badge.bg-primary,html body .bg-primary{background:var(--t-brand)!important}
+html body .text-primary{color:var(--t-brand)!important}
+html body .progress-bar{background:var(--t-brand)}
+
+/* ---------- Bottom tab bar: dark floating dock ---------- */
+@media (max-width:991.98px){
+  html body .sm-bar{
+    left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:5px;
+    background:var(--t-ink);border:0;border-radius:24px;
+    box-shadow:0 16px 34px rgba(28,25,23,.38);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  html body .sm-tab{color:#a8a29e;border-radius:19px;font-weight:600;transition:background .2s,color .2s}
+  html body .sm-tab.active{color:var(--t-ink);background:var(--t-sun)}
+}
+@media (min-width:992px){
+  html body .sm-bar{background:transparent;box-shadow:none;border:0}
+  html body .sm-tab{color:var(--t-mut);font-weight:700}
+  html body .sm-tab.active{color:var(--t-ink);background:var(--t-sun);border-radius:999px}
+}
+html body .sm-badge{background:var(--t-brand);color:#fff;border:2px solid var(--t-ink);font-weight:800}
+html body .sm-avatar{background:var(--t-sun);color:var(--t-ink)}
+html body .sm-item:hover,html body .sm-item:active{background:var(--t-paper)}
+html body .sm-item .sm-ic{background:var(--t-sun);color:var(--t-ink)}
+html body .sm-cta .sm-p{background:var(--t-ink);color:#fff;box-shadow:none}
+html body .sm-cta .sm-s{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink)}
+html body .sm-lang a.on{border-color:var(--t-ink);color:var(--t-ink);background:var(--t-sun)}
+html body .sm-sheet{border-radius:28px 28px 0 0}
+
+/* ---------- Location sheet ---------- */
+html body .area-chip{background:var(--t-paper);color:var(--t-ink)}
+html body .area-chip.on,html body .area-save{background:var(--t-ink);color:#fff}
+html body .area-input:focus{border-color:var(--t-ink)}
+
+/* ---------- Footer ---------- */
+html body .shop-footer{background:var(--t-ink);color:#d6d3d1}
+html body .shop-footer a{color:var(--t-sun)} html body .shop-footer a:hover{color:#fff}
+html body .skip-link:focus{background:var(--t-ink);color:#fff}
+
+/* ---------- Motion ---------- */
+@keyframes t-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+html body .product-card,html body .cat-tile,html body .stl,html body .promo-card{animation:t-rise .4s ease both}
+@media (prefers-reduced-motion:reduce){html body .product-card,html body .cat-tile,html body .stl,html body .promo-card{animation:none}}
+
+/* ---------- Larger screens ---------- */
+@media (min-width:992px){
+  html body .hero-copy h1{font-size:50px}
+  html body .app-header{padding:28px 36px 8px!important}
+  html body .cat-grid{padding:2px 36px 8px}
+  html body .promo-track{grid-template-columns:repeat(4,1fr);padding:12px 36px 6px}
+  html body .promo-card:first-child{grid-column:span 2;min-height:110px}
+  html body .promo-card:last-child:nth-child(even){grid-column:auto}
+  html body .promo-card.promo-img{grid-column:span 2;aspect-ratio:3/1}
+  html body .app-search{max-width:680px}
+}
+@media (max-width:575px){html body .hero-copy h1{font-size:31px}}
+
+/* =====================================================================
+   v2.1 — Store tile + "Trending / Favourites" cards ka naya design
+   Store: lamba cover, ink border, chhote chips (time / fee / rating), neeche dashed "Min order" patti.
+   Trending: square photo (poori dikhti hai, kategi nahi), 2-line naam, store ka naam chip, price bold.
+   ===================================================================== */
+html body .store-track{gap:14px;padding:6px 16px 18px}
+html body .store-track .stl{flex:0 0 min(80%,300px)}
+html body .stl{border:1.5px solid var(--t-ink);border-radius:22px;box-shadow:var(--t-hard);background:#fff}
+html body .stl:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--t-ink)}
+html body .stl-cover{height:124px;border-bottom:1.5px solid var(--t-ink);background-size:cover;background-position:center}
+html body .stl-cover::after{content:"";position:absolute;inset:auto 0 0 0;height:46%;background:linear-gradient(transparent,rgba(28,25,23,.28));pointer-events:none}
+html body .stl-logo{left:14px;bottom:-26px;width:56px;height:56px;border-radius:50%;background:#fff;z-index:2;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem}
+html body .stl-logo img{border-radius:50%}
+html body .stl-flag{top:10px;left:10px;border:1.5px solid var(--t-ink);font-size:.7rem;z-index:2}
+html body .stl-free{background:var(--t-leaf)}
+html body .stl-busy{background:var(--t-sun);color:var(--t-ink)}
+html body .stl-closed{background:var(--t-ink)}
+html body .stl .stl-fav i{border:1.5px solid var(--t-ink);background:#fff}
+html body .stl-body{padding:36px 16px 14px}
+html body .stl-name{font-size:1.2rem;font-weight:700;color:var(--t-ink)}
+html body .stl-tags{margin-top:3px;font-size:.82rem;color:var(--t-mut)}
+html body .stl-spons{background:var(--t-sun);color:var(--t-ink);border:1px solid var(--t-ink)}
+html body .stl-meta{gap:6px;margin-top:12px}
+html body .stl-meta>span{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1.5px solid var(--t-line);border-radius:999px;background:#fff;
+  font-size:.78rem;font-weight:700;color:var(--t-ink);white-space:nowrap}
+html body .stl-meta>span i{color:var(--t-mut)}
+html body .stl-meta .stl-rate{background:var(--t-sun);border-color:var(--t-ink);color:var(--t-ink)}
+html body .stl-meta .stl-rate i{color:var(--t-ink)}
+html body .stl-meta .stl-new{background:var(--t-soft);border-color:var(--t-brand);color:var(--t-brand-d)}
+html body .stl-meta .stl-ok{color:var(--t-leaf)}
+html body .stl-meta>span:has(.bi-basket){flex:1 0 100%;justify-content:flex-start;border:0;border-top:1.5px dashed var(--t-line);border-radius:0;
+  padding:9px 0 0;margin-top:4px;color:var(--t-mut);font-weight:600;background:none}
+html body .stl-meta .stl-bad{border-color:#b91c1c;color:#b91c1c}
+html body .store-more{flex:0 0 130px;border-radius:22px;background:var(--t-sun);border:1.5px solid var(--t-ink);box-shadow:var(--t-hard);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--t-ink);text-decoration:none}
+html body .store-more i{font-size:2rem}
+
+/* ---- Trending / Favourites ---- */
+html body .reco-track{gap:14px;padding:6px 16px 18px}
+html body .reco-card,html body .stl,html body .store-more{text-decoration:none}
+html body .reco-card{flex:0 0 168px;border:1.5px solid var(--t-ink);border-radius:20px;box-shadow:var(--t-hard);background:#fff;overflow:hidden;
+  transition:transform .15s,box-shadow .15s}
+html body .reco-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--t-ink)}
+html body .reco-img{height:auto;aspect-ratio:1/1;background-color:var(--t-paper);background-size:contain;background-repeat:no-repeat;background-position:center;
+  border-bottom:1.5px solid var(--t-ink)}
+html body .reco-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px}
+html body .reco-name{font-size:.92rem;font-weight:700;line-height:1.25;color:var(--t-ink);max-height:none;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html body .reco-sub{display:inline-block;align-self:flex-start;max-width:100%;padding:2px 9px;border-radius:999px;background:var(--t-paper);
+  border:1px solid var(--t-line);font-size:.72rem;font-weight:700;color:var(--t-mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .reco-price{margin-top:2px;font-size:1.05rem;font-weight:800;color:var(--t-ink)}
+html body .reco-again{border-radius:20px}
+
+/* =====================================================================
+   v2.2 — Hot deals + All products ka naya design
+   Deals: bara photo (poora dikhta), sticker "% OFF", price ink + purani price katti hui.
+   Products: ink border, square photo, 2-line naam, bold price, ink "Add" + sun "Buy" button.
+   ===================================================================== */
+html body .deal-track{gap:14px;padding:6px 16px 18px}
+html body .deal-card{flex:0 0 164px;padding:0;border:1.5px solid var(--t-ink);border-radius:20px;background:#fff;box-shadow:var(--t-hard);
+  overflow:hidden;text-decoration:none;color:var(--t-ink);transition:transform .15s,box-shadow .15s}
+html body .deal-card:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--t-ink);color:var(--t-ink)}
+html body .deal-img{height:auto;aspect-ratio:1/1;border-radius:0;border-bottom:1.5px solid var(--t-ink);background:var(--t-paper);padding:10px;box-sizing:border-box}
+html body .deal-img img{object-fit:contain;mix-blend-mode:multiply;border-radius:0}
+html body .deal-off{left:8px;top:8px;background:var(--t-brand);color:#fff;border:1.5px solid var(--t-ink);border-radius:8px;
+  box-shadow:2px 2px 0 var(--t-ink);transform:rotate(-4deg);font-size:11px;font-weight:800}
+html body .deal-name{margin:10px 12px 2px;font-size:.9rem;font-weight:700;line-height:1.25;color:var(--t-ink);
+  -webkit-line-clamp:2;min-height:2.5em}
+html body .deal-price{margin:0 12px 12px;font-size:1.05rem;font-weight:800;color:var(--t-ink)}
+html body .deal-price s{color:#a8a29e;font-size:.8rem;font-weight:600}
+
+html body .products-grid{gap:12px;padding:6px 14px 0}
+html body .product-card{border:1.5px solid var(--t-ink);border-radius:20px;background:#fff;box-shadow:none;overflow:hidden;
+  transition:transform .15s,box-shadow .15s}
+html body .product-card:hover{transform:translate(-2px,-2px);box-shadow:var(--t-hard)}
+html body .product-card.has-cart-item{border-color:var(--t-leaf);box-shadow:3px 3px 0 var(--t-leaf)}
+html body .product-image{position:relative;height:auto;aspect-ratio:1/1;padding:0;background:var(--t-paper);border-bottom:1.5px solid var(--t-ink);border-radius:0}
+html body .product-image-static{position:absolute;inset:0;padding:10px;box-sizing:border-box}
+html body .product-image img{max-width:100%;max-height:100%;object-fit:contain;filter:none;mix-blend-mode:multiply;border-radius:0;background:transparent}
+html body .discount-badge{top:8px;left:8px;transform:rotate(-4deg);z-index:3;padding:3px 8px;border-radius:8px;line-height:1.1}
+html body .product-info-strip{padding:8px 12px 0!important;background:none;gap:4px;display:flex;flex-wrap:wrap}
+html body .strip-badge{border:1.5px solid var(--t-ink)!important;border-radius:999px!important;font-size:.68rem;font-weight:800;padding:2px 8px}
+html body .strip-badge.badge-low{background:var(--t-sun);color:var(--t-ink)}
+html body .strip-badge.badge-out{background:#fee2e2;color:#991b1b}
+html body .product-info{padding:8px 12px 12px!important}
+html body .products-grid .product-name{font-size:.9rem;font-weight:700;line-height:1.25;margin-bottom:4px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em!important}
+html body .product-price-wrapper{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;padding-top:2px;margin-bottom:8px}
+html body .product-price{font-size:1.15rem;font-weight:800;color:var(--t-ink)}
+html body .product-price .currency{font-size:.78rem;font-weight:700;color:var(--t-mut);margin-right:2px}
+html body .original-price-strike{font-size:.78rem;text-decoration:line-through;color:#a8a29e}
+html body .price-unavailable{font-size:.8rem;color:var(--t-mut)}
+html body .product-action-buttons{display:flex;gap:8px}
+html body .product-action-buttons .btn.btn-add-cart{flex:1 1 auto;min-height:44px;border-radius:14px;background:var(--t-ink);color:#fff;
+  border:1.5px solid var(--t-ink)!important;box-shadow:none!important;outline:0;font-weight:800}
+html body .product-action-buttons .btn.btn-add-cart:hover{background:var(--t-brand);border-color:var(--t-brand)!important}
+html body .product-action-buttons .btn.btn-buy-icon{flex:0 0 44px;width:44px;min-height:44px;border-radius:14px;background:var(--t-sun);
+  color:var(--t-ink);border:1.5px solid var(--t-ink);box-shadow:none}
+html body .product-action-buttons .btn.btn-buy-icon:hover{background:var(--t-brand);color:#fff}
+html body .product-info .btn-cart-view{border-radius:14px;background:#dcfce7;border:1.5px solid var(--t-leaf);color:#166534;font-weight:800}
+html body .product-info .btn-secondary[disabled]{border-radius:14px;background:#e7e5e4;border:1.5px solid #d6d3d1;color:#78716c}
+@media (min-width:768px){html body .products-grid{gap:18px;padding:6px 20px 0}}

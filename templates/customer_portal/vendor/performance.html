@@ -1,0 +1,137 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% block title %}Performance{% endblock %}
+
+{% block content %}
+<style>
+    .vp-wrap { max-width: 760px; margin: 26px auto; padding: 0 14px; }
+    .vp-back { display: inline-block; margin: 4px 0 14px; color: #2563eb; text-decoration: none; }
+    .vp-card { background: #fff; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 16px; }
+    .vp-head { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #fff; padding: 18px 22px; }
+    .vp-head h3 { margin: 0; font-size: 20px; font-weight: 700; }
+    .vp-head p { margin: 3px 0 0; opacity: .9; font-size: 13px; }
+    .vp-body { padding: 14px 20px 18px; }
+    .vp-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .vp-pill { padding: 7px 14px; border-radius: 999px; border: 2px solid #e5e7eb; background: #fff; color: #374151; font-size: 14px; font-weight: 700; text-decoration: none; }
+    .vp-pill.on { border-color: #2563eb; background: #e8edff; color: #1e40af; }
+    .vp-score { display: flex; align-items: center; gap: 16px; }
+    .vp-ring { width: 96px; height: 96px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none;
+               font-size: 32px; font-weight: 800; color: #111827; border: 10px solid #e5e7eb; }
+    .vp-ring.good { border-color: #198754; } .vp-ring.ok { border-color: #2563eb; }
+    .vp-ring.warn { border-color: #f59e0b; } .vp-ring.bad { border-color: #dc3545; }
+    .vp-score h4 { margin: 0; font-size: 20px; font-weight: 800; }
+    .vp-delta { font-size: 13px; margin-top: 3px; color: #6b7280; }
+    .vp-delta.up { color: #198754; font-weight: 700; } .vp-delta.down { color: #dc3545; font-weight: 700; }
+    .vp-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .vp-kpi { border: 2px solid #f1f1f1; border-radius: 16px; padding: 12px 14px; }
+    .vp-kpi b { display: block; font-size: 22px; font-weight: 800; }
+    .vp-kpi span { font-size: 12.5px; color: #6b7280; }
+    .vp-kpi small { display: block; font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .vp-kpi.green b { color: #198754; } .vp-kpi.red b { color: #dc3545; }
+    .vp-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #f1f1f1; font-size: 14.5px; }
+    .vp-row:first-child { border-top: 0; }
+    .vp-row .n { flex: 1; min-width: 0; }
+    .vp-row .v { font-weight: 700; }
+    .vp-tip { background: #fff7ed; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+    .vp-ok { background: #ecfdf3; border-left: 4px solid #198754; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+    .vp-note { font-size: 12.5px; color: #6b7280; margin-top: 8px; }
+    .vp-title { font-weight: 800; margin-bottom: 8px; }
+    @media (min-width: 640px) { .vp-kpis { grid-template-columns: repeat(3, 1fr); } }
+</style>
+
+<div class="vp-wrap">
+    <a class="vp-back" href="{% url 'vendor_dashboard' %}">← Dashboard</a>
+    &nbsp;·&nbsp; <a class="vp-back" href="{% url 'vendor_reports' %}">📊 Sales report</a>
+
+    <div class="vp-card">
+        <div class="vp-head"><h3>🎯 Performance</h3><p>{{ start|date:"d M Y" }}{% if start != end %} – {{ end|date:"d M Y" }}{% endif %}</p></div>
+        <div class="vp-body">
+            <div class="vp-pills">
+                <a class="vp-pill {% if range_key == 'today' %}on{% endif %}" href="?range=today">Aaj</a>
+                <a class="vp-pill {% if range_key == '7d' %}on{% endif %}" href="?range=7d">7 days</a>
+                <a class="vp-pill {% if range_key == '30d' %}on{% endif %}" href="?range=30d">30 days</a>
+                <a class="vp-pill {% if range_key == 'month' %}on{% endif %}" href="?range=month">Is mahine</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="vp-card"><div class="vp-body">
+        <div class="vp-score">
+            <div class="vp-ring {{ score_tone }}">{% if m.score is not None %}{{ m.score }}{% else %}–{% endif %}</div>
+            <div>
+                <h4>Store quality score: {{ score_label }}</h4>
+                {% if m.score is None %}
+                <div class="vp-delta">{% t "At least {} orders are needed for a score (now {})." min_orders m.orders %}</div>
+                {% elif score_delta is not None %}
+                <div class="vp-delta {% if score_delta > 0 %}up{% elif score_delta < 0 %}down{% endif %}">
+                    {% if score_delta > 0 %}▲ +{{ score_delta|floatformat:"-1" }}{% elif score_delta < 0 %}▼ {{ score_delta|floatformat:"-1" }}{% else %}Same as previous period{% endif %}
+                    {% if score_delta != 0 %}vs previous period{% endif %}
+                </div>
+                {% else %}
+                <div class="vp-delta">There is not enough data to compare with the previous period.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div></div>
+
+    <div class="vp-card"><div class="vp-body">
+        <div class="vp-kpis">
+            <div class="vp-kpi {% if m.accept_rate is not None and m.accept_rate >= 90 %}green{% elif m.accept_rate is not None and m.accept_rate < 70 %}red{% endif %}">
+                <b>{% if m.accept_rate is not None %}{{ m.accept_rate|floatformat:"-0" }}%{% else %}–{% endif %}</b>
+                <span>Accept rate</span>
+                {% if accept_delta is not None and accept_delta != 0 %}<small>{% if accept_delta > 0 %}▲ +{{ accept_delta|floatformat:"-1" }}{% else %}▼ {{ accept_delta|floatformat:"-1" }}{% endif %} vs previous period</small>{% endif %}
+            </div>
+            <div class="vp-kpi"><b>{{ m.orders }}</b><span>Total orders</span><small>{% t "{} in the previous period" prev_orders %}</small></div>
+            <div class="vp-kpi {% if m.missed %}red{% endif %}"><b>{{ m.missed }}</b><span>Missed (no reply)</span></div>
+            <div class="vp-kpi"><b>{{ m.rejected }}</b><span>Aap ne reject kiye</span></div>
+            <div class="vp-kpi {% if m.cancel_rate is not None and m.cancel_rate >= 20 %}red{% endif %}">
+                <b>{% if m.cancel_rate is not None %}{{ m.cancel_rate|floatformat:"-0" }}%{% else %}–{% endif %}</b>
+                <span>Cancel rate</span>
+                {% if cancel_delta is not None and cancel_delta != 0 %}<small>{% if cancel_delta > 0 %}▲ +{{ cancel_delta|floatformat:"-1" }}{% else %}▼ {{ cancel_delta|floatformat:"-1" }}{% endif %} vs previous period</small>{% endif %}
+            </div>
+            <div class="vp-kpi {% if m.rating is not None and m.rating >= 4 %}green{% elif m.rating is not None and m.rating < 3.5 %}red{% endif %}">
+                <b>{% if m.rating is not None %}{{ m.rating|floatformat:1 }} ★{% else %}–{% endif %}</b>
+                <span>Average rating</span><small>{{ m.rating_n }} review{{ m.rating_n|pluralize }}</small>
+            </div>
+            <div class="vp-kpi"><b>{{ m.disputes }}</b><span>Disputes</span></div>
+        </div>
+        <div class="vp-note">{% t "Accept rate = accepted orders / (accepted + rejected + missed). Orders that are still pending or were cancelled by the customer are not counted." %}</div>
+    </div></div>
+
+    <div class="vp-card"><div class="vp-body">
+        <div class="vp-title">⏱ Prep time (tayyari ka waqt)</div>
+        {% if m.prep_n %}
+        <div class="vp-kpis">
+            <div class="vp-kpi"><b>{{ prep_promised_txt }}</b><span>Aap ne bataya (average)</span></div>
+            <div class="vp-kpi"><b>{{ prep_actual_txt }}</b><span>Actual time taken (average)</span></div>
+            <div class="vp-kpi {% if m.prep_on_time_pct >= 80 %}green{% elif m.prep_on_time_pct < 60 %}red{% endif %}">
+                <b>{{ m.prep_on_time_pct|floatformat:"-0" }}%</b><span>Waqt par ready</span><small>{{ m.prep_late }} order late</small>
+            </div>
+        </div>
+        <div class="vp-note">{% t "Based on {} orders. An order counts as “on time” when it goes from Accept to Ready within the stated time + {} minutes." m.prep_n grace_min %}</div>
+        {% else %}
+        <div class="vp-note" style="margin-top:0;">{% t "There is no prep-time data for this period yet. It starts with new orders: enter the prep time when you accept, and press <b>Ready</b> as soon as the order is ready." %}</div>
+        {% endif %}
+    </div></div>
+
+    {% if top_reasons %}
+    <div class="vp-card"><div class="vp-body">
+        <div class="vp-title">❌ Reject ki wajahen</div>
+        {% for r in top_reasons %}
+        <div class="vp-row"><span class="n">{{ r.label }}</span><span class="v">{{ r.n }}</span></div>
+        {% endfor %}
+    </div></div>
+    {% endif %}
+
+    <div class="vp-card"><div class="vp-body">
+        <div class="vp-title">💡 How to improve</div>
+        {% if m.orders < min_orders %}
+        <div class="vp-note" style="margin-top:0;">{% t "At least {} orders are needed to give advice." min_orders %}</div>
+        {% else %}
+            {% for t in tips %}<div class="vp-tip">{{ t }}</div>
+            {% empty %}<div class="vp-ok">✅ All good in this period. Keep it up.</div>{% endfor %}
+        {% endif %}
+        <div class="vp-note">{% t "Score: accept rate (35%), rating (25%), ready on time (20%), cancellations (10%), disputes (10%). Anything without data is left out." %}</div>
+    </div></div>
+</div>
+{% endblock %}

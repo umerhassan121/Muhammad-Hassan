@@ -1,0 +1,257 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}Verify OTP (Later) - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_verify_otp_later.css' %}?v=1">{% endblock %}
+
+{% block content %}
+
+
+<div class="verify-container">
+    
+    <div class="verify-card">
+        
+        <!-- Header -->
+        <div class="verify-header">
+            <div class="icon-circle">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <h3>Verify OTP (Later)</h3>
+            <p>If you did not verify the OTP at the time of the order, verify it here</p>
+        </div>
+        
+        <!-- Body -->
+        <div class="verify-body">
+            
+            <!-- Steps Info -->
+            <div class="steps-info">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <small>Phone<br>Number</small>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <small>Order<br>Token</small>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <small>OTP<br>Code</small>
+                </div>
+            </div>
+            
+            <!-- Django Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-message 
+                        {% if message.tags == 'error' %}alert-error
+                        {% elif message.tags == 'success' %}alert-success
+                        {% elif message.tags == 'warning' %}alert-warning
+                        {% else %}alert-info{% endif %}">
+                        <i class="bi bi-{% if message.tags == 'error' %}exclamation-circle-fill{% elif message.tags == 'success' %}check-circle-fill{% elif message.tags == 'warning' %}exclamation-triangle-fill{% else %}info-circle-fill{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- PRE-FILL SUCCESS BANNER -->
+            {% if prefill_phone and prefill_token %}
+            <div class="prefilled-alert">
+                <i class="bi bi-check-circle-fill"></i>
+                <div>
+                    <strong>✅ Details Auto-Filled!</strong>
+                    <br>
+                    <small>You only need to enter the OTP and verify.</small>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong>Where do I find the Order Token?</strong>
+                <br>
+                {% t 'When you placed the order and pressed the <strong>"Send OTP"</strong> button, you received an <strong>8-character Order Token</strong> (e.g. <code>A3F7B2C9</code>).' %}
+                <br><br>
+                If you do not have a token, please 
+                <a href="{% url 'shop_home' %}" style="color: #0c5460; font-weight: bold; text-decoration: underline;">
+                    place a new order
+                </a>.
+            </div>
+            
+            <!-- Form -->
+            <form method="POST" id="verifyForm" novalidate>
+                {% csrf_token %}
+                
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">
+                        <i class="bi bi-phone-fill"></i> Phone Number
+                        {% if prefill_phone %}
+                        <span class="prefilled-badge">✓ Auto-filled</span>
+                        {% endif %}
+                    </label>
+                    <input type="tel" 
+                           name="phone" 
+                           id="phone" 
+                           placeholder="03XXXXXXXXX"
+                           value="{{ prefill_phone|default:'' }}"
+                           class="{% if prefill_phone %}prefilled{% endif %}"
+                           required
+                           autocomplete="tel"
+                           inputmode="tel">
+                    <div class="help-text">The same number you gave when placing the order</div>
+                </div>
+                
+                <!-- Order Token -->
+                <div class="form-group">
+                    <label for="order_token">
+                        <i class="bi bi-bookmark-star-fill"></i> Order Token
+                        {% if prefill_token %}
+                        <span class="prefilled-badge">✓ Auto-filled</span>
+                        {% endif %}
+                    </label>
+                    <input type="text" 
+                           name="order_token" 
+                           id="order_token" 
+                           maxlength="8"
+                           placeholder="A3F7B2C9"
+                           value="{{ prefill_token|default:'' }}"
+                           class="token-input{% if prefill_token %} prefilled{% endif %}"
+                           required
+                           autocomplete="off"
+                           autocapitalize="characters"
+                           spellcheck="false">
+                    <div class="help-text">8-character token (A-Z, 0-9)</div>
+                </div>
+                
+                <!-- OTP Code -->
+                <div class="form-group">
+                    <label for="otp_code">
+                        <i class="bi bi-key-fill"></i> OTP Code
+                        <span class="manual-badge">Enter Manually</span>
+                    </label>
+                    <input type="text" 
+                           name="otp_code" 
+                           id="otp_code" 
+                           maxlength="6"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           placeholder="••••••"
+                           class="otp-input"
+                           required
+                           autocomplete="one-time-code"
+                           spellcheck="false">
+                    <div class="help-text">The 6-digit code that came in the Email</div>
+                </div>
+                
+                <!-- Submit Button -->
+                <button type="submit" 
+                        class="btn-verify" 
+                        id="verifyBtn">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Verify & Login</span>
+                </button>
+                
+            </form>
+            
+            <!-- Back Links -->
+            <div class="back-links">
+                <a href="{% url 'customer_login' %}">
+                    <i class="bi bi-arrow-left"></i> Back to Login
+                </a>
+                <a href="{% url 'shop_home' %}">
+                    <i class="bi bi-shop"></i> Shop
+                </a>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        if (this.classList.contains('prefilled')) {
+            this.classList.remove('prefilled');
+        }
+        this.value = this.value.replace(/[^0-9+\-\s]/g, '');
+    });
+    
+    const tokenInput = document.getElementById('order_token');
+    tokenInput.addEventListener('input', function() {
+        if (this.classList.contains('prefilled')) {
+            this.classList.remove('prefilled');
+        }
+        this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+    
+    const otpInput = document.getElementById('otp_code');
+    otpInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    const form = document.getElementById('verifyForm');
+    const btn = document.getElementById('verifyBtn');
+    
+    form.addEventListener('submit', function(e) {
+        const phone = phoneInput.value.trim();
+        const token = tokenInput.value.trim();
+        const otp = otpInput.value.trim();
+        
+        let error = '';
+        let focusField = null;
+        
+        if (!phone || phone.replace(/[^0-9]/g, '').length < 10) {
+            error = '❌ {% t "Please enter a valid phone number (min 10 digits)" %}';
+            focusField = phoneInput;
+        } else if (token.length !== 8) {
+            error = '❌ {% t "Order Token must be 8 characters" %}';
+            focusField = tokenInput;
+        } else if (otp.length !== 6) {
+            error = '❌ {% t "OTP must be 6 digits" %}';
+            focusField = otpInput;
+        }
+        
+        if (error) {
+            e.preventDefault();
+            alert(error);
+            if (focusField) focusField.focus();
+            return false;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> {% t "Verifying..." %}';
+    });
+    
+    const isPhonePrefilled = {{ prefill_phone|yesno:"true,false" }};
+    const isTokenPrefilled = {{ prefill_token|yesno:"true,false" }};
+    
+    if (isPhonePrefilled && isTokenPrefilled) {
+        setTimeout(function() { otpInput.focus(); }, 500);
+    } else if (isPhonePrefilled && !isTokenPrefilled) {
+        tokenInput.focus();
+    } else if (!isPhonePrefilled) {
+        phoneInput.focus();
+    }
+    
+    phoneInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); tokenInput.focus(); }
+    });
+    
+    tokenInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); otpInput.focus(); }
+    });
+    
+    otpInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); }
+    });
+    
+});
+</script>
+
+{% endblock %}

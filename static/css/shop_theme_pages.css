@@ -1,0 +1,280 @@
+/* =====================================================================
+   SHOP THEME v2 — PAGES  ("Market Editorial" baqi saare customer pages par)
+   shop_theme.css ke BAAD load hoti hai (base_shop.html). Vendor pages (/shop/vendor/) par load nahi hoti.
+   Sirf rang / border / shadow / font badle hain — HTML, JS, classes, logic wahi.
+   Tokens: --t-* (shop_theme.css). Rang badalne hon to wahan se badlein.
+   ===================================================================== */
+
+/* ---------- Common: page headings, cards, inputs ---------- */
+html body .cart-title,html body .summary-title,html body .fv-head h1,html body .rp-wrap h1,
+html body .info-card h2,html body .section-heading,html body .product-title,html body .sd-name,
+html body .sd-sec,html body .page-header h1,html body .mo-hero h2,html body .pr-hero h1,
+html body .po-sheet h5,html body .section-title{
+  font-family:'Fraunces','Jameel Noori Nastaleeq',Georgia,serif;letter-spacing:-.015em;color:var(--t-ink)}
+html body .cart-card,html body .summary-card,html body .wl-card,html body .wf-card,html body .pr-card,
+html body .info-card,html body .rp-card,html body .fv-card,html body .menu-section,html body .recent-orders-section,
+html body .order-card,html body .stat-card,html body .otp-card,html body .rider-card,html body .pickup-card,
+html body .timeline-container,html body .status-summary,html body .info-box,html body .sd-p,html body .sd-stats,
+html body .login-card,html body .register-card,html body .verify-card,html body .auth-card,html body .fp-card,
+html body .success-card,html body .order-summary-box,html body .track-form-card,html body .order-header-card,
+html body .st-card,html body .po-box,html body .cp-box,html body .po-sheet{
+  background:#fff;border:1.5px solid var(--t-line);border-radius:20px;box-shadow:none!important}
+html body .form-group input,html body .form-group select,html body .form-group textarea,
+html body .fp-body input,html body .otp-input,html body .qty-input,html body .sd-search input,
+html body .wf-card input,html body .wf-card select{
+  border:1.5px solid var(--t-ink)!important;border-radius:14px;background:#fff;color:var(--t-ink)}
+html body .form-group input:focus,html body .form-group select:focus,html body .form-group textarea:focus,
+html body .fp-body input:focus,html body .otp-input:focus,html body .sd-search input:focus{
+  border-color:var(--t-ink)!important;box-shadow:3px 3px 0 var(--t-sun)!important;outline:none}
+
+/* ---------- Auth: login / register / forgot / otp pages ---------- */
+html body .login-header,html body .register-header,html body .fp-head,html body .auth-header,html body .verify-header{
+  background:var(--t-sun)!important;color:var(--t-ink)!important;border-bottom:1.5px solid var(--t-ink);box-shadow:none}
+html body .login-header::before,html body .register-header::before{display:none}
+html body .login-header h3,html body .register-header h3,html body .fp-head h2,html body .auth-header h2,html body .verify-header h3{
+  font-family:'Fraunces','Jameel Noori Nastaleeq',Georgia,serif;color:var(--t-ink)!important;font-weight:700}
+html body .login-header p,html body .register-header p,html body .auth-header p,html body .verify-header p{color:rgba(28,25,23,.75)!important}
+html body .login-icon,html body .register-icon,html body .auth-icon,html body .icon-circle{
+  background:#fff!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink)}
+html body .login-card,html body .register-card,html body .verify-card,html body .auth-card,html body .fp-card{
+  overflow:hidden;border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important}
+html body .btn-login,html body .btn-register,html body .btn-auth,html body .btn-verify,html body .fp-btn,
+html body .btn-verify-quick,html body .btn-shop,html body .btn-shop-now,html body .pr-btn,html body .wf-btn,
+html body .mo-hero-btn,html body .rp-go,html body .ref-btn{
+  background:var(--t-brand)!important;background-image:none!important;color:#fff!important;border:1.5px solid var(--t-ink)!important;
+  border-radius:14px!important;font-weight:700;box-shadow:3px 3px 0 var(--t-ink)!important;transition:transform .15s,box-shadow .15s,background .15s}
+html body .btn-login:hover,html body .btn-register:hover,html body .btn-auth:hover,html body .btn-verify:hover:not(:disabled),
+html body .fp-btn:hover,html body .btn-verify-quick:hover,html body .btn-shop:hover,html body .btn-shop-now:hover,
+html body .pr-btn:hover,html body .wf-btn:hover,html body .rp-go:hover,html body .ref-btn:hover{
+  background:var(--t-ink)!important;color:#fff!important;transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--t-brand)!important}
+html body .btn-login:disabled,html body .btn-register:disabled,html body .btn-verify:disabled{opacity:.55;box-shadow:none!important}
+html body .login-footer a,html body .register-footer a,html body .back-to-login a,html body .back-links a,html body .fp-links a{color:var(--t-brand);font-weight:700}
+html body .info-box,html body .info-banner,html body .prefilled-alert{background:var(--t-soft);border:1.5px solid var(--t-line);color:var(--t-ink)}
+html body .alert-error,html body .fp-msg.error{border:1.5px solid #b91c1c;border-radius:14px}
+html body .alert-success{border:1.5px solid var(--t-leaf);border-radius:14px}
+html body .section-divider{color:var(--t-ink)}
+
+/* ---------- Pending OTPs ---------- */
+html body .otps-container .page-header,html body .otps-container .page-header h2{background:var(--t-sun);color:var(--t-ink)}
+html body .otp-card::before{background:var(--t-brand)}
+html body .otp-badge{border:1.5px solid var(--t-ink)}
+html body .btn-copy{border:1.5px solid var(--t-ink);border-radius:12px;background:#fff;color:var(--t-ink)}
+html body .btn-copy:hover{background:var(--t-ink);color:#fff}
+html body .refresh-btn{background:var(--t-ink);color:#fff;border-radius:999px}
+
+/* ---------- Cart ---------- */
+html body .cart-item:hover{background:var(--t-paper)}
+html body .cart-item-image{border:1.5px solid var(--t-ink);border-radius:14px}
+html body .cart-item-image:hover{border-color:var(--t-brand)}
+html body .cart-item-placeholder{background:var(--t-paper);border:1.5px solid var(--t-line)}
+html body .cart-item-name,html body .cart-item-total{color:var(--t-ink)}
+html body .cart-badge{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink)}
+html body .qty-control{border:1.5px solid var(--t-ink);border-radius:999px;background:#fff;overflow:hidden}
+html body .qty-btn{background:#fff;color:var(--t-ink)}
+html body .qty-btn:hover{background:var(--t-sun);color:var(--t-ink)}
+html body .btn-remove-item{color:#b91c1c}
+html body .free-ship,html body .free-progress-box{
+  background:var(--t-soft);border:1.5px solid var(--t-ink);border-radius:16px}
+html body .free-ship-text,html body .free-progress-box h6,html body .free-progress-text{color:var(--t-ink)}
+html body .free-ship-bar,html body .free-progress-bar{background:#fff;border:1.5px solid var(--t-ink);border-radius:99px;height:12px}
+html body .free-ship-fill,html body .free-progress-fill{background:var(--t-brand)}
+html body .free-ship.unlocked,html body .free-progress-box.unlocked{background:#dcfce7;border-color:var(--t-leaf)}
+html body .free-ship.unlocked .free-ship-fill,html body .free-progress-box.unlocked .free-progress-fill{background:var(--t-leaf)}
+html body .grand-total-section{
+  background:var(--t-sun)!important;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:16px;box-shadow:var(--t-hard)}
+html body .grand-total-label,html body .grand-total-value{color:var(--t-ink)}
+html body .grand-total-section small{color:rgba(28,25,23,.7)!important}
+html body .btn-checkout,html body .btn-checkout-mobile,html body .btn-checkout-mobile-pro,html body .btn-checkout-pro,html body .place-order-btn{
+  background:var(--t-brand)!important;background-image:none!important;color:#fff!important;border:1.5px solid var(--t-ink)!important;
+  box-shadow:3px 3px 0 var(--t-ink)!important;animation:none!important;border-radius:16px!important}
+html body .btn-checkout:hover,html body .btn-checkout-mobile:hover,html body .btn-checkout-pro:hover,html body .place-order-btn:hover:not(:disabled){
+  background:var(--t-ink)!important;transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--t-brand)!important}
+html body .btn-checkout-pro::after,html body .place-order-btn::after{display:none}
+html body .btn-checkout-pro .cp-right,html body .place-order-btn .po-right{background:rgba(255,255,255,.18)}
+html body .place-order-btn:disabled{background:#d6d3d1!important;color:#57534e!important;box-shadow:none!important}
+html body .cod-pill{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink)}
+html body .cart-cta-hint,html body .cart-trust,html body .cart-trust i,html body .po-trust,html body .po-trust i,html body .po-row i{color:var(--t-leaf)}
+html body .mobile-checkout-bar{background:var(--t-bg);border-top:1.5px solid var(--t-ink);box-shadow:none}
+html body .mobile-checkout-total{color:var(--t-ink)}
+html body .alert-light.border{background:var(--t-soft);border-color:var(--t-ink)!important}
+html body .empty-cart-icon{color:var(--t-line)}
+html body .cp-overlay,html body .po-overlay{background:rgba(28,25,23,.6)}
+html body .cp-box,html body .po-sheet{border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important}
+
+/* ---------- Checkout / place order ---------- */
+html body .payment-option,html body .delivery-option{border:1.5px solid var(--t-line);border-radius:16px;background:#fff;box-shadow:none}
+html body .payment-option:hover,html body .delivery-option:hover{border-color:var(--t-ink);background:var(--t-paper);box-shadow:none}
+html body .payment-option.selected,html body .delivery-option.selected{
+  border-color:var(--t-ink);background:var(--t-sun);box-shadow:var(--t-hard)}
+html body .delivery-icon{border:1.5px solid var(--t-ink);background:#fff;color:var(--t-ink)}
+html body .delivery-price,html body .summary-item.total-row{color:var(--t-ink);font-weight:800}
+html body .delivery-price.free{color:var(--t-leaf)}
+html body .summary-item{border-bottom:1px dashed var(--t-line)}
+html body .cart-product-img{border:1.5px solid var(--t-ink);border-radius:12px}
+html body .section-header{background:var(--t-sun)!important;color:var(--t-ink)!important;border-bottom:1.5px solid var(--t-ink)}
+html body .section-body{background:#fff}
+html body .otp-section,html body .token-display,html body .timer-box,html body .already-verified-box{
+  background:var(--t-soft)!important;border:1.5px solid var(--t-ink);border-radius:16px;color:var(--t-ink)}
+
+/* ---------- Order success ---------- */
+html body .success-card{border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important}
+html body .checkmark-circle{background:var(--t-leaf)!important;border:1.5px solid var(--t-ink)}
+html body .success-title{font-family:'Fraunces',Georgia,serif;color:var(--t-ink)}
+html body .order-number-box{background:var(--t-sun)!important;border:1.5px solid var(--t-ink);border-radius:16px;color:var(--t-ink)}
+html body .order-number,html body .order-label{color:var(--t-ink)!important}
+html body .btn-copy-number{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:12px}
+html body .step-icon{background:var(--t-sun)!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink)}
+html body .btn-action{border-radius:14px;border:1.5px solid var(--t-ink);font-weight:700}
+html body .btn-track{background:var(--t-brand)!important;color:#fff!important;box-shadow:3px 3px 0 var(--t-ink)}
+html body .btn-orders{background:#fff!important;color:var(--t-ink)!important}
+html body .btn-shop.btn-action{background:var(--t-sun)!important;color:var(--t-ink)!important;box-shadow:3px 3px 0 var(--t-ink)!important}
+
+/* ---------- Stores listing ---------- */
+html body .st-hero{
+  background:var(--t-sun)!important;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:24px;box-shadow:var(--t-hard)}
+html body .st-hero h1,html body .st-hero h2{font-family:'Fraunces',Georgia,serif;color:var(--t-ink)}
+html body .st-hero p{color:rgba(28,25,23,.75)}
+html body .st-search{background:#fff;border:1.5px solid var(--t-ink);border-radius:16px;box-shadow:var(--t-hard)}
+html body .st-search button{background:var(--t-ink);color:#fff}
+html body .st-card{overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+html body .st-card:hover{border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--t-ink)!important}
+html body .st-cover{background-color:#ffe9d2;background-image:linear-gradient(135deg,#ffe9d2,#ffd66b)}
+html body .st-free{background:var(--t-leaf)!important;border:1.5px solid var(--t-ink)}
+html body .st-logo{border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink)}
+html body .st-name{font-family:'Fraunces',Georgia,serif;font-weight:700;color:var(--t-ink)}
+html body .st-type,html body .st-chip,html body .st-pills a,html body .st-pill{
+  background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px;font-weight:700}
+html body .st-type.on,html body .st-type.active,html body .st-chip.on,html body .st-chip.active,html body .st-pills a.on,html body .st-pills a.active,html body .st-pill.on{
+  background:var(--t-ink);color:#fff}
+html body .st-open{background:#dcfce7;color:#166534;border:1px solid var(--t-leaf)}
+html body .st-busy{background:var(--t-sun);color:var(--t-ink);border:1px solid var(--t-ink)}
+html body .st-closed{background:#fee2e2;color:#991b1b;border:1px solid #b91c1c}
+
+/* ---------- Store detail ---------- */
+html body .sd-hero{background-color:#ffe9d2;border-bottom:1.5px solid var(--t-ink)}
+html body .sd-hero::after{background:linear-gradient(transparent,rgba(251,247,240,.0))}
+html body .sd-back{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink)}
+html body .sd-head{background:var(--t-bg)}
+html body .sd-logo{border:1.5px solid var(--t-ink);border-radius:16px;box-shadow:2px 2px 0 var(--t-ink);background:#fff}
+html body .sd-name{font-weight:700}
+html body .sd-badge{border:1.5px solid var(--t-ink);border-radius:999px;font-weight:800}
+html body .sd-open{background:#dcfce7;color:#166534}
+html body .sd-busy{background:var(--t-sun);color:var(--t-ink)}
+html body .sd-closed{background:#fee2e2;color:#991b1b}
+html body .sd-stats{border:1.5px solid var(--t-line)}
+html body .sd-stat .v.free{color:var(--t-leaf)}
+html body .sd-stat i{color:var(--t-brand)}
+html body .sd-alert{background:var(--t-soft);border:1.5px solid var(--t-ink);border-radius:14px;color:var(--t-ink)}
+html body .sd-search{border:1.5px solid var(--t-ink);border-radius:16px;box-shadow:var(--t-hard);background:#fff}
+html body .sd-search input{border:0!important;box-shadow:none!important}
+html body .sd-search button{background:var(--t-ink);color:#fff}
+html body .sd-sticky{background:rgba(251,247,240,.92);border-bottom:1.5px solid var(--t-ink)}
+html body .sd-tab{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px;font-weight:700}
+html body .sd-tab.on{background:var(--t-ink);color:#fff}
+html body .sd-p{overflow:visible;transition:transform .15s,box-shadow .15s,border-color .15s}
+html body .sd-p:hover{border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:var(--t-hard)!important}
+html body .sd-pimg{background:var(--t-paper);border-radius:18px 18px 0 0}
+html body .sd-off{background:var(--t-brand)!important;color:#fff;border:1.5px solid var(--t-ink);border-radius:8px;box-shadow:2px 2px 0 var(--t-ink)}
+html body .sd-pn{color:var(--t-ink);font-weight:700}
+html body .sd-price{color:var(--t-ink);font-weight:800}
+html body .sd-add{background:var(--t-ink)!important;color:#fff!important;border:1.5px solid var(--t-ink);border-radius:12px;box-shadow:none}
+html body .sd-add:hover{background:var(--t-brand)!important;border-color:var(--t-brand)}
+html body .sd-step{border:1.5px solid var(--t-ink);border-radius:12px;background:#fff}
+html body .sd-step button{background:var(--t-sun);color:var(--t-ink)}
+html body .sd-p.has{border-color:var(--t-leaf);box-shadow:3px 3px 0 var(--t-leaf)!important}
+html body .sd-pager a{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:12px}
+html body .cb-in{background:var(--t-ink)!important;border-radius:20px;border:0;box-shadow:0 16px 34px rgba(28,25,23,.38)}
+html body .cb-btn{background:var(--t-sun)!important;color:var(--t-ink)!important;border-radius:14px;font-weight:800}
+html body .cb-btn:hover{background:#fff!important}
+html body .sd-toast{background:var(--t-ink);color:#fff;border-radius:14px}
+
+/* ---------- Product detail ---------- */
+html body .product-detail-wrapper{background:#fff;border:1.5px solid var(--t-line);border-radius:24px;box-shadow:none}
+html body .product-image-section{background:var(--t-paper);border-radius:20px}
+html body .stock-badge{border:1.5px solid var(--t-ink);border-radius:999px;font-weight:800}
+html body .stock-badge.in-stock{background:#dcfce7;color:#166534}
+html body .stock-badge.low-stock{background:var(--t-sun);color:var(--t-ink)}
+html body .stock-badge.out-of-stock{background:#fee2e2;color:#991b1b}
+html body .product-discount-badge{background:var(--t-brand)!important;border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink);color:#fff}
+html body .product-category-badge{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:999px;font-weight:800}
+html body .product-title{font-weight:700}
+html body .product-price-value{color:var(--t-ink);font-weight:800}
+html body .product-price-section{background:var(--t-soft)!important;border:1.5px solid var(--t-ink);border-radius:18px}
+html body .discount-info{color:var(--t-brand);font-weight:800}
+html body .feature-item{background:var(--t-paper);border:1.5px solid var(--t-line);border-radius:14px}
+html body .feature-item i{color:var(--t-brand)}
+html body .pd-qty{border:1.5px solid var(--t-ink);border-radius:14px;background:#fff;overflow:hidden}
+html body .pd-qty button{background:var(--t-sun);color:var(--t-ink)}
+html body .pd-add{background:var(--t-ink)!important;color:#fff!important;border:1.5px solid var(--t-ink);border-radius:14px;box-shadow:none}
+html body .pd-add:hover{background:var(--t-brand)!important;border-color:var(--t-brand)}
+html body .pd-add.done{background:var(--t-leaf)!important;border-color:var(--t-leaf)}
+html body .pd-buy{background:var(--t-sun)!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink);border-radius:14px;box-shadow:3px 3px 0 var(--t-ink)}
+html body .pd-buy:hover{background:var(--t-brand)!important;color:#fff!important}
+html body .related-grid .product-card{border-radius:18px}
+
+/* ---------- Account / my orders / order detail & tracking ---------- */
+html body .account-header,html body .mo-hero,html body .wl-hero,html body .pr-hero,html body .page-header{
+  background:var(--t-sun)!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink);border-radius:24px;box-shadow:var(--t-hard)}
+html body .account-header::before,html body .account-header::after,html body .mo-hero::after{display:none}
+html body .account-header h2,html body .mo-hero h2,html body .wl-hero .wl-bal,html body .pr-hero h1,html body .page-header h1{color:var(--t-ink)!important}
+html body .account-header p,html body .mo-hero p,html body .wl-hero small,html body .page-header p{color:rgba(28,25,23,.75)!important;opacity:1}
+html body .avatar-circle{background:#fff!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink)}
+html body .mo-hero-btn{background:var(--t-ink)!important;box-shadow:none!important}
+html body .stat-card{border-left:1.5px solid var(--t-line)!important;border-radius:18px!important;transition:transform .15s,border-color .15s,box-shadow .15s}
+html body .stat-card:hover{border-color:var(--t-ink)!important;transform:translate(-2px,-2px);box-shadow:var(--t-hard)!important}
+html body .stat-number,html body .stat-value{color:var(--t-ink)}
+html body .order-card{border-left:1.5px solid var(--t-line)!important;border-radius:18px!important;transition:transform .15s,border-color .15s,box-shadow .15s}
+html body .order-card:hover{border-color:var(--t-ink)!important;transform:translate(-2px,-2px);box-shadow:var(--t-hard)!important}
+html body .mox1.mox1,html body .mox2.mox2,html body .mox3.mox3,html body .mox4.mox4,html body .mox5.mox5{border-color:var(--t-line)}
+html body .menu-item:hover{background:var(--t-paper)}
+html body .menu-icon{border:1.5px solid var(--t-ink);background:var(--t-sun)!important;color:var(--t-ink)!important;border-radius:12px}
+html body .order-item:hover{background:var(--t-paper)}
+html body [class^="status-"],html body .order-status{border:1.5px solid var(--t-ink);border-radius:999px;font-weight:800}
+html body .ref-card{background:var(--t-sun)!important;border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important;color:var(--t-ink)}
+html body .ref-card h3,html body .ref-card .ref-sub,html body .ref-label,html body .ref-value{color:var(--t-ink)!important}
+html body .ref-wa{background:#fff!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink)}
+html body .timeline-icon{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink)}
+html body .timeline-step.completed .timeline-icon{background:var(--t-leaf);border-color:var(--t-ink);color:#fff}
+html body .timeline-step.current .timeline-icon{background:var(--t-brand);border-color:var(--t-ink);color:#fff}
+html body .timeline::before,html body .timeline-step::before{background:var(--t-line)}
+html body .timeline-step.completed::before{background:var(--t-leaf)}
+html body .rider-call-btn{background:var(--t-ink);color:#fff;border-radius:999px;border:0}
+html body .rider-call-btn:hover{background:var(--t-brand)}
+html body .order-header-card{background:var(--t-sun)!important;color:var(--t-ink)!important;border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important}
+html body .rv-stars label{color:#d6d3d1}
+html body .rv-stars input:checked~label,html body .rv-stars label:hover,html body .rv-stars label:hover~label{color:var(--t-amber)}
+
+/* ---------- Wallet / favorites / repeat plans / pro ---------- */
+html body .wl-hero .wl-bal{font-family:'Fraunces',Georgia,serif}
+html body .wl-pos{color:var(--t-leaf)} html body .wl-neg{color:#b91c1c}
+html body .wf-tag{border:1.5px solid var(--t-ink);border-radius:999px;font-weight:800}
+html body .wf-tag.approved,html body .wf-tag.active{background:#dcfce7;color:#166534}
+html body .wf-pay{border:1.5px solid var(--t-ink);border-radius:14px;background:#fff}
+html body .fv-tab{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px;font-weight:700}
+html body .fv-tab.on{background:var(--t-ink);color:#fff}
+html body .fv-card{transition:transform .15s,box-shadow .15s,border-color .15s}
+html body .fv-card:hover{border-color:var(--t-ink);transform:translate(-2px,-2px);box-shadow:var(--t-hard)!important}
+html body .fv-img{background:var(--t-paper)}
+html body .fv-heart{color:var(--t-brand)}
+html body .fv-chip{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px}
+html body .fv-chip.on{background:var(--t-sun)}
+html body .rp-card.due{border-color:var(--t-ink);background:var(--t-sun);box-shadow:var(--t-hard)!important}
+html body .rp-alt{background:#fff;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:12px}
+html body .rp-del{color:#b91c1c}
+html body .pr-price{font-family:'Fraunces',Georgia,serif;color:var(--t-ink)}
+html body .pr-ok{background:#dcfce7;color:#166534;border:1.5px solid var(--t-leaf)}
+html body .pr-wait,html body .pr-alert{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink)}
+
+/* ---------- Info pages (about / faq / help / terms …) ---------- */
+html body .info-pills a{background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink);border-radius:999px;font-weight:700}
+html body .info-pills a.active{background:var(--t-ink);color:#fff}
+html body .info-card h2{font-weight:700}
+html body .info-wa{background:var(--t-sun);color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:14px;box-shadow:3px 3px 0 var(--t-ink)}
+html body .info-wa:hover{background:var(--t-ink);color:#fff}
+
+/* ---------- Public tracking ---------- */
+html body .track-form-card{border:1.5px solid var(--t-ink);box-shadow:var(--t-hard)!important}
+
+@media (prefers-reduced-motion:reduce){
+  html body .stat-card,html body .order-card,html body .st-card,html body .sd-p,html body .fv-card{transition:none}
+}

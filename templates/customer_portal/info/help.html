@@ -1,0 +1,37 @@
+{% extends 'customer_portal/info/base_info.html' %}
+{% load portal_i18n %}
+{% block page_title %}{% t "Help Center" %}{% endblock %}
+{% block heading %}<i class="bi bi-life-preserver text-primary"></i> {% t "Help Center" %}{% endblock %}
+{% block subheading %}{% t "What do you need help with?" %}{% endblock %}
+
+{% block info_body %}
+<div class="row g-3 mb-3">
+  <div class="col-sm-6"><a href="{% url 'track_order' %}" class="info-card d-block text-decoration-none text-reset h-100 mb-0">
+      <h2><i class="bi bi-truck text-primary"></i> {% t "Track your order" %}</h2><p class="mb-0 small">{% t "See the status with your order or bill number." %}</p></a></div>
+  <div class="col-sm-6"><a href="{% url 'my_orders' %}" class="info-card d-block text-decoration-none text-reset h-100 mb-0">
+      <h2><i class="bi bi-receipt text-primary"></i> {% t "My orders" %}</h2><p class="mb-0 small">{% t "Past and current orders." %}</p></a></div>
+  <div class="col-sm-6"><a href="{% url 'shop_returns' %}" class="info-card d-block text-decoration-none text-reset h-100 mb-0">
+      <h2><i class="bi bi-arrow-return-left text-primary"></i> {% t "Returns & refunds" %}</h2><p class="mb-0 small">{% t "Policy and how it works." %}</p></a></div>
+  <div class="col-sm-6"><a href="{% url 'shop_faq' %}" class="info-card d-block text-decoration-none text-reset h-100 mb-0">
+      <h2><i class="bi bi-question-circle text-primary"></i> {% t "FAQ" %}</h2><p class="mb-0 small">{% t "Answers to common questions." %}</p></a></div>
+</div>
+
+<div class="info-card">
+  <h2>{% t "Common problems" %}</h2>
+  <ul>
+    <li>{% t "<b>Cannot log in:</b> check your phone/email and enter the OTP on time." %}</li>
+    <li>{% t "<b>Order was not placed:</b> check the cart items and checkout address, then try again." %}</li>
+    <li>{% t "<b>Wrong address entered:</b> tell us immediately on WhatsApp or by phone." %}</li>
+    <li>{% url 'track_order' as u_track_order %}{% t "<b>Delivery is late:</b> check the status in <a href='{}'>Track Order</a>, then contact us." u_track_order %}</li>
+  </ul>
+</div>
+
+<div class="info-card">
+  <h2>{% t "Contact us" %}</h2>
+  <ul>
+    {% if company_contact_number %}<li>{% t "Phone" %}: <a href="tel:{{ company_contact_number }}" dir="ltr">{{ company_contact_number }}</a></li>{% endif %}
+    {% if company_email %}<li>{% t "Email" %}: <a href="mailto:{{ company_email }}">{{ company_email }}</a></li>{% endif %}
+    {% if company_address %}<li>{% t "Address" %}: {{ company_address }}</li>{% endif %}
+  </ul>
+</div>
+{% endblock %}

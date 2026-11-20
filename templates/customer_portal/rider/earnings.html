@@ -1,0 +1,69 @@
+{% extends 'customer_portal/rider/base.html' %}
+{% block title %}Earnings{% endblock %}
+{% block header %}<div class="top"><div class="nm">💰 Earnings</div><div class="hi">{{ rider.name }} · {{ rider.phone }}</div></div>{% endblock %}
+{% block body %}
+<div class="stats">
+  <div class="stat"><b>{{ today.deliveries }}</b><small>Today</small></div>
+  <div class="stat"><b>{{ week.deliveries }}</b><small>7 days</small></div>
+  <div class="stat"><b>{{ b.deliveries }}</b><small>Total deliveries</small></div>
+</div>
+<div class="wrap">
+  {% include 'customer_portal/rider/_goals.html' %}
+  <div class="card">
+    <div class="row"><span>Today's earnings</span><b>Rs. {{ today.earned|floatformat:0 }}</b></div>
+    <div class="row"><span>Last 7 days</span><b>Rs. {{ week.earned|floatformat:0 }}</b></div>
+    <div class="row"><span>Total earnings</span><b>Rs. {{ b.earned|floatformat:0 }}</b></div>
+    {% if b.bonus %}<div class="row"><small>including goal bonus</small><small><b>Rs. {{ b.bonus|floatformat:0 }}</b></small></div>{% endif %}
+    {% if b.peak %}<div class="row"><small>🔥 including peak bonus</small><small><b>Rs. {{ b.peak|floatformat:0 }}</b></small></div>{% endif %}
+    {% if b.tips %}<div class="row"><small>including tips</small><small><b>Rs. {{ b.tips|floatformat:0 }}</b></small></div>{% endif %}
+    <div class="row"><span>Received</span><b>Rs. {{ b.paid_out|floatformat:0 }}</b></div>
+    <div class="sep"></div>
+    <div class="row"><span><b>Still due to you</b></span><span class="fee">Rs. {{ b.due|floatformat:0 }}</span></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span>⭐ Customer rating</span>
+      <b>{% if rating.avg %}<span class="t-star">{{ rating.avg }}/5 ★</span> <small>({{ rating.count }})</small>{% else %}—{% endif %}</b></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span>COD cash collected</span><b>Rs. {{ b.cash_collected|floatformat:0 }}</b></div>
+    <div class="row"><span>Deposited with admin</span><b>Rs. {{ b.cash_deposited|floatformat:0 }}</b></div>
+    <div class="sep"></div>
+    <div class="row"><span><b>Cash in your hand</b></span><span class="fee t-brand">Rs. {{ b.cash_in_hand|floatformat:0 }}</span></div>
+    {% if cash %}<div class="bar" style="margin-top:8px"><i class="{% if cash.level == 'over' %}bad{% elif cash.level == 'warn' %}warn{% endif %}" style="width:{{ cash.pct }}%"></i></div>
+    <small>Limit: Rs. {{ cash.limit|floatformat:0 }}</small>{% endif %}
+    <div class="cod">This cash belongs to the company — deposit it with the admin.</div>
+  </div>
+
+  {% include 'customer_portal/rider/_payout.html' %}
+
+  {% if tip_list %}
+  <h3>💝 Tips from customers</h3>
+  <div class="card"><table>
+    {% for x in tip_list %}<tr><td>{{ x.created_at|date:"d M" }}<br><small class="mut">Order #{{ x.sale_order.order_no }}</small></td>
+      <td style="text-align:right"><b>+ Rs. {{ x.amount|floatformat:0 }}</b></td></tr>{% endfor %}
+  </table></div>
+  {% endif %}
+
+  {% if bonuses %}
+  <h3>🏆 Bonus history</h3>
+  <div class="card"><table>
+    {% for x in bonuses %}<tr><td>{{ x.period_start|date:"d M" }}<br><small class="mut">{% if x.kind == 'daily' %}Daily goal{% else %}Weekly goal{% endif %} · {{ x.deliveries }} deliveries</small></td>
+      <td style="text-align:right"><b>+ Rs. {{ x.amount|floatformat:0 }}</b></td></tr>{% endfor %}
+  </table></div>
+  {% endif %}
+
+  <h3>Account history</h3>
+  <div class="card">
+    <table>
+      {% for s in settlements %}
+      <tr><td>{{ s.created_at|date:"d M, h:i A" }}<br><small class="mut">{{ s.note }}</small></td>
+          <td>{% if s.kind == 'cash_in' %}Cash deposited{% else %}Earnings received{% endif %}</td>
+          <td style="text-align:right"><b>Rs. {{ s.amount|floatformat:0 }}</b></td></tr>
+      {% empty %}<tr><td class="empty" colspan="3">No account entries yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+</div>
+{% endblock %}

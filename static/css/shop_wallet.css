@@ -1,0 +1,46 @@
+/* wallet.html ka style (Step 6). Sirf us page par `extra_css` se load hota hai. */
+/* --- blok 1 (1051 bytes) --- */
+  .wl-wrap { max-width: 640px; margin: 24px auto 40px; padding: 0 14px; }
+  .wl-hero { background: linear-gradient(135deg,#d9480f,#f59e0b); color: #fff; border-radius: 22px; padding: 22px 24px; box-shadow: 0 10px 40px rgba(217,72,15,.25); }
+  .wl-hero small { opacity: .9; }
+  .wl-bal { font-size: 36px; font-weight: 800; margin: 2px 0 6px; }
+  .wl-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 6px 18px; margin-top: 16px; }
+  .wl-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid #f1f1f1; }
+  .wl-row:first-child { border-top: 0; }
+  .wl-row .t { flex: 1; min-width: 0; }
+  .wl-row .t b { display: block; font-size: 14.5px; }
+  .wl-row .t small { color: #6b7280; }
+  .wl-pos { color: #198754; font-weight: 800; }
+  .wl-neg { color: #dc3545; font-weight: 800; }
+  .wl-note { font-size: 13.5px; color: #374151; background: #fcefe4; border-radius: 14px; padding: 12px 14px; margin-top: 14px; }
+  .wl-empty { text-align: center; color: #6b7280; padding: 26px 0; }
+
+/* --- blok 2 (1145 bytes) --- */
+    .wf-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 14px 16px; margin-top: 14px; }
+    .wf-card h3 { font-size: 16px; font-weight: 800; margin: 0 0 8px; }
+    .wf-card input, .wf-card select { width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; font-size: 14px; }
+    .wf-btn { width: 100%; border: 0; border-radius: 10px; padding: 10px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#d9480f,#f59e0b); }
+    .wf-pay { font-size: 13px; background: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .wf-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 7px 0; border-top: 1px solid #f1f1f1; }
+    .wf-code { font-family: monospace; font-weight: 800; color: #1c1917; letter-spacing: 1px; }
+    .wf-tag { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: #e2e8f0; }
+    .wf-tag.approved, .wf-tag.active { background: #dcfce7; color: #166534; }
+    .wf-tag.rejected, .wf-tag.cancelled { background: #fee2e2; color: #991b1b; }
+
+
+/* ===== Step 6: pehle inline style="" tha, ab class (dohri class = pehle jaisa zor) ===== */
+.wlx1.wlx1{padding:14px 16px;margin-bottom:14px;}
+.wlx2.wlx2{font-weight:800;}
+.wlx3.wlx3{font-size:26px;font-weight:800;margin:2px 0;}
+.wlx4.wlx4{font-size:14px;font-weight:600;color:#6b7280;}
+.wlx5.wlx5{font-size:13px;color:#6b7280;margin-bottom:8px;}
+.wlx6.wlx6{border:0;border-radius:10px;padding:10px 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,#d9480f,#f59e0b);}
+.wlx7.wlx7{font-size:13px;color:#b45309;}
+.wlx8.wlx8{margin-top:10px;border-top:1px solid #f1f1f1;}
+.wlx9.wlx9{color:#6b7280;}
+.wlx10.wlx10{font-size:12px;color:#64748b;margin-top:6px;}
+.wlx11.wlx11{text-align:right;}
+
+/* ===== Step 6: tap size 44px+ ===== */
+.wf-btn{min-height:48px}
+@media (max-width:991.98px){.btn.btn-sm{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}

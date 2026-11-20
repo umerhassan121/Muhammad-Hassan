@@ -1,0 +1,22 @@
+/* repeat_plans.html ka style (Step 6). Sirf us page par `extra_css` se load hota hai. */
+/* --- blok 1 (1166 bytes) --- */
+  .rp-wrap { max-width: 760px; margin: 24px auto 40px; padding: 0 14px; }
+  .rp-wrap h1 { font-size: 26px; font-weight: 800; margin: 0 0 4px; }
+  .rp-sub { color: #64748b; font-size: 14px; margin-bottom: 16px; }
+  .rp-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 14px; margin-bottom: 12px; border: 2px solid transparent; }
+  .rp-card.due { border-color: #d9480f; }
+  .rp-card.off { opacity: .6; }
+  .rp-store { font-weight: 800; font-size: 16px; }
+  .rp-items { font-size: 13px; color: #64748b; }
+  .rp-when { margin-top: 6px; font-weight: 700; color: #1c1917; font-size: 14px; }
+  .rp-next { font-size: 12px; color: #64748b; }
+  .rp-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .rp-actions form { flex: 1 1 auto; }
+  .rp-actions button { width: 100%; border: 0; border-radius: 10px; padding: 9px; font-weight: 800; font-size: 13px; }
+  .rp-go { color: #fff; background: linear-gradient(135deg,#d9480f,#f59e0b); }
+  .rp-alt { background: #f1f5f9; color: #334155; }
+  .rp-del { background: #fee2e2; color: #b91c1c; }
+  .rp-empty { text-align: center; color: #64748b; padding: 40px 10px; }
+
+/* ===== Step 6: tap size 44px+ ===== */
+@media (max-width:991.98px){.btn.btn-sm{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}

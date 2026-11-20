@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Rider support{% endblock %}
+{% block page_title %}💬 Rider support{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <a href="{% url 'rider_manage' %}" class="btn btn-sm btn-outline-secondary mb-3">← Riders</a>
+  <div class="list-group">
+    {% for x in rows %}
+    <a href="{% url 'rider_support_thread' x.rider.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if x.unread %}fw-bold{% endif %}">
+      <span>{{ x.rider.name }} <small class="text-muted">{{ x.rider.phone }}</small><br>
+        <small class="{% if x.unread %}text-dark{% else %}text-muted{% endif %}">{% if x.last.sender_role == 'admin' %}You: {% endif %}{{ x.last.message|truncatechars:80 }}</small></span>
+      <span class="text-end"><small class="text-muted">{{ x.last.created_at|date:"d M, h:i A" }}</small>{% if x.unread %}<br><span class="badge bg-danger">{{ x.unread }}</span>{% endif %}</span>
+    </a>
+    {% empty %}<div class="text-muted">No rider has written yet.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

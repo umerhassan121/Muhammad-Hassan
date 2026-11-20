@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Peak hours{% endblock %}
+{% block page_title %}🔥 Peak hours{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <a href="{% url 'rider_manage' %}" class="btn btn-sm btn-outline-secondary mb-3">← Riders</a>
+  <p class="text-muted small">In a peak window every order a rider <b>accepts</b> pays him the extra amount on top of his normal fee. Overlapping windows: the biggest extra applies. Turn the whole feature on/off in Settings &rarr; Riders.</p>
+  {% if now_peak %}<div class="alert alert-warning py-2">🔥 Peak is ON right now: <b>{{ now_peak.name }}</b> (+{{ now_peak.extra|floatformat:0 }} per delivery, until {{ now_peak.until }})</div>{% endif %}
+
+  <div class="card shadow-sm mb-4"><div class="card-body">
+    <h6>Add a peak window</h6>
+    <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="col-12 col-md-3"><label class="form-label small mb-0">Name</label><input class="form-control form-control-sm" name="name" maxlength="60" placeholder="Lunch rush"></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-0">From</label><input type="time" class="form-control form-control-sm" name="start" required></div>
+      <div class="col-6 col-md-2"><label class="form-label small mb-0">To</label><input type="time" class="form-control form-control-sm" name="end" required></div>
+      <div class="col-12 col-md-2"><label class="form-label small mb-0">Extra per delivery</label><input type="number" step="0.01" min="0.01" class="form-control form-control-sm" name="extra" required></div>
+      <div class="col-12"><span class="small">Days (none ticked = every day):</span>
+        {% for n, d in day_names %}<label class="ms-2 small"><input type="checkbox" name="days" value="{{ n }}"> {{ d }}</label>{% endfor %}</div>
+      <div class="col-12"><button class="btn btn-primary btn-sm">Add</button></div>
+    </form>
+  </div></div>
+
+  <h6>Windows</h6>
+  <div class="table-responsive"><table class="table table-sm align-middle">
+    <tr><th>Name</th><th>Time</th><th>Days</th><th>Extra</th><th>Status</th><th></th></tr>
+    {% for r in rows %}<tr>
+      <td>{{ r.w.name }}</td><td>{{ r.w.start_time|time:"H:i" }}–{{ r.w.end_time|time:"H:i" }}</td><td>{{ r.days_label }}</td><td>+{{ r.w.extra_amount|floatformat:2 }}</td>
+      <td>{% if r.w.is_active %}<span class="badge bg-success">ON</span>{% else %}<span class="badge bg-secondary">OFF</span>{% endif %}</td>
+      <td class="text-nowrap">
+        <form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="window_id" value="{{ r.w.id }}"><button class="btn btn-outline-secondary btn-sm">{% if r.w.is_active %}Turn off{% else %}Turn on{% endif %}</button></form>
+        <form method="post" class="d-inline" onsubmit="return confirm('Delete this window?')">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="window_id" value="{{ r.w.id }}"><button class="btn btn-outline-danger btn-sm">Delete</button></form>
+      </td></tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No peak windows yet.</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+== 1. 44px se chhote buttons / links ==
+small-320x568-en: 0
+small-320x568-ur: 0
+android-360x640-en: 0
+android-360x640-ur: 0
+iphone-390x844-en: 0
+iphone-390x844-ur: 0
+
+== 2. Takrao ==
+  koi nahi
+
+== 3. More sheet ==
+  small-320x568-en: {'top': 129, 'bottom': 568, 'vh': 568, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  small-320x568-ur: {'top': 85.203125, 'bottom': 568, 'vh': 568, 'scrolls': True, 'sosPoint': 'ic', 'minLink': 61}
+  android-360x640-en: {'top': 201, 'bottom': 640, 'vh': 640, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  android-360x640-ur: {'top': 96, 'bottom': 640, 'vh': 640, 'scrolls': True, 'sosPoint': 'ic', 'minLink': 61}
+  iphone-390x844-en: {'top': 371, 'bottom': 844, 'vh': 844, 'scrolls': False, 'sosPoint': 'lb', 'minLink': 52}
+  iphone-390x844-ur: {'top': 241.9375, 'bottom': 844, 'vh': 844, 'scrolls': False, 'sosPoint': 'ic', 'minLink': 61}
+
+== 4. GPS patti vs Online switch ==
+  small-320x568-en: {'switchTop': 146.671875, 'switchBottom': 202.671875, 'barBottom': 76.671875, 'covered': False, 'langCovered': False}
+  small-320x568-ur: {'switchTop': 132.53125, 'switchBottom': 194.53125, 'barBottom': 38.890625, 'covered': False, 'langCovered': False}
+  android-360x640-en: {'switchTop': 127.78125, 'switchBottom': 183.78125, 'barBottom': 57.78125, 'covered': False, 'langCovered': False}
+  android-360x640-ur: {'switchTop': 132.53125, 'switchBottom': 194.53125, 'barBottom': 38.890625, 'covered': False, 'langCovered': False}
+  iphone-390x844-en: {'switchTop': 221.78125, 'switchBottom': 277.78125, 'barBottom': 104.78125, 'covered': False, 'langCovered': False}
+  iphone-390x844-ur: {'switchTop': 226.53125, 'switchBottom': 288.53125, 'barBottom': 85.890625, 'covered': False, 'langCovered': False}
+
+== 5. Naye order ka popup ==
+  small-320x568: {'vh': 568, 'yesTop': 376, 'yesBottom': 435, 'noBottom': 503, 'laterBottom': 565, 'scrolls': True, 'yesH': 59, 'yesVisible': True}
+  android-360x640: {'vh': 640, 'yesTop': 396, 'yesBottom': 455, 'noBottom': 523, 'laterBottom': 585, 'scrolls': False, 'yesH': 59, 'yesVisible': True}
+  iphone-390x844: {'vh': 844, 'yesTop': 419, 'yesBottom': 478, 'noBottom': 546, 'laterBottom': 608, 'scrolls': False, 'yesH': 59, 'yesVisible': True}
+
+== 6. Urdu: neeche ki bar ke labels kat rahe hain ==
+  small-320x568-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 60, 'cw': 60}]
+  android-360x640-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 68, 'cw': 68}]
+  iphone-390x844-ur: [{'t': '🛵', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '🧾', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '💰', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '💬', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}, {'t': '☰', 'sh': 27, 'ch': 24, 'sw': 74, 'cw': 74}]
+
+== 7. Step 9 guards (True = theek) ==
+  small-320x568: {'reload_blocked_while_typing': True, 'reload_happens_when_idle': True, 'more_back_closes_sheet': True, 'more_ui_close_keeps_history_clean': True, 'sos_back_closes_sheet': True, 'popup_offline_no_navigation': True, 'popup_back_closes': True, 'popup_later_keeps_history_clean': True}
+  android-360x640: {'reload_blocked_while_typing': True, 'reload_happens_when_idle': True, 'more_back_closes_sheet': True, 'more_ui_close_keeps_history_clean': True, 'sos_back_closes_sheet': True, 'popup_offline_no_navigation': True, 'popup_back_closes': True, 'popup_later_keeps_history_clean': True}
+  iphone-390x844: {'reload_blocked_while_typing': True, 'reload_happens_when_idle': True, 'more_back_closes_sheet': True, 'more_ui_close_keeps_history_clean': True, 'sos_back_closes_sheet': True, 'popup_offline_no_navigation': True, 'popup_back_closes': True, 'popup_later_keeps_history_clean': True}
+
+Neeche ki bar ki unchai (px): {'small-320x568-en': 57, 'small-320x568-ur': 59.6875, 'android-360x640-en': 57, 'android-360x640-ur': 59.6875, 'iphone-390x844-en': 91, 'iphone-390x844-ur': 93.6875}

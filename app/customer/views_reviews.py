@@ -1,0 +1,223 @@
+"""Customer ki rating/review: store aur rider ke liye (delivered order par, ek dafa)."""
+import logging
+
+from django.contrib import messages
+from .vendor_access import get_vendor_profile
+from django.db import IntegrityError, transaction
+from django.db.models import Avg, Count
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from ..shop_flags import flag_required, shop_flag
+from django.views.decorators.http import require_POST
+
+from ..decorators import customer_login_required, vendor_login_required
+from ..models import DeliveryInfo, OrderReview, SaleOrder, VendorProfile
+from . import store_orders
+
+logger = logging.getLogger(__name__)
+
+REVIEWABLE = ('delivered', 'invoiced')
+
+
+def _stars(raw):
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return v if 1 <= v <= 5 else None
+
+
+def rating_summary(qs, field):
+    """{'avg': 4.5, 'count': 12} ya avg=None agar koi rating nahi."""
+    rated = qs.exclude(**{f'{field}__isnull': True})
+    a = rated.aggregate(avg=Avg(field), n=Count('id'))
+    return {'avg': round(float(a['avg']), 1) if a['avg'] else None, 'count': a['n'] or 0}
+
+
+def vendor_rating(vendor):
+    return rating_summary(OrderReview.objects.filter(vendor=vendor), 'vendor_rating')
+
+
+def rider_rating(rider):
+    return rating_summary(OrderReview.objects.filter(rider=rider), 'rider_rating')
+
+
+@customer_login_required
+@require_POST
+def tip_rider(request, order_id):
+    """Delivery ke baad rider ko tip (wallet se, ek order par ek dafa)."""
+    from . import rider_tips
+    if not hasattr(request.user, 'customer_profile'):
+        messages.error(request, 'Access denied')
+        return redirect('shop_home')
+    back = redirect('order_detail_customer', order_id=order_id)
+    if not rider_tips.enabled():
+        messages.error(request, 'Tipping riders is currently unavailable.')
+        return back
+    customer = request.user.customer_profile.customer
+    order = get_object_or_404(SaleOrder, id=order_id, customer=customer)
+    if order.status not in REVIEWABLE:
+        messages.error(request, '❌ You can tip only after the order is delivered.')
+        return back
+    di = DeliveryInfo.objects.filter(sale_order=order, status='delivered', rider__isnull=False).select_related('rider', 'rider__user').first()
+    if not di:
+        messages.error(request, '❌ This order has no rider to tip.')
+        return back
+    try:
+        tip = rider_tips.give_tip(order, customer, di.rider,
+                                   request.POST.get('amount') or request.POST.get('custom'))
+    except rider_tips.TipError as exc:
+        messages.error(request, f'❌ {exc}')
+        return back
+    store_orders._notify(di.rider.user, f'💝 Tip: Rs. {tip.amount:,.0f}',
+                         f'Customer ne order #{order.order_no} par aap ko Rs. {tip.amount:,.0f} tip di.',
+                         '/shop/rider/earnings/', 'success')
+    messages.success(request, f'💝 Thank you! Rs. {tip.amount:,.0f} tip sent to your rider.')
+    return back
+
+
+@flag_required('customer_can_rate_orders')
+@customer_login_required
+@require_POST
+def rate_order(request, order_id):
+    if not hasattr(request.user, 'customer_profile'):
+        messages.error(request, 'Access denied')
+        return redirect('shop_home')
+    customer = request.user.customer_profile.customer
+    order = get_object_or_404(SaleOrder, id=order_id, customer=customer)
+
+    if order.status not in REVIEWABLE:
+        messages.error(request, '❌ You can rate only after the order is delivered.')
+        return redirect('order_detail_customer', order_id=order.id)
+    if OrderReview.objects.filter(sale_order=order).exists():
+        messages.info(request, 'You have already rated this order.')
+        return redirect('order_detail_customer', order_id=order.id)
+
+    di = DeliveryInfo.objects.filter(sale_order=order, status='delivered', rider__isnull=False).select_related('rider').first()
+    rider = di.rider if di else None
+    if rider is None and order.big_vehicle_state == 'approved' and order.big_vehicle_driver_id:
+        rider = order.big_vehicle_driver          # bari gari ka driver bhi rate ho sakta hai
+
+    vendor_stars = _stars(request.POST.get('vendor_rating')) if order.vendor_id else None
+    rider_stars = _stars(request.POST.get('rider_rating')) if rider else None
+    if not vendor_stars and not rider_stars:
+        messages.error(request, '❌ Please choose at least one rating (⭐).')
+        return redirect('order_detail_customer', order_id=order.id)
+
+    try:
+        with transaction.atomic():
+            OrderReview.objects.create(
+                sale_order=order, vendor_id=order.vendor_id, rider=rider,
+                vendor_rating=vendor_stars, vendor_comment=request.POST.get('vendor_comment', '').strip()[:300],
+                rider_rating=rider_stars, rider_comment=request.POST.get('rider_comment', '').strip()[:300],
+            )
+    except IntegrityError:
+        messages.info(request, 'You have already rated this order.')
+        return redirect('order_detail_customer', order_id=order.id)
+
+    # Store aur rider ko khabar
+    try:
+        if vendor_stars:
+            vp = VendorProfile.objects.filter(vendor_id=order.vendor_id).select_related('user').first()
+            store_orders._notify(vp.user if vp else None, f'⭐ Order #{order.order_no}: {vendor_stars}/5',
+                                 request.POST.get('vendor_comment', '').strip()[:200] or 'Customer ne aap ke store ko rating di.',
+                                 '/shop/vendor/', 'success' if vendor_stars >= 4 else 'warning')
+        if rider_stars:
+            store_orders._notify(rider.user, f'⭐ Order #{order.order_no}: {rider_stars}/5',
+                                 request.POST.get('rider_comment', '').strip()[:200] or 'Customer ne aap ko rating di.',
+                                 '/shop/rider/earnings/', 'success' if rider_stars >= 4 else 'warning')
+    except Exception as exc:
+        logger.error("Review notify error: %s", exc)
+
+    messages.success(request, '⭐ Thank you for your rating!')
+    return redirect('order_detail_customer', order_id=order.id)
+
+
+def store_rating_map():
+    """Saare stores ki rating ek query mein: {vendor_id: {'avg': 4.5, 'count': 12}}"""
+    rows = (OrderReview.objects.filter(vendor_rating__isnull=False)
+            .values('vendor').annotate(avg=Avg('vendor_rating'), n=Count('id')))
+    return {r['vendor']: {'avg': round(float(r['avg']), 1), 'count': r['n']} for r in rows if r['vendor']}
+
+
+def _reviewer_name(order):
+    """Privacy: 'Hadi Ahmed' -> 'Hadi A.'"""
+    parts = (getattr(order.customer, 'name', '') or 'Customer').split()
+    return parts[0] + (f' {parts[-1][0]}.' if len(parts) > 1 else '')
+
+
+def store_reviews(vendor, limit=10):
+    """Store page ke liye: average, 5-1 star ka hisaab (percent) aur aakhri reviews."""
+    qs = OrderReview.objects.filter(vendor=vendor, vendor_rating__isnull=False)
+    summary = rating_summary(qs, 'vendor_rating')
+    counts = {r['vendor_rating']: r['n'] for r in qs.values('vendor_rating').annotate(n=Count('id'))}
+    total = summary['count'] or 1
+    bars = [{'stars': i, 'count': counts.get(i, 0), 'pct': round(counts.get(i, 0) * 100 / total)}
+            for i in (5, 4, 3, 2, 1)]
+    latest = []
+    for rv in qs.select_related('sale_order__customer')[:limit]:
+        latest.append({'stars': rv.vendor_rating, 'comment': rv.vendor_comment,
+                       'name': _reviewer_name(rv.sale_order), 'date': rv.created_at,
+                       'reply': rv.vendor_reply, 'reply_date': rv.vendor_replied_at})
+    return {'summary': summary, 'bars': bars, 'latest': latest}
+
+
+# ============================================================
+# Vendor: reviews dekhna aur jawab dena (public reply)
+# ============================================================
+
+REPLY_MAX = 300
+
+
+@vendor_login_required
+def vendor_reviews(request):
+    """Store ke saare reviews + har review par jawab dene ka form."""
+    profile = get_vendor_profile(request.user)
+    vendor = profile.vendor
+    qs = (OrderReview.objects.filter(vendor=vendor, vendor_rating__isnull=False)
+          .select_related('sale_order__customer'))
+    reviews = list(qs[:100])
+    for rv in reviews:
+        rv.reviewer = _reviewer_name(rv.sale_order)
+    return render(request, 'customer_portal/vendor/reviews.html', {
+        'profile': profile,
+        'rating': vendor_rating(vendor),
+        'bars': store_reviews(vendor, limit=0)['bars'],
+        'reviews': reviews,
+        'unanswered': sum(1 for r in reviews if not r.vendor_reply),
+        'can_reply': shop_flag('vendor_can_reply_reviews'),
+        'reply_max': REPLY_MAX,
+    })
+
+
+@flag_required('vendor_can_reply_reviews', redirect_to='vendor_dashboard')
+@vendor_login_required
+@require_POST
+def vendor_reply_review(request, review_id):
+    """Vendor apne store ke review par ek public jawab likhta ya badalta hai (khali bhejne par hata deta hai)."""
+    profile = get_vendor_profile(request.user)
+    review = get_object_or_404(OrderReview, id=review_id, vendor=profile.vendor, vendor_rating__isnull=False)
+    text = ' '.join(request.POST.get('reply', '').split())[:REPLY_MAX]
+    first_reply = not review.vendor_reply
+
+    if not text:
+        if review.vendor_reply:
+            review.vendor_reply, review.vendor_replied_at = '', None
+            review.save(update_fields=['vendor_reply', 'vendor_replied_at'])
+            messages.info(request, 'Your reply was removed.')
+        return redirect('vendor_reviews')
+
+    review.vendor_reply = text
+    review.vendor_replied_at = timezone.now()
+    review.save(update_fields=['vendor_reply', 'vendor_replied_at'])
+
+    if first_reply:     # sirf pehle jawab par customer ko khabar (badalne par dobara nahi)
+        try:
+            user = store_orders._customer_user(review.sale_order)
+            store_orders._notify(user, f'💬 {profile.business_name} replied to your review',
+                                 text[:200], reverse('order_detail_customer', args=[review.sale_order_id]), 'info')
+        except Exception as exc:
+            logger.error("Review reply notify error: %s", exc)
+    messages.success(request, '✅ Reply saved. Customers can see it on your store page.')
+    return redirect('vendor_reviews')

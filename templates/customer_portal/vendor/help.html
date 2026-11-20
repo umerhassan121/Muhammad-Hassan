@@ -1,0 +1,49 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% block title %}Help center - {{ company_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .vhl-wrap { max-width: 900px; margin: 24px auto; padding: 0 12px; }
+  .vhl-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .vhl-top h3 { margin: 0; font-weight: 700; }
+  .vhl-back { text-decoration: none; border: 1px solid #ddd; background: #fff; border-radius: 10px; padding: 6px 14px; color: #333; }
+  .vhl-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.06); padding: 16px; margin-bottom: 14px; }
+  .vhl-card h5 { margin: 0 0 8px; font-weight: 700; }
+  .vhl-cta { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecfdf5; }
+  .vhl-btn { background: #059669; color: #fff; text-decoration: none; font-weight: 600; padding: 9px 18px; border-radius: 10px; white-space: nowrap; }
+  .vhl-badge { background: #dc2626; color: #fff; border-radius: 20px; padding: 1px 8px; font-size: 12px; margin-left: 4px; }
+  details { border-top: 1px dashed #e5e7eb; padding: 10px 0; }
+  details:first-of-type { border-top: 0; }
+  summary { cursor: pointer; font-weight: 600; color: #111827; }
+  details p { margin: 8px 0 0; color: #4b5563; font-size: 14px; line-height: 1.6; }
+</style>
+<div class="vhl-wrap">
+  <div class="vhl-top">
+    <h3>❓ Help center</h3>
+    <a class="vhl-back" href="{% url 'vendor_dashboard' %}">Dashboard</a>
+  </div>
+
+
+  <div class="vhl-card vhl-cta">
+    <div>
+      <b>Did not find an answer?</b>
+      <div style="font-size:13px;color:#4b5563;">Send a ticket to Support. The reply will appear here.</div>
+    </div>
+    {% if support_on %}
+      <a class="vhl-btn" href="{% url 'vendor_support' %}">🎫 Support tickets{% if unread %}<span class="vhl-badge">{{ unread }} new</span>{% endif %}</a>
+    {% else %}
+      <span style="font-size:13px;color:#6b7280;">Tickets are closed right now. Please contact the admin directly.</span>
+    {% endif %}
+  </div>
+
+  {% for group, items in faq %}
+  <div class="vhl-card">
+    <h5>{% t group %}</h5>
+    {% for q, a in items %}
+      <details><summary>{% t q %}</summary><p>{% t a %}</p></details>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

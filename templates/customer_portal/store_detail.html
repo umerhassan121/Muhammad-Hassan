@@ -1,0 +1,237 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}{{ store.business_name }} - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_store_detail.css' %}?v=2">{% endblock %}
+
+{% block content %}
+
+<div class="sd-wrap">
+
+  <div class="sd-hero" {% if store.cover_image %}style="background-image:url('{{ store.cover_image.url }}')"{% endif %}>
+    <a class="sd-back" href="{% url 'store_list' %}" aria-label="All stores"><i class="bi bi-arrow-left"></i></a>
+    {% if status == 'closed' %}<div class="sd-closed-veil">CLOSED</div>{% endif %}
+  </div>
+
+  <div class="sd-head">
+    <div class="sd-top">
+      <div class="sd-logo" {% if store.logo %}style="background-image:url('{{ store.logo.url }}')"{% endif %}>{% if not store.logo %}{{ store.business_name|slice:":1"|upper }}{% endif %}</div>
+      <div class="sdx1">
+        {% if favorites_on %}<button type="button" class="fav-btn {% if is_fav %}on{% endif %}" style="float:right;margin-left:8px;" aria-label="Favourite store"
+                onclick="toggleFav(this,'{% url 'favorite_store_toggle' store.pk %}',false)"><i class="bi {% if is_fav %}bi-heart-fill{% else %}bi-heart{% endif %}"></i></button>{% endif %}
+        <div class="sd-name">{{ store.business_name }}
+          {% if store.is_dark_store %}<span class="sd-badge" style="background:#fff3bf;color:#7c5a00;">⚡ Mart</span>{% endif %}
+          <span class="sd-badge sd-{{ status }}">{% if status == 'open' %}Open{% elif status == 'busy' %}Busy{% else %}Closed{% endif %}</span>
+        </div>
+        <div class="sd-sub">{% if store.store_category %}<b>{{ store.store_category.icon }} {{ store.store_category.name }}</b>{% if store_tags or store.city %} &middot; {% endif %}{% endif %}{% if store_tags %}{{ store_tags|join:" &bull; " }}{% endif %}{% if store.city %}{% if store_tags %} &middot; {% endif %}<i class="bi bi-geo-alt"></i> {{ store.city }}{% endif %}</div>
+      </div>
+    </div>
+
+    <div class="sd-stats">
+      <div class="sd-stat"><div class="k">Rating</div><div class="v">{% if reviews.summary.avg %}<a href="#reviews" class="sdx2"><i class="bi bi-star-fill sdx3"></i> {{ reviews.summary.avg }} <small>({{ reviews.summary.count }})</small></a>{% else %}New{% endif %}</div></div>
+      <div class="sd-stat"><div class="k">Delivery time</div><div class="v"><i class="bi bi-clock"></i>{{ store.eff_time_min }}-{{ store.eff_time_max }} min</div></div>
+      <div class="sd-stat"><div class="k">Delivery fee</div>
+        <div class="v {% if fee_now <= 0 %}free{% endif %}"><i class="bi bi-bicycle"></i>{% if fee_now > 0 %}{{ currency }} {{ fee_now|floatformat:0 }}{% else %}Free{% endif %}{% if fee_distance_km is not None %} <small>&middot; {{ fee_distance_km }} km</small>{% endif %}</div>
+        {% if fee_too_far %}<div class="sdx4">{{ fee_range_message }}</div>{% endif %}</div>
+      {% if store_cuisines %}<div class="sd-stat"><div class="k">Cuisines</div><div class="v">{% for c in store_cuisines %}{{ c.icon }} {{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div></div>{% endif %}
+      <div class="sd-stat"><div class="k">Minimum order</div><div class="v"><i class="bi bi-basket"></i>{% if store.min_order_amount > 0 %}{{ currency }} {{ store.min_order_amount|floatformat:0 }}{% else %}None{% endif %}</div></div>
+      {% if store.has_any_hours %}
+      <div class="sd-stat"><div class="k">Opening hours</div><div class="v"><i class="bi bi-calendar-check"></i>{{ store.today_hours_text }}{% if store.has_day_hours %}
+        <details class="sdx5"><summary class="sdx6">All days</summary>
+          {% for d in store.week_hours %}<div style="{% if d.today %}font-weight:800;{% endif %}">{{ d.day|slice:":3" }}: {{ d.text }}</div>{% endfor %}
+        </details>{% endif %}</div></div>
+      {% endif %}
+    </div>
+
+    {% if store.delivery_areas %}<div class="sd-desc"><i class="bi bi-geo-alt-fill sdx7"></i> <b>Delivers to:</b> {{ store.delivery_areas }}</div>{% endif %}
+    {% if store.store_description %}<div class="sd-desc">{{ store.store_description|linebreaksbr }}</div>{% endif %}
+    {% if store_offer %}<div class="sd-alert sdx8"><i class="bi bi-ticket-perforated-fill"></i> {{ store_offer.badge }}: {% t "Use code <b>{}</b> in your cart" store_offer.code %}{% if store_offer.min_order %} {% t "(minimum Rs. {})" store_offer.min_order|floatformat:0 %}{% endif %}.</div>{% endif %}
+    {% if store.is_paused %}<div class="sd-alert"><i class="bi bi-hourglass-split"></i> {% t "This store is very busy and not taking new orders right now. Please try again after {}." store.paused_until_text %}</div>
+    {% elif status == 'closed' %}<div class="sd-alert"><i class="bi bi-moon"></i> This store is closed right now. You can browse products; you can order when it opens.</div>
+    {% elif status == 'busy' %}<div class="sd-alert busy"><i class="bi bi-hourglass-split"></i> This store is busy right now, so delivery may take a little longer.</div>{% endif %}
+  </div>
+
+  <form class="sd-search" method="get">
+    {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+    <input type="text" name="q" id="sdQ" value="{{ search }}" placeholder="Search in this store...">
+    <button type="button" class="st-mic sdx10" id="sdMic" onclick="toggleVoiceSearch('sdQ','sdMic',true)" title="Voice Search" aria-label="Voice Search"><i class="bi bi-mic-fill"></i></button>
+    <button type="submit" aria-label="Search"><i class="bi bi-search"></i></button>
+  </form>
+
+  <div class="sd-sticky">
+    <div class="sd-tabs">
+      <a class="sd-tab {% if not selected_category %}on{% endif %}" href="?{% if search %}q={{ search|urlencode }}{% endif %}">{% t "All ({})" menu_total %}</a>
+      {% for m in menu %}
+        <a class="sd-tab {% if selected_category == m.category_id %}on{% endif %}" href="?category={{ m.category_id|default_if_none:'' }}{% if search %}&q={{ search|urlencode }}{% endif %}">{{ m.category__name|default:"Other" }} ({{ m.n }})</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if products %}
+    {% if store_deals %}
+    <div class="sd-sec">🎁 Deals<small>{% if store_deals|length == 1 %}{% t "{} deal" store_deals|length %}{% else %}{% t "{} deals" store_deals|length %}{% endif %}</small></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      {% for d in store_deals %}<div class="sdx11"><b class="sdx12">{{ d.text }}</b> &middot; {{ d.title }}<div class="sdx13">{{ d.items }}</div></div>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if popular %}
+    <div class="sd-sec">⭐ Popular<small>{% if popular|length == 1 %}{% t "{} item" popular|length %}{% else %}{% t "{} items" popular|length %}{% endif %}</small></div>
+    <div class="sd-grid">
+      {% for p in popular %}{% include 'customer_portal/_store_card.html' with idp='pp' %}{% endfor %}
+    </div>
+    {% endif %}
+    {% regroup products by category.name as groups %}
+    {% for g in groups %}
+    <div class="sd-sec">{{ g.grouper|default:"Other" }}<small>{% if g.list|length == 1 %}{% t "{} item" g.list|length %}{% else %}{% t "{} items" g.list|length %}{% endif %}</small></div>
+    <div class="sd-grid">
+      {% for p in g.list %}
+      {% include 'customer_portal/_store_card.html' %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    {% if page_obj.has_other_pages %}
+    <div class="sd-pager">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&q={{ search|urlencode }}{% endif %}">&laquo; Previous</a>{% endif %}
+      {% t "Page {} / {}" page_obj.number page_obj.paginator.num_pages %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search %}&q={{ search|urlencode }}{% endif %}">Next &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+  {% else %}
+    {% include 'customer_portal/_empty_state.html' with icon='bi-bag-x' text='No products found in this store.' compact=1 %}
+  {% endif %}
+
+  <div id="reviews" class="sdx15">
+    <h5 class="sdx16">⭐ Ratings &amp; Reviews</h5>
+    {% if reviews.summary.avg %}
+    <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+      <div class="sdx17">
+        <div class="sdx18">{{ reviews.summary.avg }}</div>
+        <div class="sdx19">★★★★★</div>
+        <small class="sdx20">{% if reviews.summary.count == 1 %}{% t "{} rating" reviews.summary.count %}{% else %}{% t "{} ratings" reviews.summary.count %}{% endif %}</small>
+      </div>
+      <div class="sdx21">
+        {% for b in reviews.bars %}
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0;">
+          <span class="sdx22">{{ b.stars }}★</span>
+          <div class="sdx23"><div style="width:{{ b.pct }}%;height:100%;background:#f59e0b;"></div></div>
+          <span class="sdx24">{{ b.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% for rv in reviews.latest %}
+      {% if rv.comment or rv.reply or forloop.first %}
+      <div class="sdx25">
+        <div style="display:flex;justify-content:space-between;"><b>{{ rv.name }}</b><small class="sdx20">{{ rv.date|date:"d M Y" }}</small></div>
+        <div class="sdx3">{% for i in "12345" %}{% if forloop.counter <= rv.stars %}★{% else %}<span class="sdx26">★</span>{% endif %}{% endfor %}</div>
+        {% if rv.comment %}<div class="sdx27">{{ rv.comment }}</div>{% endif %}
+        {% if rv.reply %}<div class="sdx28"><b class="sdx29">{{ store.business_name }}</b> <small class="sdx20">&middot; {% t "Reply from the store" %}</small><div>{{ rv.reply }}</div></div>{% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% else %}
+    <p class="sdx30">No ratings yet. Place the first order and leave a rating!</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Cart bar -->
+<div class="cb" id="cartBar">
+  <div class="cb-in">
+    <div class="cb-min" id="cbMin"></div>
+    <a class="cb-btn" href="{% url 'cart_view' %}">
+      <span><span class="cb-n" id="cbCount">0</span></span>
+      <span>View cart</span>
+      <span id="cbTotal">{{ currency }} 0</span>
+    </a>
+  </div>
+</div>
+<div class="sd-toast" id="sdToast" role="status" aria-live="polite"></div>
+
+{{ cart_state|json_script:"cartState" }}
+<script>
+(function () {
+  var CURRENCY = '{{ currency }}';
+  var MIN_ORDER = {{ store.min_order_amount|default:0|stringformat:"f" }};
+  var CART_OTHER = {% if cart_other %}true{% else %}false{% endif %};
+  var cart = JSON.parse(document.getElementById('cartState').textContent || '{}');   // { "12": {qty, price} }
+  var URL_ADD = '{% url "add_to_cart" %}', URL_UPD = '{% url "update_cart" %}';
+  var toastTimer = null;
+
+  function csrf() { var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; }
+  function money(n) { return CURRENCY + ' ' + Math.round(n); }
+  function toast(msg) {
+    var t = document.getElementById('sdToast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
+  function post(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); });
+  }
+
+  function paintCard(id) {
+    Array.prototype.forEach.call(document.querySelectorAll('.sd-p[data-id="' + id + '"]'), function (el) {
+      var item = cart[id], qty = item ? item.qty : 0, stock = parseInt(el.dataset.stock, 10) || 0;
+      el.classList.toggle('has', qty > 0);
+      var q = el.querySelector('.q'); if (q) q.textContent = qty;
+      var plus = el.querySelector('.plus'); if (plus) plus.disabled = qty >= stock;
+    });
+  }
+  function paintAll() {
+    var count = 0, total = 0;
+    Object.keys(cart).forEach(function (k) { count += cart[k].qty; total += cart[k].qty * cart[k].price; });
+    Array.prototype.forEach.call(document.querySelectorAll('.sd-p'), function (el) { paintCard(el.dataset.id); });
+    var bar = document.getElementById('cartBar');
+    bar.classList.toggle('show', count > 0 && !CART_OTHER);
+    document.body.classList.toggle('has-cart-bar', count > 0 && !CART_OTHER);
+    document.getElementById('cbCount').textContent = count;
+    document.getElementById('cbTotal').textContent = money(total);
+    var min = document.getElementById('cbMin');
+    if (MIN_ORDER > 0 && total < MIN_ORDER) {
+      min.textContent = 'Minimum order ' + money(MIN_ORDER) + ' hai. ' + money(MIN_ORDER - total) + ' ka aur maal add karein.';
+      min.classList.add('show');
+    } else { min.classList.remove('show'); }
+    var badge = document.querySelector('.cart-count, #cartCount, .cart-badge');
+    if (badge && !CART_OTHER) badge.textContent = count;
+  }
+
+  function lock(id, on) { Array.prototype.forEach.call(document.querySelectorAll('.sd-p[data-id="' + id + '"]'), function (el) { el.classList.toggle('busy-req', on); }); }
+  function priceOf(id) { var el = document.querySelector('.sd-p[data-id="' + id + '"]'); return el ? (parseFloat(el.dataset.price) || 0) : 0; }
+
+  window.cartAdd = function (id, replace) {
+    lock(id, true);
+    post(URL_ADD, { product_id: id, quantity: 1, replace_cart: !!replace }).then(function (d) {
+      lock(id, false);
+      if (!d.success && d.cart_conflict) {
+        if (confirm(d.message)) { cartAdd(id, true); }
+        return;
+      }
+      if (!d.success && d.needs_options && d.product_url) { location.href = d.product_url; return; }
+      if (!d.success) { toast(d.message || 'Kuch masla aa gaya'); return; }
+      if (replace) { cart = {}; CART_OTHER = false; }
+      var cur = cart[id] ? cart[id].qty : 0;
+      cart[id] = { qty: cur + 1, price: priceOf(id) };
+      paintAll();
+    }).catch(function () { lock(id, false); toast('Network error, dobara koshish karein'); });
+  };
+
+  window.cartSet = function (id, delta) {
+    var cur = cart[id] ? cart[id].qty : 0, next = cur + delta;
+    if (next < 0) return;
+    lock(id, true);
+    post(URL_UPD, { product_id: id, quantity: next }).then(function (d) {
+      lock(id, false);
+      if (!d.success) { toast(d.message || 'Kuch masla aa gaya'); return; }
+      if (next === 0) { delete cart[id]; } else { cart[id] = { qty: next, price: cart[id] ? cart[id].price : priceOf(id) }; }
+      paintAll();
+    }).catch(function () { lock(id, false); toast('Network error, dobara koshish karein'); });
+  };
+
+  paintAll();
+})();
+</script>
+{% if favorites_on %}{% include 'customer_portal/_fav_js.html' %}{% endif %}
+{% endblock %}

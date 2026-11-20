@@ -1,0 +1,79 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% block title %}Support tickets - {{ company_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .vsp-wrap { max-width: 900px; margin: 24px auto; padding: 0 12px; }
+  .vsp-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .vsp-top h3 { margin: 0; font-weight: 700; }
+  .vsp-back { text-decoration: none; border: 1px solid #ddd; background: #fff; border-radius: 10px; padding: 6px 14px; color: #333; }
+  .vsp-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.06); padding: 16px; margin-bottom: 12px; }
+  .vsp-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .vsp-tab { flex: 1; text-align: center; text-decoration: none; padding: 10px 14px; border-radius: 12px; background: #fff; color: #444; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+  .vsp-tab.active { background: #1f2937; color: #fff; }
+  .vsp-form { display: grid; gap: 10px; margin-top: 10px; }
+  .vsp-form label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 3px; }
+  .vsp-form input, .vsp-form select, .vsp-form textarea { width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+  .vsp-btn { border: 0; background: #059669; color: #fff; font-weight: 600; padding: 10px 18px; border-radius: 10px; cursor: pointer; }
+  .vsp-item { display: block; text-decoration: none; color: inherit; }
+  .vsp-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .vsp-meta { font-size: 12.5px; color: #6b7280; margin-top: 3px; }
+  .vsp-pill { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .vsp-open { background: #fff3cd; color: #856404; }
+  .vsp-answered { background: #d4edda; color: #155724; }
+  .vsp-closed { background: #e2e3e5; color: #383d41; }
+  .vsp-new { background: #dc2626; color: #fff; }
+  summary { cursor: pointer; font-weight: 700; }
+</style>
+<div class="vsp-wrap">
+  <div class="vsp-top">
+    <h3>🎫 Support tickets</h3>
+    <span><a class="vsp-back" href="{% url 'vendor_help' %}">Help / FAQ</a> <a class="vsp-back" href="{% url 'vendor_dashboard' %}">Dashboard</a></span>
+  </div>
+
+
+  <div class="vsp-card">
+    <details {% if open_n == 0 and tab == 'open' and not tickets %}open{% endif %}>
+      <summary>➕ Open new ticket</summary>
+      {% if open_n >= max_open %}
+        <div class="vsp-meta">{% t "You have {} tickets open. Resolve or close one before opening a new one." max_open %}</div>
+      {% else %}
+      <form method="post" class="vsp-form">
+        {% csrf_token %}
+        <div>
+          <label for="sp-cat">What is the problem about</label>
+          <select id="sp-cat" name="category">
+            {% for key, label in categories %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label for="sp-sub">Mauzu</label><input id="sp-sub" name="subject" maxlength="120" required></div>
+        <div><label for="sp-body">Details (add the order number if any)</label><textarea id="sp-body" name="body" rows="5" maxlength="2000" required></textarea></div>
+        <div><button class="vsp-btn" type="submit">Send ticket</button></div>
+      </form>
+      {% endif %}
+    </details>
+  </div>
+
+  <div class="vsp-tabs">
+    {% for key, label in tabs.items %}
+      <a class="vsp-tab {% if key == tab %}active{% endif %}" href="?tab={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% for t in tickets %}
+  <a class="vsp-card vsp-item" href="{% url 'vendor_support_detail' t.pk %}">
+    <div class="vsp-row">
+      <span><b>{{ t.number }}</b> &middot; {{ t.subject }}
+        <div class="vsp-meta">{{ t.get_category_display }} &middot; {{ t.updated_at|date:"d M Y, h:i A" }}</div></span>
+      <span>
+        {% if t.vendor_unread %}<span class="vsp-pill vsp-new">New reply</span>{% endif %}
+        <span class="vsp-pill vsp-{{ t.status }}">{{ t.get_status_display }}</span>
+      </span>
+    </div>
+  </a>
+  {% empty %}
+  <div class="vsp-card">{% include 'customer_portal/vendor/_vendor_empty.html' with icon='bi-life-preserver' title='No tickets in this tab' compact=1 %}</div>
+  {% endfor %}
+</div>
+{% endblock %}

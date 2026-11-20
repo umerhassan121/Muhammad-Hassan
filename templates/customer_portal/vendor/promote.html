@@ -1,0 +1,55 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% block title %}Promote my store{% endblock %}
+
+{% block content %}
+<div class="v-page v-page--narrow">
+    <a class="v-back" href="{% url 'vendor_dashboard' %}">&larr; Dashboard</a>
+    {% for m in messages %}<div class="v-alert {% if m.tags == 'error' %}v-alert--error{% endif %}">{{ m }}</div>{% endfor %}
+
+    <div class="v-card">
+        <div class="v-card-head"><h3>&#128226; Promote my store</h3><p>Show your store first to every customer.</p></div>
+        <div class="v-card-body">
+            {% if running %}
+            <div class="v-alert v-alert--ok">&#9989; Your store is sponsored until <b>{{ running.ends_on|date:"d M Y" }}</b>.</div>
+            {% endif %}
+            {% if pending %}
+            <div class="v-alert v-alert--warn">&#9203; Request sent on {{ pending.requested_at|date:"d M Y" }}. Waiting for payment confirmation.</div>
+            {% endif %}
+
+            <div class="v-price">
+                {% if cfg.price > 0 %}Rs {{ cfg.price|floatformat:0 }}{% else %}Ask the shop{% endif %}
+                <small>for {{ cfg.days }} days</small>
+            </div>
+            <ul class="v-list">
+                <li>Your store appears at the top of the store list and on the home page.</li>
+                <li>A &quot;Sponsored&quot; tag makes it stand out.</li>
+                <li>A closed store never goes above open ones.</li>
+                {% if cfg.max_slots %}<li>Only {{ cfg.max_slots }} stores can be sponsored at one time.</li>{% endif %}
+            </ul>
+
+            {% if not pending %}
+            <form method="post">{% csrf_token %}
+                <div class="v-field">
+                    <label for="req_budget">Daily budget (Rs.) &mdash; optional</label>
+                    <input id="req_budget" name="daily_budget" type="number" min="0" step="0.01" placeholder="0" class="v-input">
+                    <div class="v-help">0 = no limit. When the budget is used up, your store is paused for the day.</div>
+                </div>
+                <button type="submit" class="v-btn v-btn--block">{% if running %}Extend sponsorship{% else %}Request sponsorship{% endif %}</button>
+            </form>
+            <div class="v-help" style="margin-top:10px;">You pay the shop directly (cash / bank / JazzCash). It starts after the shop confirms your payment.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% include "customer_portal/vendor/_ads_report.html" %}
+
+    {% if history %}
+    <div class="v-card"><div class="v-card-body">
+        <h5 class="v-title">Earlier sponsorships</h5>
+        {% for h in history %}
+        <div class="v-row"><span>{{ h.starts_on|date:"d M Y" }} &ndash; {{ h.ends_on|date:"d M Y" }}</span><span>{{ h.get_status_display }}</span></div>
+        {% endfor %}
+    </div></div>
+    {% endif %}
+</div>
+{% endblock %}

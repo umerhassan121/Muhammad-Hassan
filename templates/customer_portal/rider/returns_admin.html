@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Failed deliveries{% endblock %}
+{% block page_title %}↩️ Failed deliveries{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <a href="{% url 'rider_manage' %}" class="btn btn-sm btn-outline-secondary mb-3">← Riders</a>
+
+  <h5>Back at the store — decide</h5>
+  {% for f in returned %}
+  <div class="card shadow-sm mb-3 border-danger"><div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <div><b>Order #{{ f.sale_order.order_no }}</b> · {{ f.sale_order.vendor.name|default:"" }} · {{ f.sale_order.customer.name }}
+        <div class="small text-muted">{{ f.get_reason_display }}{% if f.note %} — {{ f.note }}{% endif %} · Rider {{ f.rider.name }} · {{ f.returned_at|date:"d M, h:i A" }}
+          · {{ f.sale_order.payment_method|upper|default:"COD" }}</div></div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="redispatch"><input type="hidden" name="failure_id" value="{{ f.id }}">
+        <button class="btn btn-primary btn-sm" onclick="return confirm('Send this order to riders again?')">🔁 Send again (re-dispatch)</button></form>
+      <form method="post" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="action" value="cancel"><input type="hidden" name="failure_id" value="{{ f.id }}">
+        <input class="form-control form-control-sm" name="reason" placeholder="Reason shown to the customer">
+        <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this order? Wallet money is refunded automatically.')">❌ Cancel order</button></form>
+    </div>
+  </div></div>
+  {% empty %}<div class="text-muted mb-3">Nothing is waiting for a decision.</div>{% endfor %}
+
+  <h5 class="mt-4">Rider still with the order</h5>
+  {% for f in waiting %}
+  <div class="card shadow-sm mb-2"><div class="card-body py-2">
+    <b>Order #{{ f.sale_order.order_no }}</b> · {{ f.sale_order.customer.name }} — {{ f.get_reason_display }}{% if f.note %} ({{ f.note }}){% endif %}
+    · Rider {{ f.rider.name }} ({{ f.rider.phone }}) · {{ f.reported_at|date:"h:i A" }}{% if f.customer_ready %} · <span class="badge bg-success">customer ready</span>{% endif %}
+  </div></div>
+  {% empty %}<div class="text-muted">None.</div>{% endfor %}
+
+  <h5 class="mt-4">Recently closed</h5>
+  <div class="table-responsive"><table class="table table-sm">
+    {% for f in recent %}<tr><td>#{{ f.sale_order.order_no }}</td><td>{{ f.get_reason_display }}</td><td>{{ f.rider.name }}</td><td>{{ f.resolution }}</td><td>{{ f.closed_at|date:"d M, h:i A" }}</td></tr>
+    {% empty %}<tr><td class="text-muted">—</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

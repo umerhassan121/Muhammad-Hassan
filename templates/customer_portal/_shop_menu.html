@@ -1,0 +1,157 @@
+{% comment %}
+  Customer shop ka ek shared menu (Step 2): neeche 5 tab ki bar + Account sheet.
+  {% shop_menu %} se base_shop.html mein ek hi jagah lagta hai (app/templatetags/shop_menu_tags.py).
+  Faisle (kaun sa tab, badge, active) app/customer/shop_menu.py mein hain.
+  Vendor / Rider pages par sm_tabs khali hota hai, is liye kuch nahi dikhta.
+  CSS ab static/css/shop.css (hissa 3) mein hai (Step 4).
+{% endcomment %}
+{% if sm_tabs %}
+
+
+<nav class="sm-bar{% if not sm_show_bar %} sm-nobar{% endif %}" id="smBar" aria-label="Main menu">
+    {% for t in sm_tabs %}
+    <a href="{{ t.url }}" class="sm-tab{% if t.active %} active{% endif %}"{% if t.active %} aria-current="page"{% endif %}{% if t.is_account %} id="smAccountTab" aria-haspopup="dialog" aria-controls="smSheet" aria-expanded="false"{% endif %}>
+        <span class="sm-ico"><i class="bi {% if t.active %}{{ t.icon_on }}{% else %}{{ t.icon }}{% endif %}" aria-hidden="true"></i>{% if t.is_cart %}<span class="sm-badge" data-sm-cart{% if not t.badge %} hidden{% endif %}>{{ t.badge }}</span>{% elif t.badge %}<span class="sm-badge">{{ t.badge }}</span>{% endif %}{% if t.live %}<span class="sm-live" aria-hidden="true"></span>{% endif %}</span>
+        <span class="sm-lbl">{{ t.label }}</span>{% if t.live %}<span class="visually-hidden">Order on the way</span>{% endif %}
+    </a>
+    {% endfor %}
+</nav>
+
+<div class="sm-overlay" id="smOverlay"></div>
+<div class="sm-sheet" id="smSheet" role="dialog" aria-modal="true" aria-labelledby="smSheetTitle">
+    <div class="sm-grab" aria-hidden="true"></div>
+    <div class="sm-head">
+        {% if sm_logged_in %}
+        <div class="sm-avatar" aria-hidden="true">{{ user.customer_profile.customer.name|slice:":1"|upper }}</div>
+        <div class="sm-who"><b id="smSheetTitle">{{ user.customer_profile.customer.name }}</b><span>{{ user.customer_profile.customer.contact_number }}</span></div>
+        {% else %}
+        <div class="sm-avatar" aria-hidden="true"><i class="bi bi-person"></i></div>
+        <div class="sm-who"><b id="smSheetTitle">Welcome</b><span>Login to see your orders</span></div>
+        {% endif %}
+        <button type="button" class="sm-x" data-sm-close aria-label="Close"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+
+    <div class="sm-body">
+        {% if sm_logged_in %}
+        <a class="sm-item" href="{% url 'my_account' %}"><span class="sm-ic"><i class="bi bi-person-circle"></i></span><span class="sm-tx">My account<small>Profile, address, security</small></span><i class="bi bi-chevron-right sm-go"></i></a>
+        <div class="sm-title">Quick access</div>
+        <div class="sm-quick">
+            {% if SHOP.shop_wallet_enabled %}<a class="sm-q" href="{% url 'wallet_page' %}"><span class="sm-qi"><i class="bi bi-wallet2"></i></span><span class="sm-qt">Wallet</span></a>{% endif %}
+            {% if SHOP.shop_favorites_enabled %}<a class="sm-q" href="{% url 'favorites_page' %}"><span class="sm-qi"><i class="bi bi-heart"></i></span><span class="sm-qt">Favourites</span></a>{% endif %}
+            <a class="sm-q" href="{% url 'repeat_plans' %}"><span class="sm-qi"><i class="bi bi-arrow-repeat"></i></span><span class="sm-qt">Repeat orders</span></a>
+            {% if SHOP.shop_pro_enabled %}<a class="sm-q" href="{% url 'pro_page' %}"><span class="sm-qi"><i class="bi bi-stars"></i></span><span class="sm-qt">Pro</span></a>{% endif %}
+        </div>
+        {% else %}
+        {% if SHOP.customer_login_enabled or SHOP.customer_register_enabled %}
+        <div class="sm-cta">
+            {% if SHOP.customer_login_enabled %}<a class="sm-p" href="{% url 'customer_login' %}">Login</a>{% endif %}
+            {% if SHOP.customer_register_enabled %}<a class="sm-s" href="{% url 'customer_register' %}">Register</a>{% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+
+        <div class="sm-title">Help</div>
+        <a class="sm-item" href="{% url 'shop_help' %}"><span class="sm-ic"><i class="bi bi-question-circle"></i></span><span class="sm-tx">Help center</span><i class="bi bi-chevron-right sm-go"></i></a>
+        <a class="sm-item" href="{% url 'shop_faq' %}"><span class="sm-ic"><i class="bi bi-chat-square-text"></i></span><span class="sm-tx">FAQ</span><i class="bi bi-chevron-right sm-go"></i></a>
+        <a class="sm-item" href="{% url 'shop_about' %}"><span class="sm-ic"><i class="bi bi-info-circle"></i></span><span class="sm-tx">About us</span><i class="bi bi-chevron-right sm-go"></i></a>
+        <a class="sm-item" href="{% url 'shop_returns' %}"><span class="sm-ic"><i class="bi bi-arrow-return-left"></i></span><span class="sm-tx">Returns</span><i class="bi bi-chevron-right sm-go"></i></a>
+        <a class="sm-item" href="{% url 'shop_terms' %}"><span class="sm-ic"><i class="bi bi-file-text"></i></span><span class="sm-tx">Terms</span><i class="bi bi-chevron-right sm-go"></i></a>
+        <a class="sm-item" href="{% url 'shop_privacy' %}"><span class="sm-ic"><i class="bi bi-shield-check"></i></span><span class="sm-tx">Privacy</span><i class="bi bi-chevron-right sm-go"></i></a>
+
+        {% if company_whatsapp_url or company_contact_number or company_email or company_website %}
+        <div class="sm-title">Contact us</div>
+        {% if company_whatsapp_url %}<a class="sm-item" href="{{ company_whatsapp_url }}?text=Hello%20{{ company_name|urlencode }}" target="_blank" rel="noopener"><span class="sm-ic"><i class="bi bi-whatsapp"></i></span><span class="sm-tx">WhatsApp</span></a>{% endif %}
+        {% if company_contact_number %}<a class="sm-item" href="tel:{{ company_contact_number }}"><span class="sm-ic"><i class="bi bi-telephone"></i></span><span class="sm-tx">Call<small>{{ company_contact_number }}</small></span></a>{% endif %}
+        {% if company_email %}<a class="sm-item" href="mailto:{{ company_email }}"><span class="sm-ic"><i class="bi bi-envelope"></i></span><span class="sm-tx">Email<small>{{ company_email }}</small></span></a>{% endif %}
+        {% if company_website %}<a class="sm-item" href="{{ company_website }}" target="_blank" rel="noopener"><span class="sm-ic"><i class="bi bi-globe2"></i></span><span class="sm-tx">Website</span></a>{% endif %}
+        {% endif %}
+
+        {% if user.is_authenticated and user.vendor_profile or user.is_authenticated and user.rider_profile or SHOP.vendor_login_enabled or SHOP.vendor_register_enabled or SHOP.rider_login_enabled or SHOP.rider_register_enabled %}
+        <div class="sm-title">Work with us</div>
+        {% if user.is_authenticated and user.vendor_profile %}
+        <a class="sm-item" href="{% url 'vendor_dashboard' %}"><span class="sm-ic"><i class="bi bi-shop"></i></span><span class="sm-tx">Seller dashboard<small>{{ user.vendor_profile.business_name }}</small></span><i class="bi bi-chevron-right sm-go"></i></a>
+        {% else %}
+        {% if SHOP.vendor_login_enabled %}<a class="sm-item" href="{% url 'vendor_login' %}"><span class="sm-ic"><i class="bi bi-shop"></i></span><span class="sm-tx">Seller login</span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% if SHOP.vendor_register_enabled %}<a class="sm-item" href="{% url 'vendor_register' %}"><span class="sm-ic"><i class="bi bi-person-plus"></i></span><span class="sm-tx">Sell with us<small>Register your store</small></span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% endif %}
+        {% if user.is_authenticated and user.rider_profile %}
+        <a class="sm-item" href="{% url 'rider_home' %}"><span class="sm-ic"><i class="bi bi-bicycle"></i></span><span class="sm-tx">Rider dashboard</span><i class="bi bi-chevron-right sm-go"></i></a>
+        {% else %}
+        {% if SHOP.rider_login_enabled %}<a class="sm-item" href="{% url 'rider_login' %}"><span class="sm-ic"><i class="bi bi-bicycle"></i></span><span class="sm-tx">Rider login</span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% if SHOP.rider_register_enabled %}<a class="sm-item" href="{% url 'rider_register' %}"><span class="sm-ic"><i class="bi bi-person-plus"></i></span><span class="sm-tx">Deliver with us<small>Become a rider</small></span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% endif %}
+        {% endif %}
+
+        {% if sm_logged_in %}
+        <a class="sm-item sm-danger" href="{% url 'customer_logout' %}"><span class="sm-ic"><i class="bi bi-box-arrow-right"></i></span><span class="sm-tx">Logout</span></a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function () {
+    var tab = document.getElementById('smAccountTab');
+    var sheet = document.getElementById('smSheet');
+    var overlay = document.getElementById('smOverlay');
+    if (!tab || !sheet || !overlay) return;
+    var lastFocus = null;
+
+    function isOpen() { return sheet.classList.contains('open'); }
+    function open() {
+        lastFocus = document.activeElement;
+        overlay.classList.add('open');
+        sheet.classList.add('open');
+        tab.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('sm-lock');
+        var first = sheet.querySelector('.sm-x');
+        if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+    }
+    function close() {
+        overlay.classList.remove('open');
+        sheet.classList.remove('open');
+        tab.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('sm-lock');
+        if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
+    }
+    /* Account tab: JS chale to sheet kholo; na chale to seedha link (Account / Login page) */
+    tab.addEventListener('click', function (e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+        e.preventDefault();
+        if (isOpen()) close(); else open();
+    });
+    overlay.addEventListener('click', close);
+    var x = sheet.querySelector('[data-sm-close]');
+    if (x) x.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+        if (!isOpen()) return;
+        if (e.key === 'Escape') { close(); return; }
+        if (e.key === 'Tab') {   /* focus sheet ke andar hi ghume */
+            var f = sheet.querySelectorAll('a[href], button');
+            if (!f.length) return;
+            var a = f[0], z = f[f.length - 1];
+            if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+            else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+        }
+    });
+    window.addEventListener('pageshow', function (e) { if (e.persisted && isOpen()) close(); });
+    window.shopMenuClose = close;
+})();
+/* Safety: APK/WebView mein back ya app-switch ke baad scroll-lock atka reh sakta hai.
+   Agar koi sheet / sidebar khula nahi, to lock hata do taake page hamesha scroll ho. */
+(function () {
+    function unlockIfIdle() {
+        var sheet = document.getElementById('smSheet');
+        var sb = document.querySelector('#adminSidebar.open');
+        if (sheet && sheet.classList.contains('open')) return;
+        if (sb) return;
+        document.body.classList.remove('sm-lock');
+        if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
+    }
+    window.addEventListener('pageshow', unlockIfIdle);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) unlockIfIdle(); });
+    window.addEventListener('focus', unlockIfIdle);
+    document.addEventListener('touchstart', unlockIfIdle, { passive: true });
+})();
+</script>
+{% endif %}

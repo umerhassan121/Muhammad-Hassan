@@ -1,0 +1,40 @@
+{% load portal_i18n %}
+{% if payout.on %}
+<h3>🏦 Withdraw earnings</h3>
+<div class="card">
+  <div class="row"><span>Earnings balance</span><b>Rs. {{ payout.s.due|floatformat:0 }}</b></div>
+  {% if payout.s.cash > 0 %}<div class="row"><small>minus COD cash in your hand</small><small><b>− Rs. {{ payout.s.cash|floatformat:0 }}</b></small></div>{% endif %}
+  {% if payout.s.pending > 0 %}<div class="row"><small>minus pending request</small><small><b>− Rs. {{ payout.s.pending|floatformat:0 }}</b></small></div>{% endif %}
+  <div class="sep"></div>
+  <div class="row"><span><b>You can request</b></span><span class="fee">Rs. {{ payout.s.available|floatformat:0 }}</span></div>
+
+  {% if payout.pending %}
+    <div class="cod" style="margin-top:10px">⏳ {% t "Request of <b>Rs. {}</b> ({}) is waiting for the admin." payout.pending.amount|floatformat:0 payout.pending.get_method_display %}</div>
+    <form method="post" action="{% url 'rider_payout_cancel' payout.pending.id %}" style="margin-top:8px">{% csrf_token %}
+      <button class="btn l s">Cancel request</button></form>
+  {% elif payout.s.available >= payout.s.min %}
+    <form method="post" action="{% url 'rider_payout_request' %}" style="margin-top:10px">{% csrf_token %}
+      <input class="proof-in" name="amount" inputmode="decimal" placeholder="{% t "Amount (max Rs. {})" payout.s.available|floatformat:0 %}" required>
+      <select class="proof-in" name="method" id="payMethod" onchange="document.getElementById('payAcc').style.display=this.value==='cash'?'none':'block'">
+        {% for k, label in payout.methods %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+      </select>
+      <div id="payAcc">
+        <input class="proof-in" name="account_title" maxlength="100" placeholder="Account holder name">
+        <input class="proof-in" name="account_no" maxlength="50" placeholder="IBAN / BenefitPay number">
+      </div>
+      <input class="proof-in" name="note" maxlength="200" placeholder="Note (optional)">
+      <button class="btn o">Request payout</button>
+    </form>
+  {% else %}
+    <small class="mut blk mt">{% t "The minimum request is Rs. {}." payout.s.min|floatformat:0 %}</small>
+  {% endif %}
+
+  {% if payout.history %}
+  <div class="sep"></div>
+  <table>
+    {% for x in payout.history %}<tr><td>{{ x.requested_at|date:"d M" }}<br><small class="mut">{{ x.get_method_display }}{% if x.status == 'rejected' and x.reject_reason %} · {{ x.reject_reason }}{% elif x.status == 'paid' and x.reference_no %} · {% t "ref {}" x.reference_no %}{% endif %}</small></td>
+      <td style="text-align:right"><b>Rs. {{ x.amount|floatformat:0 }}</b><br><small>{{ x.get_status_display }}</small></td></tr>{% endfor %}
+  </table>
+  {% endif %}
+</div>
+{% endif %}

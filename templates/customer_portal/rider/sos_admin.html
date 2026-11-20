@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Rider SOS{% endblock %}
+{% block page_title %}🆘 Rider SOS{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <a href="{% url 'rider_manage' %}" class="btn btn-sm btn-outline-secondary mb-3">← Riders</a>
+
+  <h5>Open alerts</h5>
+  {% for a in open_alerts %}
+  <div class="card shadow-sm mb-3 border-danger"><div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <div><b>{{ a.rider.name }}</b> · <a href="tel:{{ a.rider.phone }}">📞 {{ a.rider.phone }}</a>
+        <div class="small text-muted">{{ a.created_at|date:"d M, h:i A" }}
+          {% if a.delivery and a.delivery.sale_order %} · Order #{{ a.delivery.sale_order.order_no }}{% endif %}
+          {% if a.note %} · {{ a.note }}{% endif %}</div></div>
+      <div>{% if a.map %}<a class="btn btn-danger btn-sm" href="{{ a.map }}" target="_blank" rel="noopener">📍 {% if a.location_source == 'live' %}Live location{% else %}Last known location{% endif %}</a>
+        {% else %}<span class="badge bg-secondary">No location - call the rider</span>{% endif %}</div>
+    </div>
+    <form method="post" class="d-flex gap-2 mt-3">{% csrf_token %}<input type="hidden" name="sos_id" value="{{ a.id }}">
+      <input class="form-control form-control-sm" name="admin_note" maxlength="200" placeholder="What was done (optional)">
+      <button class="btn btn-success btn-sm" onclick="return confirm('Close this SOS? Do it only after the rider is safe.')">✅ Rider is safe - close</button>
+    </form>
+  </div></div>
+  {% empty %}<div class="text-muted mb-3">No open SOS alerts.</div>{% endfor %}
+
+  <h5 class="mt-4">Recently closed</h5>
+  <div class="table-responsive"><table class="table table-sm">
+    {% for a in recent %}<tr><td>{{ a.rider.name }}</td><td>{{ a.created_at|date:"d M, h:i A" }}</td><td>{{ a.resolved_by.username|default:"" }}</td><td>{{ a.admin_note }}</td></tr>
+    {% empty %}<tr><td class="text-muted">—</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+/* order_detail.html ka style (Step 6). Sirf us page par `extra_css` se load hota hai. */
+/* --- blok 1 (62 bytes) --- */
+    
+    body {
+        padding-bottom: 90px !important;
+    }
+
+/* --- blok 2 (298 bytes) --- */
+      .rv-stars{display:inline-flex;flex-direction:row-reverse;gap:2px}
+      .rv-stars input{display:none}
+      .rv-stars label{font-size:34px;color:#d1d5db;cursor:pointer;line-height:1}
+      .rv-stars input:checked ~ label,.rv-stars label:hover,.rv-stars label:hover ~ label{color:#f59e0b}
+    
+
+/* --- blok 3 (1591 bytes) --- */
+.timeline {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 20px 0;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 5%;
+    right: 5%;
+    height: 3px;
+    background: #eef0f5;
+    z-index: 0;
+}
+.timeline-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f5ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-size: 1.2rem;
+    border: 3px solid white;
+}
+.timeline-step.completed .timeline-icon {
+    background: #10b981;
+    color: white;
+}
+.timeline-step.current .timeline-icon {
+    background: #f2994a;
+    color: white;
+    animation: pulse 1.5s infinite;
+    transform: scale(1.1);
+}
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(242, 153, 74, 0.4); }
+    50% { box-shadow: 0 0 0 15px rgba(242, 153, 74, 0); }
+}
+.timeline-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+.timeline-step.completed .timeline-label,
+.timeline-step.current .timeline-label {
+    color: #1a1a2e;
+}
+
+@media (max-width: 768px) {
+    .timeline {
+        flex-wrap: wrap;
+    }
+    .timeline::before {
+        display: none;
+    }
+    .timeline-step {
+        flex: 0 0 50%;
+        margin-bottom: 15px;
+    }
+}
+
+    body { background: #f3f5ff; }
+    .card { border-radius: 20px; border: 0; box-shadow: 0 6px 20px rgba(0,0,0,.06); }
+    .timeline-icon { box-shadow: 0 3px 8px rgba(217,72,15,.25); }
+
+
+/* ===== Step 6: pehle inline style="" tha, ab class (dohri class = pehle jaisa zor) ===== */
+.odx1.odx1{font-size:.78rem;opacity:.9;}
+.odx2.odx2{font-size:2rem;font-weight:800;letter-spacing:.5rem;}
+.odx3.odx3{color:#f59e0b;}
+.odx4.odx4{margin:6px 0 4px;background:#f8fafc;border-left:3px solid #d9480f;border-radius:8px;padding:7px 11px;font-size:14px;}
+.odx5.odx5{color:#f59e0b;}
+
+/* ===== Step 6: tap size 44px+ ===== */
+@media (max-width:991.98px){.btn.btn-sm{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}

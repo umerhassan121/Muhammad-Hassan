@@ -1,0 +1,480 @@
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% verbatim %}
+<script>
+(function(){
+  var cfg = JSON.parse(document.getElementById('navcfg').textContent);
+  var BATCH = cfg.mode === 'batch';
+  var LANG = cfg.lang === 'ar' ? 'ar' : 'en';
+  var root = document.getElementById('nv');
+  var $ = function(id){ return document.getElementById(id); };
+  if(LANG === 'ar'){ root.setAttribute('dir', 'rtl'); }
+
+  // ---------- text (English / Arabic) ----------
+  var STR = {
+    en: {gps:'Getting your location…', pickup:'Pick up', drop:'Drop off', stop:'Stop', of:'of', min:'min', arrived:"You've arrived",
+      slide:'Slide to confirm pickup', deliver:'Deliver the order', call:'Call', chat:'WhatsApp', collect:'Collect', paid:'Paid online',
+      next:'Next stop', rerouting:'Rerouting…', nonet:'No internet. Retrying…', noperm:'Location permission is off. Please allow location for this app.',
+      waitgps:'Waiting for GPS signal…', nopin:'No map pin for this stop - use Google Maps', alldone:'All stops completed', arrivedBtn:"I've arrived",
+      openOrder:'Open order', picked:'Picked up ✓', failed:'Could not confirm. Try again.', voiceOn:'Voice guidance on', exitBtn:'Exit',
+      then:'Then', items:'items', toStop:'to this stop', gmaps:'Google Maps', waze:'Waze', backOrder:'Back to the order',
+      nogps:'This device has no GPS. Use Google Maps below.', nomapload:'Map could not load. Use Google Maps below.', confirmFirst:'Confirm this stop to continue',
+      toStore:'To the store', toCust:'To the customer', orders:'orders', home:'Back to orders', stops:'Stops', straight:'straight line'},
+    ar: {gps:'جارٍ تحديد موقعك…', pickup:'استلام الطلب', drop:'تسليم الطلب', stop:'المحطة', of:'من', min:'د', arrived:'لقد وصلت',
+      slide:'اسحب لتأكيد الاستلام', deliver:'تسليم الطلب', call:'اتصال', chat:'واتساب', collect:'حصّل', paid:'مدفوع إلكترونيًا',
+      next:'المحطة التالية', rerouting:'جارٍ إعادة حساب المسار…', nonet:'لا يوجد اتصال. إعادة المحاولة…', noperm:'إذن الموقع مغلق. يرجى السماح بالموقع للتطبيق.',
+      waitgps:'بانتظار إشارة GPS…', nopin:'لا يوجد موقع لهذه المحطة - استخدم خرائط جوجل', alldone:'تم إنجاز جميع المحطات', arrivedBtn:'لقد وصلت',
+      openOrder:'فتح الطلب', picked:'تم الاستلام ✓', failed:'تعذر التأكيد. حاول مرة أخرى.', voiceOn:'تم تشغيل الإرشاد الصوتي', exitBtn:'خروج',
+      then:'ثم', items:'أصناف', toStop:'إلى هذه المحطة', gmaps:'خرائط جوجل', waze:'ويز', backOrder:'العودة إلى الطلب',
+      nogps:'هذا الجهاز لا يدعم GPS. استخدم خرائط جوجل.', nomapload:'تعذر تحميل الخريطة. استخدم خرائط جوجل.', confirmFirst:'أكّد هذه المحطة للمتابعة',
+      toStore:'إلى المتجر', toCust:'إلى العميل', orders:'طلبات', home:'العودة إلى الطلبات', stops:'المحطات', straight:'خط مستقيم'}
+  };
+  function t(k){ return (STR[LANG] && STR[LANG][k]) || STR.en[k] || k; }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  var CUR = cfg.currency || 'Rs.';
+
+  // ---------- icons ----------
+  var P = {
+    straight: '<path d="M12 21V5M6 11l6-6 6 6"/>',
+    right: '<path d="M6 21v-8a4 4 0 0 1 4-4h8M14 4l5 5-5 5"/>',
+    uturn: '<path d="M7 21V9a5 5 0 0 1 10 0v9M13 14l4 4 4-4"/>',
+    round: '<circle cx="12" cy="15" r="4.5"/><path d="M12 10.5V4M9 7l3-3 3 3"/>',
+    flag: '<path d="M6 21V4h11l-2.5 4L17 12H6"/>',
+    bag: '<path d="M6 8h12l1 12H5L6 8zM9 8a3 3 0 0 1 6 0"/>',
+    home: '<path d="M4 11l8-7 8 7M6 10v10h12V10M10 20v-5h4v5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    arrow: '<path d="M9 6l6 6-6 6"/>'
+  };
+  function svg(name, rot, flip){
+    var tr = [];
+    if(flip) tr.push('translate(24 0) scale(-1 1)');
+    if(rot) tr.push('rotate(' + rot + ' 12 12)');
+    return '<svg viewBox="0 0 24 24"><g' + (tr.length ? ' transform="' + tr.join(' ') + '"' : '') + '>' + P[name] + '</g></svg>';
+  }
+  function stepIcon(st){
+    var ty = st.type, md = st.mod || '';
+    if(ty === 'arrive') return svg('flag');
+    if(ty === 'roundabout' || ty === 'rotary' || ty === 'roundabout turn') return svg('round');
+    if(md === 'uturn') return svg('uturn');
+    var left = md.indexOf('left') >= 0;
+    if(md.indexOf('sharp') >= 0) return svg('straight', left ? -135 : 135);
+    if(md.indexOf('slight') >= 0) return svg('straight', left ? -40 : 40);
+    if(md === 'left') return svg('right', 0, true);
+    if(md === 'right') return svg('right');
+    return svg('straight');
+  }
+  var ME_SVG = '<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="20" fill="rgba(37,99,235,.16)"/><path d="M22 7l10 28-10-6-10 6z" fill="#2563eb" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>';
+
+  // ---------- helpers ----------
+  function dM(a, b){
+    var R = 6371000, p1 = a[0]*Math.PI/180, p2 = b[0]*Math.PI/180, dp = p2-p1, dl = (b[1]-a[1])*Math.PI/180;
+    var x = Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+    return 2*R*Math.asin(Math.sqrt(x));
+  }
+  function project(p, a, b){
+    var k = Math.cos(p[0]*Math.PI/180);
+    var ax = (a[1]-p[1])*k, ay = a[0]-p[0], bx = (b[1]-p[1])*k, by = b[0]-p[0];
+    var vx = bx-ax, vy = by-ay, l2 = vx*vx + vy*vy;
+    var tt = l2 ? Math.max(0, Math.min(1, -(ax*vx + ay*vy)/l2)) : 0;
+    var cx = ax + tt*vx, cy = ay + tt*vy;
+    return {d: Math.sqrt(cx*cx + cy*cy)*111320, t: tt};
+  }
+  function fmtDist(m){
+    var u = LANG === 'ar' ? ['م', 'كم'] : ['m', 'km'];
+    if(m < 1000) return (m < 50 ? Math.round(m/5)*5 : Math.round(m/10)*10) + ' ' + u[0];
+    return (m/1000).toFixed(1) + ' ' + u[1];
+  }
+  function mins(s){ return Math.max(1, Math.round(s/60)); }
+  function clockAt(sec){
+    try{ return new Date(Date.now() + sec*1000).toLocaleTimeString(LANG === 'ar' ? 'ar-BH-u-nu-latn' : 'en-US', {hour:'numeric', minute:'2-digit'}); }
+    catch(e){ return ''; }
+  }
+  function store(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){} return null; }
+  function status(msg){ var s = $('nvStatus'); s.textContent = msg || ''; s.style.display = msg ? 'block' : 'none'; }
+  var toastTimer = null;
+  function toast(msg){ var e = $('nvToast'); e.textContent = msg; e.style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(function(){ e.style.display = 'none'; }, 2600); }
+  function stopIconName(s){ return s.kind === 'pickup' ? 'bag' : 'home'; }
+
+  // ---------- stops ----------
+  var stops;
+  if(BATCH){ stops = cfg.stops || []; }
+  else {
+    stops = [{n: 1, key: 'single', kind: cfg.leg === 'store' ? 'pickup' : 'drop', label: cfg.dest_name, addr: '', ll: cfg.dest,
+              orders: [{id: 0, no: cfg.order_no}], phone: '', wa: '', items: 0, cash: 0, cod: false}];
+  }
+  var maxSeen = 0;
+  try{ maxSeen = parseInt(store('nvMax') || '0', 10) || 0; }catch(e){}
+  if(stops.length > maxSeen){ maxSeen = stops.length; store('nvMax', String(maxSeen)); }
+
+  // ---------- state ----------
+  var map = null, meMk = null, remLayer = null, casing = null, stopLayer = null;
+  var route = null, line = [], cum = [], total = 0, fetchedAt = 0;
+  var pos = null, acc = 999, heading = null, follow = true, firstFix = true;
+  var lastFetch = 0, fetching = false, fails = 0, offCount = 0, spoken = {}, arrivedMode = false, arrivedSaid = {};
+  var voice = store('riderNavVoice') !== 'off';
+  var night = (function(){ var s = store('riderNavNight'); if(s === 'on') return true; if(s === 'off') return false;
+    var h = new Date().getHours() + new Date().getMinutes()/60; return h >= 18.5 || h < 5.5; })();
+  var lastKeys = '', lastCur = '', pickupBusy = false, retryTimer = null;
+
+  // ---------- voice ----------
+  function say(txt){
+    if(!voice || !('speechSynthesis' in window)) return;
+    try{
+      var u = new SpeechSynthesisUtterance(txt); u.lang = LANG === 'ar' ? 'ar-SA' : 'en-US';
+      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function inM(m){ return LANG === 'ar' ? ('بعد ' + m + ' متر، ') : ('In ' + m + ' meters, '); }
+
+  // ---------- fab buttons ----------
+  var FAB = {
+    on: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
+    off: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l4 6M21 9l-4 6"/></svg>',
+    night: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>',
+    overview: '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+    center: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'
+  };
+  function paintFabs(){
+    if(!map) return;
+    $('nvVoice').innerHTML = voice ? FAB.on : FAB.off; $('nvVoice').className = 'nv-fab' + (voice ? '' : ' on');
+    $('nvNight').innerHTML = FAB.night; $('nvNight').className = 'nv-fab' + (night ? ' on' : '');
+    $('nvOverview').innerHTML = FAB.overview; $('nvCenter').innerHTML = FAB.center;
+    $('nvCenter').className = 'nv-fab' + (follow ? '' : ' on');
+    root.className = root.className.replace(/\bnight\b/, '').trim() + (night ? ' night' : '');
+  }
+
+  // ---------- map ----------
+  function centerOn(p, zoom){
+    var z = zoom || map.getZoom();
+    var H = root.clientHeight, top = $('nvStatus').getBoundingClientRect().bottom;
+    var cardB = document.querySelector('.nv-card').getBoundingClientRect().bottom;
+    var sheetT = $('nvSheet').getBoundingClientRect().top;
+    var freeC = (Math.max(top, cardB) + sheetT) / 2, d = H/2 - freeC;
+    var pt = map.project(p, z); pt.y += d;
+    map.setView(map.unproject(pt, z), z, {animate: true});
+  }
+  function pinHtml(s, cur){
+    var cls = 'nv-pin' + (s.kind === 'drop' ? ' drop' : '') + (s.ll ? '' : ' nopin') + (cur ? ' cur' : '');
+    return '<div class="' + cls + '">' + s.n + '</div>';
+  }
+  function drawStops(){
+    if(!map) return;
+    if(stopLayer) map.removeLayer(stopLayer);
+    stopLayer = L.layerGroup().addTo(map);
+    for(var i = 0; i < stops.length; i++){
+      var s = stops[i]; if(!s.ll) continue;
+      var sz = i === 0 ? 38 : 30;
+      L.marker(s.ll, {icon: L.divIcon({html: pinHtml(s, i === 0), className: '', iconSize: [sz, sz], iconAnchor: [sz/2, sz/2]}),
+        zIndexOffset: i === 0 ? 500 : 100}).addTo(stopLayer);
+    }
+  }
+  function located(){ var o = []; for(var i = 0; i < stops.length; i++) if(stops[i].ll) o.push(stops[i]); return o; }
+
+  if(cfg.has_map !== false && $('nvMap')){
+    if(!window.L){ status(t('nomapload')); }
+    else {
+      var first = located()[0];
+      map = L.map('nvMap', {zoomControl: false, attributionControl: true}).setView(first ? first.ll : [26.22, 50.58], 15);
+      L.tileLayer(cfg.tile || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: cfg.tile_attr || '&copy; OpenStreetMap'}).addTo(map);
+      casing = L.polyline([], {color: '#fff', weight: 11, opacity: .95, lineCap: 'round', lineJoin: 'round'}).addTo(map);
+      remLayer = L.polyline([], {color: '#2563eb', weight: 6.5, opacity: 1, lineCap: 'round', lineJoin: 'round'}).addTo(map);
+      drawStops();
+      map.on('dragstart', function(){ follow = false; paintFabs(); });
+      $('nvVoice').addEventListener('click', function(){ voice = !voice; store('riderNavVoice', voice ? 'on' : 'off'); paintFabs(); if(voice) say(t('voiceOn')); });
+      $('nvNight').addEventListener('click', function(){ night = !night; store('riderNavNight', night ? 'on' : 'off'); paintFabs(); });
+      $('nvCenter').addEventListener('click', function(){ follow = true; paintFabs(); if(pos) centerOn(pos, Math.max(map.getZoom(), 16)); });
+      $('nvOverview').addEventListener('click', function(){
+        follow = false; paintFabs();
+        var pts = []; for(var i = 0; i < stops.length; i++) if(stops[i].ll) pts.push(stops[i].ll);
+        if(pos) pts.push(pos);
+        if(pts.length) map.fitBounds(L.latLngBounds(pts), {paddingTopLeft: [30, 150], paddingBottomRight: [30, root.clientHeight - $('nvSheet').getBoundingClientRect().top + 30], maxZoom: 17});
+      });
+    }
+  }
+  paintFabs();
+
+  // ---------- route ----------
+  function setRoute(r){
+    route = r; line = r.line; cum = [0]; fetchedAt = Date.now();
+    for(var i = 1; i < line.length; i++) cum.push(cum[i-1] + dM(line[i-1], line[i]));
+    total = cum[cum.length-1] || 1;
+    spoken = {};
+    if(map){ casing.setLatLngs(line); remLayer.setLatLngs(line); }
+    status('');
+  }
+  function curKey(){ return stops.length ? stops[0].key : ''; }
+  function fetchRoute(force){
+    if(!pos || fetching) return;
+    var gap = Math.min(120000, 15000 * Math.pow(2, fails));
+    if(!force && Date.now() - lastFetch < gap) return;
+    if(force && Date.now() - lastFetch < 3500) { clearTimeout(retryTimer); retryTimer = setTimeout(function(){ fetchRoute(true); }, 3600); return; }
+    fetching = true; lastFetch = Date.now();
+    var url = cfg.route_url + '?lat=' + pos[0].toFixed(6) + '&lng=' + pos[1].toFixed(6) + '&lang=' + LANG;
+    if(BATCH && curKey()) url += '&cur=' + encodeURIComponent(curKey());
+    fetch(url, {credentials: 'same-origin'})
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, code: r.status, j: j}; }, function(){ return {ok: false, code: r.status, j: null}; }); })
+      .then(function(x){
+        fetching = false;
+        if(x.ok && x.j && x.j.done){ finish(); return; }
+        if(x.ok && x.j && x.j.success){
+          fails = 0; offCount = 0;
+          if(BATCH && x.j.stops){ applyStops(x.j.stops); }
+          setRoute(x.j); renderAll();
+        } else if(x.code === 429){
+          clearTimeout(retryTimer); retryTimer = setTimeout(function(){ fetchRoute(true); }, 5200);
+        } else {
+          fails++;
+          if(BATCH && x.j && x.j.stops){ applyStops(x.j.stops); renderAll(); }
+          if(!route) status((x.j && x.j.message) || t('nonet'));
+        }
+      })
+      .catch(function(){ fetching = false; fails++; if(!route) status(t('nonet')); });
+  }
+  function applyStops(list){
+    var keys = list.map(function(s){ return s.key; }).join('|');
+    var changed = keys !== lastKeys;
+    stops = list;
+    if(stops.length > maxSeen){ maxSeen = stops.length; store('nvMax', String(maxSeen)); }
+    if(changed){
+      lastKeys = keys; drawStops(); arrivedMode = false; manualArrive = false;
+      if(stops.length && curKey() !== lastCur){
+        if(lastCur){ say(t('next') + ': ' + (stops[0].kind === 'pickup' ? t('pickup') : t('drop')) + ' ' + stops[0].label); }
+        lastCur = curKey();
+      }
+    }
+  }
+  function finish(){
+    store('nvMax', '0');
+    $('nvDoneT').textContent = t('alldone'); $('nvDoneB').textContent = t('home');
+    $('nvDone').style.display = 'flex'; say(t('alldone'));
+    setTimeout(function(){ location.href = cfg.back_url; }, 3500);
+  }
+
+  // ---------- progress ----------
+  function progress(p){
+    var best = {d: 1e12, i: 0, t: 0};
+    for(var i = 0; i < line.length - 1; i++){
+      var r = project(p, line[i], line[i+1]);
+      if(r.d < best.d) best = {d: r.d, i: i, t: r.t};
+    }
+    var along = cum[best.i] + best.t * (cum[best.i+1] - cum[best.i]);
+    return {off: best.d, along: along, i: best.i, t: best.t};
+  }
+
+  // ---------- rendering ----------
+  function etaFor(i, curLive){
+    var s = stops[i]; if(!s) return 0;
+    if(i === 0 && curLive != null) return curLive;
+    if(s.eta_s == null) return null;
+    return Math.max(0, s.eta_s - (Date.now() - fetchedAt)/1000);
+  }
+  function renderStopsUI(curEta, curDist){
+    var cur = stops[0]; if(!cur) return;
+    var tot = Math.max(maxSeen, stops.length), done = tot - stops.length;
+    $('nvCnt').textContent = (BATCH ? (t('stop') + ' ' + (done + 1) + ' ' + t('of') + ' ' + tot) : (cur.kind === 'pickup' ? t('toStore') : t('toCust')));
+    $('nvProg').style.width = (BATCH ? Math.round(done / tot * 100) : 0) + '%';
+    if(curEta != null){
+      $('nvMin').textContent = mins(curEta); $('nvMinU').textContent = t('min');
+      $('nvSub').textContent = clockAt(curEta) + ' · ' + fmtDist(curDist);
+    } else { $('nvMin').textContent = '--'; $('nvSub').textContent = ''; }
+
+    // current stop card
+    var chips = '';
+    for(var i = 0; i < cur.orders.length; i++) chips += '<span class="nv-chip">#' + esc(cur.orders[i].no) + '</span>';
+    if(cur.items) chips += '<span class="nv-chip">' + cur.items + ' ' + t('items') + '</span>';
+    if(cur.kind === 'drop'){ chips += cur.cod ? '<span class="nv-chip cod">' + t('collect') + ' ' + CUR + ' ' + Math.round(cur.cash).toLocaleString('en-US') + '</span>' : (BATCH ? '<span class="nv-chip ok">' + t('paid') + '</span>' : ''); }
+    $('nvCur').innerHTML = '<div class="nv-badge ' + (cur.kind === 'drop' ? 'drop' : '') + (cur.ll ? '' : ' nopin') + '">' + (BATCH ? cur.n : svg(stopIconName(cur)).replace('<svg ', '<svg style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round" ')) + '</div>' +
+      '<div style="min-width:0;flex:1"><div class="t">' + (cur.kind === 'pickup' ? t('pickup') : t('drop')) + ' · ' + esc(cur.label) + '</div>' +
+      (cur.addr ? '<div class="a">' + esc(cur.addr) + '</div>' : '') + (cur.ll ? '' : '<div class="a" style="color:#b45309">' + t('nopin') + '</div>') +
+      '<div class="nv-chips">' + chips + '</div></div>';
+
+    // timeline
+    if(BATCH){
+      var h = '';
+      for(var k = 0; k < stops.length; k++){
+        var s = stops[k], e = etaFor(k, k === 0 ? curEta : null);
+        var oc = ''; for(var j = 0; j < s.orders.length; j++) oc += '#' + esc(s.orders[j].no) + (j < s.orders.length - 1 ? ', ' : '');
+        h += '<div class="nv-li"><div class="nv-badge ' + (s.kind === 'drop' ? 'drop' : '') + (s.ll ? '' : ' nopin') + '">' + s.n + '</div>' +
+             '<div style="min-width:0"><div class="t">' + (s.kind === 'pickup' ? t('pickup') : t('drop')) + ' · ' + esc(s.label) + '</div>' +
+             '<div class="a">' + oc + (s.addr ? ' · ' + esc(s.addr) : '') + '</div></div>' +
+             '<div class="r">' + (e != null ? '<b>' + clockAt(e) + '</b>' + (s.dist_m != null && k > 0 ? fmtDist(s.dist_m) : '') : '') + '</div></div>';
+      }
+      $('nvList').innerHTML = h;
+    }
+    renderExt();
+  }
+  function renderExt(){
+    var ext = cfg.ext || null, h = '';
+    if(BATCH && route && route.google) h = '<a href="' + esc(route.google) + '" target="_blank" rel="noopener">🗺️ ' + t('gmaps') + ' (' + t('stops') + ')</a>';
+    else if(BATCH && cfg.google) h = '<a href="' + esc(cfg.google) + '" target="_blank" rel="noopener">🗺️ ' + t('gmaps') + ' (' + t('stops') + ')</a>';
+    else if(ext) h = '<a href="' + esc(ext.google) + '" target="_blank" rel="noopener">🗺️ ' + t('gmaps') + '</a><a href="' + esc(ext.waze) + '" target="_blank" rel="noopener">🚗 ' + t('waze') + '</a>';
+    h += '<a href="' + esc(cfg.back_url) + '">✖ ' + t('exitBtn') + '</a>';
+    $('nvExt').innerHTML = h;
+  }
+
+  // ---------- arrival action panel ----------
+  function renderAction(){
+    var box = $('nvAct'), cur = stops[0];
+    if(!cur || !arrivedMode){ box.className = 'nv-act'; box.innerHTML = ''; return; }
+    box.className = 'nv-act show';
+    var h = '';
+    if(cur.kind === 'pickup' && BATCH){
+      h += '<div class="nv-slide" id="nvSlide"><div class="nv-knob" id="nvKnob">' + svg('arrow') + '</div><span>' + t('slide') + '</span></div>';
+      if(cur.phone) h += '<div class="nv-row"><a class="nv-btn l" href="tel:' + esc(cur.phone) + '">📞 ' + t('call') + '</a><a class="nv-btn l" href="' + esc(cfg.order_url) + '">' + t('openOrder') + '</a></div>';
+    } else {
+      h += '<a class="nv-btn" href="' + esc(cfg.order_url) + '">' + (cur.kind === 'drop' ? t('deliver') : t('backOrder')) + '</a>';
+      if(cur.phone || cur.wa){
+        h += '<div class="nv-row">' + (cur.phone ? '<a class="nv-btn l" href="tel:' + esc(cur.phone) + '">📞 ' + t('call') + '</a>' : '') +
+             (cur.wa ? '<a class="nv-btn l" href="' + esc(cur.wa) + '" target="_blank" rel="noopener">💬 ' + t('chat') + '</a>' : '') + '</div>';
+      }
+    }
+    box.innerHTML = h;
+    var sl = $('nvSlide'); if(sl) bindSlide(sl);
+  }
+  function bindSlide(sl){
+    var knob = $('nvKnob'), startX = 0, dx = 0, drag = false, max = 0;
+    var rtl = LANG === 'ar';
+    function down(e){ drag = true; var p = e.touches ? e.touches[0] : e; startX = p.clientX; max = sl.clientWidth - knob.clientWidth - 8; e.preventDefault(); }
+    function move(e){
+      if(!drag) return; var p = e.touches ? e.touches[0] : e;
+      dx = (rtl ? -1 : 1) * (p.clientX - startX); dx = Math.max(0, Math.min(max, dx));
+      knob.style[rtl ? 'right' : 'left'] = (4 + dx) + 'px'; if(rtl) knob.style.left = 'auto';
+    }
+    function up(){
+      if(!drag) return; drag = false;
+      if(dx >= max * 0.85){ knob.style[rtl ? 'right' : 'left'] = (4 + max) + 'px'; confirmPickup(sl); }
+      else { dx = 0; knob.style[rtl ? 'right' : 'left'] = '4px'; }
+    }
+    knob.addEventListener('touchstart', down, {passive: false}); knob.addEventListener('mousedown', down);
+    window.addEventListener('touchmove', move, {passive: true}); window.addEventListener('mousemove', move);
+    window.addEventListener('touchend', up); window.addEventListener('mouseup', up);
+  }
+  function confirmPickup(sl){
+    var cur = stops[0]; if(!cur || pickupBusy) return;
+    pickupBusy = true; sl.className += ' busy';
+    var body = []; for(var i = 0; i < cur.orders.length; i++) body.push('order_ids=' + encodeURIComponent(cur.orders[i].id));
+    fetch(cfg.pickup_url, {method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': $('nvCsrf').value}, body: body.join('&')})
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+      .then(function(x){
+        pickupBusy = false;
+        if(x.ok && x.j.success){
+          toast(t('picked')); say(t('picked'));
+          arrivedMode = false; renderAction(); lastFetch = 0; fails = 0; fetchRoute(true);
+        } else { toast((x.j && x.j.message) || t('failed')); sl.className = 'nv-slide'; var k = $('nvKnob'); if(k){ k.style.left = '4px'; k.style.right = ''; } }
+      })
+      .catch(function(){ pickupBusy = false; toast(t('failed')); sl.className = 'nv-slide'; });
+  }
+
+  // ---------- main render (GPS tick / route change) ----------
+  function renderAll(){
+    if(!stops.length) return;
+    var cur = stops[0];
+    var curEta = null, curDist = null, toStop = null;
+    if(pos && cur.ll){ toStop = dM(pos, cur.ll); }
+    if(!route || !pos){
+      if(toStop != null){ curDist = toStop; curEta = null; $('nvBig').textContent = fmtDist(toStop); $('nvText').textContent = pos ? t('straight') : t('gps'); }
+      else { $('nvBig').innerHTML = '&nbsp;'; $('nvText').textContent = pos ? '' : t('gps'); }
+      $('nvIcon').innerHTML = svg(stopIconName(cur));
+      // route na ho (internet / routing server band) tab bhi seedhi doori se arrival pakdo
+      if(cur.ll && toStop != null && toStop < 50){ if(!arrivedMode){ arrivedMode = true; if(!arrivedSaid[cur.key]){ arrivedSaid[cur.key] = 1; say(t('arrived')); } } }
+      else if(toStop != null && toStop > 130 && arrivedMode && !manualArrive){ arrivedMode = false; }
+      renderStopsUI(curEta, curDist); renderAction(); if(!arrivedMode) renderActionHint(); return;
+    }
+    var pr = progress(pos), ratio = (route.distance_m || total) / total;
+    var doneM = pr.along * ratio;
+    var legs = route.legs || [], L0 = legs[0] || {end_m: route.distance_m, distance_m: route.distance_m, duration_s: route.duration_s};
+    var legIdx = 0; for(var i = 0; i < legs.length; i++){ if(legs[i].end_m > doneM - 30){ legIdx = i; break; } legIdx = i; }
+    var toCur = Math.max(0, L0.end_m - doneM);
+    if(legIdx > 0) toCur = 0;
+    var tgt = located()[0] || cur;                 // route hamesha pehle MAP-PIN wale stop tak hota hai
+    curDist = (cur.ll && toStop != null && toStop < 60) ? toStop : toCur;
+    curEta = (L0.distance_m ? L0.duration_s * (toCur / L0.distance_m) : 0);
+    if(!cur.ll){ curDist = null; curEta = null; }  // current stop ka pin nahi: sahi ETA nahi ban sakti
+
+    // route trimmed to what is still ahead
+    if(map){
+      var seg = line[pr.i], nx = line[pr.i + 1] || seg;
+      var snap = [seg[0] + (nx[0] - seg[0]) * pr.t, seg[1] + (nx[1] - seg[1]) * pr.t];
+      var rest = [snap].concat(line.slice(pr.i + 1));
+      remLayer.setLatLngs(rest); casing.setLatLngs(rest);
+    }
+
+    // maneuver banner: steps of the current leg only
+    var cs = []; for(var s = 0; s < route.steps.length; s++) if((route.steps[s].leg || 0) === legIdx) cs.push(route.steps[s]);
+    var idx = 0; for(var q = 0; q < cs.length; q++){ if(cs[q].start_m <= doneM + 5) idx = q; }
+    var nxt = cs[idx + 1] || cs[cs.length - 1];
+    if(nxt){
+      var toNext = Math.max(0, nxt.start_m - doneM), isEnd = nxt.type === 'arrive';
+      $('nvIcon').innerHTML = isEnd ? svg(stopIconName(tgt)) : stepIcon(nxt);
+      $('nvBig').textContent = isEnd ? fmtDist(toCur) : fmtDist(toNext);
+      $('nvText').textContent = isEnd ? ((tgt.kind === 'pickup' ? t('pickup') : t('drop')) + ' · ' + tgt.label) : nxt.text;
+      var after = cs[idx + 2], thenTxt = '';
+      if(!isEnd && after && (after.start_m - nxt.start_m) < 160){ thenTxt = t('then') + ' ' + after.text; }
+      $('nvThen').textContent = thenTxt;
+      var key = 'L' + legIdx + 's' + (idx + 1);
+      if(!isEnd){
+        if(toNext <= 250 && toNext > 60 && !spoken[key + 'a']){ spoken[key + 'a'] = 1; say(inM(Math.round(toNext/10)*10) + nxt.text); }
+        else if(toNext <= 60 && !spoken[key + 'b']){ spoken[key + 'b'] = 1; spoken[key + 'a'] = 1; say(nxt.text); }
+      }
+    }
+    if(legIdx > 0){ $('nvThen').textContent = t('confirmFirst'); }
+
+    // arrival at the current stop
+    if(cur.ll && curDist != null && curDist < 50){
+      if(!arrivedMode){ arrivedMode = true; renderAction(); }
+      if(!arrivedSaid[cur.key]){ arrivedSaid[cur.key] = 1; say(t('arrived') + ' - ' + (cur.kind === 'pickup' ? t('pickup') : t('drop')) + ' ' + cur.label); }
+    } else if(curDist != null && curDist > 130 && arrivedMode && !manualArrive){ arrivedMode = false; renderAction(); }
+
+    // off route: 2 consecutive fixes > 60 m away
+    if(pr.off > 60 && acc <= 100){ offCount++; if(offCount >= 2){ status(t('rerouting')); fetchRoute(true); } } else offCount = 0;
+
+    renderStopsUI(curEta, curDist);
+    if(!arrivedMode) renderActionHint();
+  }
+  var manualArrive = false;
+  function renderActionHint(){
+    // "I've arrived" shortcut when GPS is poor (inside malls / near buildings): visible within 300 m
+    var cur = stops[0], box = $('nvAct');
+    if(!cur || arrivedMode) return;
+    var d = (pos && cur.ll) ? dM(pos, cur.ll) : 1e9;
+    if(d <= 300){
+      box.className = 'nv-act show';
+      box.innerHTML = '<button type="button" class="nv-btn l" id="nvArr">' + t('arrivedBtn') + '</button>';
+      $('nvArr').addEventListener('click', function(){ manualArrive = true; arrivedMode = true; renderAction(); });
+    } else if(box.className.indexOf('show') >= 0 && !manualArrive){ box.className = 'nv-act'; box.innerHTML = ''; }
+  }
+
+  // ---------- sheet toggle ----------
+  $('nvHandle').addEventListener('click', function(){
+    root.className = root.className.indexOf(' open') >= 0 ? root.className.replace(' open', '') : root.className + ' open';
+  });
+
+  // ---------- GPS ----------
+  function onPos(g){
+    pos = [g.coords.latitude, g.coords.longitude]; acc = g.coords.accuracy || 999;
+    var sp = g.coords.speed;
+    if(map){
+      if(typeof g.coords.heading === 'number' && !isNaN(g.coords.heading) && sp > 1.5) heading = g.coords.heading;
+      var ic = L.divIcon({html: '<div class="nv-me" id="nvMe">' + ME_SVG + '</div>', className: '', iconSize: [44, 44], iconAnchor: [22, 22]});
+      if(!meMk){ meMk = L.marker(pos, {icon: ic, zIndexOffset: 1000}).addTo(map); } else { meMk.setLatLng(pos); }
+      var me = $('nvMe'); if(me && heading != null) me.style.transform = 'rotate(' + heading + 'deg)';
+      var spd = $('nvSpeed'); if(sp != null && sp >= 0){ spd.style.display = 'flex'; $('nvSpeedV').textContent = Math.round(sp * 3.6); }
+      if(firstFix){ firstFix = false; centerOn(pos, 17); status(''); }
+      else if(follow){ centerOn(pos); }
+    } else if(firstFix){ firstFix = false; status(''); }
+    fetchRoute(false);
+    renderAll();
+  }
+  function onErr(e){ status(e && e.code === 1 ? t('noperm') : t('waitgps')); }
+  if(!('geolocation' in navigator)){ status(t('nogps')); }
+  else navigator.geolocation.watchPosition(onPos, onErr, {enableHighAccuracy: true, maximumAge: 2000, timeout: 20000});
+
+  // periodic refresh (ETAs, new orders added mid-trip) + when the app comes back to the foreground
+  setInterval(function(){ if(BATCH && pos && route) fetchRoute(false); if(route) renderAll(); }, 20000);
+  function lock(){ try{ if(navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); }catch(e){} }
+  lock(); document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible'){ lock(); if(pos){ lastFetch = 0; fetchRoute(true); } } });
+
+  renderAll();
+})();
+</script>
+{% endverbatim %}

@@ -1,0 +1,39 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+{% load portal_i18n %}
+{% block title %}Pro{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_pro.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<div class="pr-wrap">
+  {% for m in messages %}<div class="pr-alert">{{ m }}</div>{% endfor %}
+  <div class="pr-hero">
+    <h1>⭐ Pro</h1>
+    <div>Free delivery{% if cfg.min_order > 0 %} {% t "(on orders above Rs. {})" cfg.min_order|floatformat:0 %}{% endif %}</div>
+    <div class="pr-price">Rs. {{ cfg.price|floatformat:0 }} <small class="prx1">/ {% t "{} days" cfg.days %}</small></div>
+  </div>
+
+  <div class="pr-card">
+    {% if active %}
+      <div class="pr-status pr-ok">✅ {% t "You are a Pro member until {}." active.ends_on|date:"d M Y" %}</div>
+    {% elif pending %}
+      <div class="pr-status pr-wait">⏳ {% t "Your request was received ({}). The shop will activate Pro once you pay." pending.requested_at|date:"d M" %}</div>
+    {% else %}
+      <ul class="prx2">
+        <li>🚚 Delivery fee waived on every eligible order</li>
+        <li>📆 {% t "Valid for {} days" cfg.days %}</li>
+        <li>💵 Pay the shop by cash, bank or JazzCash; online payment is not available yet</li>
+      </ul>
+      {% if can_pay_wallet %}
+      <form method="post" action="{% url 'pro_buy_wallet' %}" style="margin-bottom:10px;">{% csrf_token %}
+        <button class="pr-btn" type="submit">{% t "Pay Rs. {} from wallet and get Pro now" cfg.price|floatformat:0 %}</button>
+        <div class="prx3">{% t "Wallet balance: Rs. {}" wallet_balance|floatformat:0 %}</div>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'pro_request' %}">{% csrf_token %}
+        <button class="pr-btn" type="submit">Send Pro request</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

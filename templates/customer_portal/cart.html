@@ -1,0 +1,383 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}Cart - {{ company_name }}{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_cart.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h1 class="mb-0 cart-title">
+            🛒 Your Cart
+            <span class="badge bg-primary cart-badge">{% t "{} items" cart_items|length %}</span>
+        </h1>
+        <a href="{% url 'shop_home' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-plus-circle"></i> Add More Items
+        </a>
+    </div>
+    
+    {% if cart_items %}
+
+    {% if store and store.is_vendor_store %}
+    <div class="alert alert-light border d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <b><i class="bi bi-shop"></i> {{ store.name }}</b>
+            <span class="text-muted small d-block">
+                {% t "Delivery Rs. {}" store.delivery_fee|floatformat:0 %}{% if store.time_text %} &middot; {{ store.time_text }}{% endif %}
+                {% if store.min_order > 0 %} &middot; {% t "Minimum order Rs. {}" store.min_order|floatformat:0 %}{% endif %}
+            </span>
+        </div>
+    </div>
+    {% if not store.is_open %}
+    <div class="alert alert-danger">🔒 {{ store.closed_message }}</div>
+    {% elif not store.min_ok %}
+    <div class="alert alert-warning">
+        ⚠️ {% t "{} has a minimum order of Rs. {}." store.name store.min_order|floatformat:0 %}
+        {% t "Add <b>Rs. {}</b> more to order." store.short_by|floatformat:0 %}
+        {% if store.profile %}<a href="{% url 'store_detail' store.profile.pk %}" class="alert-link">Add more from this store</a>{% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+    
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+
+            {% if free_delivery_progress %}
+            <div class="free-ship {% if free_delivery_progress.unlocked %}unlocked{% endif %}">
+                {% if free_delivery_progress.unlocked %}
+                <div class="free-ship-text"><i class="bi bi-gift-fill"></i> {% t "Congratulations! You unlocked <b>FREE Delivery</b>" %}</div>
+                {% else %}
+                <div class="free-ship-text"><i class="bi bi-truck"></i> {% t "Add <b>Rs. {}</b> more and get <b>FREE Delivery</b>" free_delivery_progress.remaining|floatformat:0 %}</div>
+                {% endif %}
+                <div class="free-ship-bar"><div class="free-ship-fill" style="width: {{ free_delivery_progress.percent }}%;"></div></div>
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm border-0 cart-card" id="cartCard">
+                <div class="cart-loading" id="cartLoading"><div class="spinner-border text-success"></div></div>
+                <div class="card-body p-3 p-md-4">
+                    
+                    {% for item in cart_items %}
+                    <div class="cart-item" data-product-id="{{ item.cart_key }}">
+                        <div class="row g-3 align-items-center">
+                            
+                            <div class="col-3 col-md-2">
+                                <a href="{% url 'shop_product_detail' item.product_id %}">
+                                    {% if item.image %}
+                                        <img src="{{ item.image }}" alt="{{ item.name }}" class="cart-item-image">
+                                    {% else %}
+                                        <div class="cart-item-placeholder">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+                                    {% endif %}
+                                </a>
+                            </div>
+                            
+                            <div class="col-9 col-md-4">
+                                <a href="{% url 'shop_product_detail' item.product_id %}" class="text-decoration-none">
+                                    <h6 class="cart-item-name mb-1">{{ item.name }}</h6>
+                                </a>
+                                {% if item.options_text %}<div class="small text-muted mb-1"><i class="bi bi-sliders"></i> {{ item.options_text }}</div>{% endif %}
+                                {% if item.note %}<div class="small text-muted mb-1"><i class="bi bi-chat-left-text"></i> {{ item.note }}</div>{% endif %}
+                                <div class="cart-item-price">
+                                    <i class="bi bi-tag"></i> 
+                                    Rs. {{ item.price|floatformat:0 }} <small class="text-muted">/ unit</small>
+                                </div>
+                                <div class="cart-item-line d-md-none">Rs. {{ item.price|floatformat:0 }} × {{ item.quantity }}</div>
+                            </div>
+                            
+                            <div class="col-6 col-md-3">
+                                <label class="small text-muted d-md-none mb-1">Quantity</label>
+                                <div class="qty-control">
+                                    <button type="button" class="qty-btn" onclick="changeCartQty('{{ item.cart_key }}', -1)">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" class="qty-input cart-qty"
+                                           value="{{ item.quantity }}" min="1"
+                                           data-product-id="{{ item.cart_key }}"
+                                           id="qty-{{ item.cart_key }}">
+                                    <button type="button" class="qty-btn" onclick="changeCartQty('{{ item.cart_key }}', 1)">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-6 col-md-3 text-end">
+                                <div class="cart-item-total">Rs. {{ item.total|floatformat:0 }}</div>
+                                <button class="btn-remove-item remove-item"
+                                        data-product-id="{{ item.cart_key }}" title="Remove">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr class="my-3">{% endif %}
+                    {% endfor %}
+                    
+                </div>
+            </div>
+            
+            <div class="d-md-none mt-3">
+                <a href="{% url 'shop_home' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 summary-card">
+                <div class="card-body p-4">
+                    
+                    <h5 class="mb-3 summary-title">
+                        <i class="bi bi-receipt"></i> Order Summary
+                    </h5>
+                    
+{% include 'customer_portal/_offer_box.html' with next_page='cart' %}
+                    <div class="summary-row">
+                        <span class="text-muted">
+                            <i class="bi bi-box-seam"></i> {% t "Subtotal ({} items):" cart_items|length %}
+                        </span>
+                        <strong>Rs. {{ subtotal|floatformat:0 }}</strong>
+                    </div>
+                    
+                    <div class="summary-row">
+                        <span class="text-muted"><i class="bi bi-truck"></i> Delivery:</span>
+                        {% if delivery_charges > 0 %}
+                            <strong>Rs. {{ delivery_charges|floatformat:0 }}</strong>
+                        {% else %}
+                            <span class="text-success fw-bold">
+                                <i class="bi bi-check-circle"></i> Free
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+{% include 'customer_portal/_offer_rows.html' with part='mid' %}
+                    <div class="summary-row">
+                        <span class="text-muted"><i class="bi bi-cash-coin"></i> Payment:</span>
+                        <span class="cod-pill">Cash on Delivery</span>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <div class="grand-total-section mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="grand-total-label">Grand Total</div>
+                                <small class="text-muted">Final Amount</small>
+                            </div>
+                            <div class="grand-total-value">Rs. {{ total_amount|floatformat:0 }}</div>
+                        </div>
+                    </div>
+{% include 'customer_portal/_offer_rows.html' with part='end' %}
+                    
+                    {% if store and store.is_vendor_store and not store.is_open or store and store.is_vendor_store and not store.min_ok %}
+                    <button type="button" class="btn btn-checkout w-100 btn-lg mb-2" disabled style="opacity:.55;">
+                        <i class="bi bi-lock-fill"></i> {% if not store.is_open %}{% t "Store is closed" %}{% else %}{% t "Min. order Rs. {}" store.min_order|floatformat:0 %}{% endif %}
+                    </button>
+                    {% else %}
+                    {% if SHOP.shop_ordering_enabled %}
+                    <div class="cart-cta-hint"><i class="bi bi-hand-index-thumb-fill"></i> Click here to place your order</div>
+                    <a href="{% url 'checkout' %}" class="btn-checkout-pro mb-2">
+                        <span class="cp-left">
+                            <i class="bi bi-bag-check-fill cp-icon"></i>
+                            <span class="cp-text"><strong>Proceed to Checkout</strong><small>Cash on Delivery</small></span>
+                        </span>
+                        <span class="cp-right">Rs. {{ total_amount|floatformat:0 }} <i class="bi bi-arrow-right-circle-fill"></i></span>
+                    </a>
+                    {% else %}
+                    <div class="alert alert-secondary text-center mb-2"><i class="bi bi-pause-circle"></i> Ordering is closed right now. Please try again later.</div>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <a href="{% url 'shop_home' %}" class="btn btn-outline-secondary w-100 d-none d-md-block">
+                        <i class="bi bi-arrow-left"></i> Continue Shopping
+                    </a>
+                    
+                    <div class="cart-trust">
+                        <span><i class="bi bi-cash-coin"></i> Delivery par payment</span>
+                        <span><i class="bi bi-x-circle"></i> No advance payment</span>
+                        <span><i class="bi bi-shield-lock-fill"></i> 100% Secure</span>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    {% else %}
+    
+    {% url 'shop_home' as shop_url %}
+    {% include 'customer_portal/_empty_state.html' with icon='bi-cart-x' title='Your cart is empty' text='Add your favourite products and order with Cash on Delivery.' cta_url=shop_url cta_label='Start shopping' %}
+    
+    {% endif %}
+    
+</div>
+
+{% if cart_items %}
+<div class="mobile-checkout-bar d-lg-none">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <div class="mobile-checkout-label">Total</div>
+            <div class="mobile-checkout-total">Rs. {{ total_amount|floatformat:0 }}</div>
+            {% if store and store.is_vendor_store and not store.is_open %}<div class="mobile-checkout-why">Store is closed right now</div>
+            {% elif store and store.is_vendor_store and not store.min_ok %}<div class="mobile-checkout-why">{% t "Add Rs. {} more to order" store.short_by|floatformat:0 %}</div>{% endif %}
+        </div>
+        {% if store and store.is_vendor_store and not store.is_open or store and store.is_vendor_store and not store.min_ok %}
+        <button type="button" class="btn btn-checkout-mobile" disabled style="opacity:.55;">
+            <i class="bi bi-lock-fill"></i> {% if not store.is_open %}{% t "Band" %}{% else %}{% t "Min Rs. {}" store.min_order|floatformat:0 %}{% endif %}
+        </button>
+        {% else %}
+        {% if SHOP.shop_ordering_enabled %}
+        <a href="{% url 'checkout' %}" class="btn-checkout-mobile-pro">
+            <i class="bi bi-bag-check-fill"></i> Checkout <i class="bi bi-arrow-right-circle-fill"></i>
+        </a>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<div class="cp-overlay" id="cpConfirm" role="dialog" aria-modal="true">
+    <div class="cp-box">
+        <div class="cp-ico"><i class="bi bi-trash3-fill"></i></div>
+        {% t "<h5>Remove item?</h5>" %}
+        <p id="cpItemName">This product will be removed from your cart.</p>
+        <div class="cp-actions">
+            <button type="button" class="cp-no" id="cpNo">No</button>
+            <button type="button" class="cp-yes" id="cpYes">Yes, remove</button>
+        </div>
+    </div>
+</div>
+<script>
+function askRemove(productId) {
+    const box = document.getElementById('cpConfirm');
+    const nameEl = document.querySelector('.cart-item[data-product-id="' + productId + '"] .cart-item-name');
+    document.getElementById('cpItemName').textContent = nameEl ? nameEl.textContent.trim() + ' ' + '{% t "will be removed from the cart." %}' : '{% t "This product will be removed from the cart." %}';
+    const close = () => { box.classList.remove('show'); document.removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    document.getElementById('cpNo').onclick = close;
+    document.getElementById('cpYes').onclick = function () { close(); removeItem(productId); };
+    box.onclick = (e) => { if (e.target === box) close(); };
+    document.addEventListener('keydown', onKey);
+    box.classList.add('show');
+}
+function showCartLoading() { const l = document.getElementById('cartLoading'); if (l) l.classList.add('show'); }
+function hideCartLoading() { const l = document.getElementById('cartLoading'); if (l) l.classList.remove('show'); }
+
+function changeCartQty(productId, delta) {
+    const input = document.getElementById('qty-' + productId);
+    if (!input) return;
+    
+    const newValue = parseInt(input.value) + delta;
+    
+    if (newValue < 1) {
+        askRemove(productId);
+        return;
+    }
+    
+    input.value = newValue;
+    updateCartQuantity(productId, newValue);
+}
+
+document.querySelectorAll('.cart-qty').forEach(input => {
+    input.addEventListener('change', function() {
+        const productId = this.dataset.productId;
+        const quantity = parseInt(this.value);
+        
+        if (quantity < 1) {
+            this.value = 1;
+            return;
+        }
+        
+        updateCartQuantity(productId, quantity);
+    });
+    
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+        }
+    });
+});
+
+function updateCartQuantity(productId, quantity) {
+    const input = document.getElementById('qty-' + productId);
+    if (input) input.disabled = true;
+    showCartLoading();
+    
+    fetch('{% url "update_cart" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            cart_key: String(productId),
+            product_id: parseInt(String(productId).split(':')[0], 10),
+            quantity: quantity
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            shopUx.error(data.message);
+            hideCartLoading();
+            if (input) input.disabled = false;
+        }
+    })
+    .catch(err => {
+        shopUx.netError();
+        hideCartLoading();
+        if (input) input.disabled = false;
+    });
+}
+
+document.querySelectorAll('.remove-item').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const productId = this.dataset.productId;
+        
+        askRemove(productId);
+    });
+});
+
+function removeItem(productId) {
+    const item = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+    if (item) {
+        item.style.transition = 'all 0.3s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+    }
+    
+    fetch(`/shop/cart/remove/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            setTimeout(() => location.reload(), 300);
+        }
+    })
+    .catch(err => {
+        shopUx.netError();
+        if (item) {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }
+    });
+}
+</script>
+{% endblock %}

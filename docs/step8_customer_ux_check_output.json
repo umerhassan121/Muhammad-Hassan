@@ -1,0 +1,120 @@
+[
+  {
+    "check": "3 baar click par sirf 1 POST",
+    "ok": true,
+    "detail": 1
+  },
+  {
+    "check": "submit par spinner (.is-loading)",
+    "ok": true,
+    "detail": "is-loading"
+  },
+  {
+    "check": "button band ho gaya",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "check": "offline: laal patti dikhi",
+    "ok": true,
+    "detail": "block"
+  },
+  {
+    "check": "offline patti normal flow mein (fixed nahi)",
+    "ok": true,
+    "detail": "static"
+  },
+  {
+    "check": "offline patti header ko nahi dhaanpti",
+    "ok": true,
+    "detail": "header top=54.0625 patti=54.0625"
+  },
+  {
+    "check": "offline: link browser error page par nahi gaya",
+    "ok": true,
+    "detail": "http://t.local/page"
+  },
+  {
+    "check": "offline: toast aaya",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "check": "toast neeche ki bar ke ooper",
+    "ok": true,
+    "detail": "toast bottom=556.0474243164062 bar top=615"
+  },
+  {
+    "check": "offline: form nahi gaya",
+    "ok": true,
+    "detail": "http://t.local/page"
+  },
+  {
+    "check": "fetchJson offline",
+    "ok": true,
+    "detail": "offline"
+  },
+  {
+    "check": "online wapas: patti hat gayi",
+    "ok": true,
+    "detail": "none"
+  },
+  {
+    "check": "fetchJson /api/ok -> ok",
+    "ok": true,
+    "detail": [
+      "ok",
+      false
+    ]
+  },
+  {
+    "check": "fetchJson /api/401 -> session",
+    "ok": true,
+    "detail": [
+      "session",
+      false
+    ]
+  },
+  {
+    "check": "fetchJson /api/500 -> server",
+    "ok": true,
+    "detail": [
+      "server",
+      true
+    ]
+  },
+  {
+    "check": "fetchJson /api/html -> html",
+    "ok": true,
+    "detail": [
+      "html",
+      true
+    ]
+  },
+  {
+    "check": "fetchJson /api/404 -> notfound",
+    "ok": true,
+    "detail": [
+      "notfound",
+      false
+    ]
+  },
+  {
+    "check": "fetchJson timeout (shayad chala gaya = unsure)",
+    "ok": true,
+    "detail": [
+      "timeout",
+      true
+    ]
+  },
+  {
+    "check": "Urdu mein patti ka text",
+    "ok": true,
+    "detail": "انٹرنیٹ نہیں ہے۔ کنکشن چیک کریں۔"
+  },
+  {
+    "check": "page par JS error nahi",
+    "ok": true,
+    "detail": []
+  }
+]

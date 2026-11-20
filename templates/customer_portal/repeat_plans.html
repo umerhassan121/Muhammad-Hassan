@@ -1,0 +1,29 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+{% load portal_i18n %}
+
+{% block title %}Repeat orders{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_repeat_plans.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<div class="rp-wrap">
+  <h1><i class="bi bi-arrow-repeat"></i> Repeat orders</h1>
+  <div class="rp-sub">Milk, vegetables and other regular items: we remind you on time and add them to your cart in one tap.</div>
+  {% for p in plans %}
+  <div class="rp-card {% if p.pk == due_id %}due{% endif %} {% if not p.is_active %}off{% endif %}">
+    <div class="rp-store">{% if p.store_name %}{{ p.store_name }}{% else %}{% t "Your store" %}{% endif %}</div>
+    <div class="rp-items">{{ p.summary }}</div>
+    <div class="rp-when"><i class="bi bi-clock"></i> {{ p.schedule_text }}{% if not p.is_active %} &middot; <span>Paused</span>{% endif %}</div>
+    {% if p.is_active %}<div class="rp-next">{% t "Next reminder: {}" p.next_run_at|date:"D, d M, h:i A" %}</div>{% endif %}
+    <div class="rp-actions">
+      <form method="post" action="{% url 'repeat_plan_run' p.pk %}">{% csrf_token %}<button type="submit" class="rp-go"><i class="bi bi-cart-plus"></i> Order now</button></form>
+      <form method="post" action="{% url 'repeat_plan_toggle' p.pk %}">{% csrf_token %}<button type="submit" class="rp-alt">{% if p.is_active %}Pause{% else %}Resume{% endif %}</button></form>
+      <form method="post" action="{% url 'repeat_plan_delete' p.pk %}" onsubmit="return confirm('{% t "Delete this repeat order?" %}')">{% csrf_token %}<button type="submit" class="rp-del">Delete</button></form>
+    </div>
+  </div>
+  {% empty %}
+  {% url 'my_orders' as orders_url %}
+  {% include 'customer_portal/_empty_state.html' with icon='bi-arrow-repeat' title='No repeat orders yet.' text='Open a delivered order and tap Repeat this order.' cta_url=orders_url cta_label='My orders' %}
+  {% endfor %}
+</div>
+{% endblock %}

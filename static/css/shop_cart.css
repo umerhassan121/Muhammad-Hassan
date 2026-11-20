@@ -1,0 +1,118 @@
+/* Cart page ka style (Step 5). Sirf cart.html (extra_css) load karta hai.
+   Tap size 44px+, "Total + Checkout" patti safe-area ke saath, neeche ki bar cart par mobile par chhupi hoti hai (shop.css .sm-nobar). */
+body { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important; }
+.mobile-checkout-why { font-size: .72rem; font-weight: 700; color: #b45309; line-height: 1.25; margin-top: 3px; max-width: 150px; }
+
+.cart-title { font-size: 1.5rem; font-weight: 800; }
+.cart-badge { font-size: 0.8rem; vertical-align: middle; padding: 6px 12px; border-radius: 20px; }
+.cart-card { border-radius: 16px; }
+.cart-item { transition: all 0.2s ease; }
+.cart-item:hover { background: #f8f9ff; border-radius: 12px; padding: 8px; margin: -8px; }
+.cart-item-image { width: 70px; height: 70px; object-fit: cover; border-radius: 12px; border: 2px solid #eef0f5; transition: all 0.3s; }
+.cart-item-image:hover { transform: scale(1.05); border-color: #d9480f; }
+.cart-item-placeholder { width: 70px; height: 70px; border-radius: 12px; background: linear-gradient(135deg, #f8f9fc 0%, #e8ecf4 100%); display: flex; align-items: center; justify-content: center; color: #c5c9d3; font-size: 1.8rem; border: 2px solid #eef0f5; }
+.cart-item-name { font-size: 0.95rem; font-weight: 700; color: #1a1a2e; line-height: 1.3; }
+.cart-item-name:hover { color: #d9480f; }
+.cart-item-price { font-size: 0.85rem; color: #d9480f; font-weight: 600; }
+.qty-control { display: inline-flex; align-items: center; border: 2px solid #e0e7ff; border-radius: 10px; overflow: hidden; background: white; height: 44px; }
+.qty-btn { width: 44px; min-width: 44px; height: 100%; border: none; background: #f8f9fc; color: #d9480f; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.qty-btn:hover { background: #d9480f; color: white; }
+.qty-input { width: 50px; height: 100%; border: none; text-align: center; font-weight: 700; font-size: 0.95rem; color: #1a1a2e; background: white; outline: none; -moz-appearance: textfield; }
+.qty-input::-webkit-inner-spin-button, .qty-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cart-item-total { font-size: 1.1rem; font-weight: 900; color: #11998e; margin-bottom: 6px; }
+.btn-remove-item { background: transparent; border: 1px solid #fce4e4; color: #dc3545; font-size: 0.8rem; min-height: 44px; min-width: 44px; padding: 4px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.btn-remove-item:hover { background: #dc3545; color: white; border-color: #dc3545; }
+.summary-card { border-radius: 16px; position: sticky; top: 20px; }
+.summary-title { font-weight: 800; color: #1a1a2e; font-size: 1.1rem; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 0.9rem; }
+.grand-total-section { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 12px; padding: 16px 20px; color: white; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3); }
+.grand-total-label { font-weight: 800; font-size: 1rem; color: white; line-height: 1; }
+.grand-total-section small { color: rgba(255,255,255,0.9) !important; font-size: 0.7rem; }
+.grand-total-value { font-weight: 900; font-size: 1.4rem; color: white; }
+.btn-checkout { background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%); border: none; font-weight: 700; padding: 12px; border-radius: 10px; transition: all 0.3s; color: white; }
+.btn-checkout:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(217,72,15, 0.4); color: white; }
+.trust-badges i { font-size: 1.2rem; }
+.empty-cart-icon { font-size: 6rem; color: #e0e3eb; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.mobile-checkout-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 999; border-top: 2px solid #eef0f5; }
+.mobile-checkout-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.mobile-checkout-total { font-size: 1.3rem; font-weight: 900; color: #11998e; line-height: 1; }
+.btn-checkout-mobile { min-height: 48px; background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%); color: white; border: none; font-weight: 700; padding: 10px 24px; border-radius: 10px; font-size: 0.95rem; transition: all 0.3s; }
+.btn-checkout-mobile:hover { transform: scale(1.05); color: white; }
+@media (max-width: 768px) {
+    .cart-title { font-size: 1.2rem; }
+    .cart-item-name { font-size: 0.85rem; }
+    .cart-item-price { font-size: 0.75rem; }
+    .cart-item-image, .cart-item-placeholder { width: 60px; height: 60px; }
+    .cart-item-total { font-size: 0.95rem; }
+    .qty-input { width: 48px; font-size: 0.9rem; }
+    .grand-total-value { font-size: 1.2rem; }
+}
+
+.cart-card { border-radius: 22px; box-shadow: 0 6px 22px rgba(0,0,0,.07) !important; }
+.alert-light.border { background: #fcefe4; border-color: #fdc7a5 !important; border-radius: 16px; }
+.btn-checkout, .btn-checkout-mobile { border-radius: 28px !important; }
+/* ===== Professional cart upgrade ===== */
+.cart-card { position: relative; overflow: hidden; }
+.cart-loading { position: absolute; inset: 0; background: rgba(255,255,255,.7); display: none; align-items: center; justify-content: center; z-index: 5; }
+.cart-loading.show { display: flex; }
+.cart-item-line { font-size: .78rem; color: #64748b; }
+
+.free-ship { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 16px; padding: 12px 16px; margin-bottom: 14px; }
+.free-ship.unlocked { background: #f0fdf4; border-color: #bbf7d0; }
+.free-ship-text { font-size: .85rem; color: #9a3412; margin-bottom: 8px; }
+.free-ship.unlocked .free-ship-text { color: #166534; margin-bottom: 0; }
+.free-ship-bar { height: 8px; background: #fde4c8; border-radius: 99px; overflow: hidden; }
+.free-ship-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #22c55e); border-radius: 99px; transition: width .6s; }
+.free-ship.unlocked .free-ship-bar { display: none; }
+
+.cod-pill { background: #dcfce7; color: #166534; font-weight: 700; font-size: .78rem; padding: 4px 10px; border-radius: 99px; }
+
+.cart-cta-hint { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 8px; }
+.cart-cta-hint i { font-size: 18px; animation: cpPoint 1.1s ease-in-out infinite; }
+@keyframes cpPoint { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+.btn-checkout-pro {
+    min-height: 48px;
+    position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; padding: 15px 16px; border-radius: 14px; text-decoration: none; color: #fff !important; border: 0;
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 55%, #14b8a6 100%);
+    box-shadow: 0 8px 24px rgba(22,163,74,.45); transition: transform .2s, box-shadow .2s;
+    animation: cpPulse 2s ease-out infinite;
+}
+.btn-checkout-pro::after { content: ''; position: absolute; top: 0; left: -75%; width: 50%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,.35), transparent); transform: skewX(-20deg);
+    animation: cpShine 3s ease-in-out infinite; pointer-events: none; }
+@keyframes cpPulse { 0% { box-shadow: 0 8px 24px rgba(22,163,74,.45), 0 0 0 0 rgba(34,197,94,.55); }
+    70% { box-shadow: 0 8px 24px rgba(22,163,74,.45), 0 0 0 14px rgba(34,197,94,0); }
+    100% { box-shadow: 0 8px 24px rgba(22,163,74,.45), 0 0 0 0 rgba(34,197,94,0); } }
+@keyframes cpShine { 0%,60% { left: -75%; } 100% { left: 130%; } }
+.btn-checkout-pro:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(22,163,74,.55); color: #fff; }
+.btn-checkout-pro:active { transform: scale(.98); }
+.btn-checkout-pro .cp-left, .btn-checkout-pro .cp-right { display: flex; align-items: center; gap: 10px; }
+.btn-checkout-pro .cp-icon { font-size: 26px; line-height: 1; }
+.btn-checkout-pro .cp-text { display: flex; flex-direction: column; line-height: 1.2; }
+.btn-checkout-pro .cp-text strong { font-size: 17px; font-weight: 800; }
+.btn-checkout-pro .cp-text small { font-size: 12px; font-weight: 600; opacity: .92; }
+.btn-checkout-pro .cp-right { background: rgba(255,255,255,.2); padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 16px; white-space: nowrap; }
+.btn-checkout-pro .cp-right i { font-size: 19px; }
+
+.cart-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 12px; font-size: 12px; font-weight: 600; color: #166534; }
+.cart-trust span { display: inline-flex; align-items: center; gap: 5px; }
+.cart-trust i { color: #16a34a; }
+
+.btn-checkout-mobile-pro { min-height: 48px; display: inline-flex; align-items: center; gap: 8px; color: #fff !important; text-decoration: none; font-weight: 800; font-size: 1rem;
+    padding: 12px 20px; border-radius: 14px; background: linear-gradient(135deg, #16a34a, #22c55e); animation: cpPulse 2s ease-out infinite; }
+.mobile-checkout-bar { border-top: 3px solid #22c55e; }
+
+/* Remove confirm popup */
+.cp-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px); }
+.cp-overlay.show { display: flex; }
+.cp-box { background: #fff; width: 100%; max-width: 380px; border-radius: 20px; padding: 24px 20px 18px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+.cp-box .cp-ico { width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 10px; }
+.cp-box h5 { font-weight: 800; margin-bottom: 4px; }
+.cp-box p { color: #64748b; font-size: .9rem; margin-bottom: 16px; }
+.cp-actions { display: flex; gap: 10px; }
+.cp-actions button { flex: 1; border: 0; border-radius: 12px; padding: 12px; font-weight: 800; cursor: pointer; }
+.cp-no { background: #f1f5f9; color: #334155; }
+.cp-yes { background: #dc2626; color: #fff; }

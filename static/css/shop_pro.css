@@ -1,0 +1,22 @@
+/* pro.html ka style (Step 6). Sirf us page par `extra_css` se load hota hai. */
+/* --- blok 1 (1080 bytes) --- */
+  .pr-wrap { max-width: 560px; margin: 24px auto 40px; padding: 0 14px; }
+  .pr-hero { background: linear-gradient(135deg,#f59e0b,#e11d48); color: #fff; border-radius: 22px; padding: 24px; text-align: center; box-shadow: 0 10px 40px rgba(245,158,11,.3); }
+  .pr-hero h1 { font-size: 28px; font-weight: 800; margin: 0 0 6px; }
+  .pr-price { font-size: 34px; font-weight: 800; margin: 10px 0 0; }
+  .pr-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 18px rgba(0,0,0,.07); padding: 18px 20px; margin-top: 16px; }
+  .pr-card li { padding: 6px 0; font-size: 15px; list-style: none; }
+  .pr-btn { width: 100%; border: 0; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#f59e0b,#e11d48); cursor: pointer; }
+  .pr-status { border-radius: 14px; padding: 12px 14px; font-weight: 700; }
+  .pr-ok { background: #e8f5e9; color: #1b5e20; }
+  .pr-wait { background: #fff7e0; color: #8a6200; }
+  .pr-alert { padding: 11px 15px; border-radius: 12px; margin-bottom: 10px; background: #e8f5e9; color: #1b5e20; }
+
+
+/* ===== Step 6: pehle inline style="" tha, ab class (dohri class = pehle jaisa zor) ===== */
+.prx1.prx1{font-size:15px;font-weight:600;}
+.prx2.prx2{padding:0;margin:0 0 14px;}
+.prx3.prx3{font-size:12.5px;color:#6b7280;margin-top:4px;}
+
+/* ===== Step 6: tap size 44px+ ===== */
+.pr-btn{min-height:48px}

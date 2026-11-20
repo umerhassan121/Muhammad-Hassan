@@ -1,0 +1,1050 @@
+name: Django CI/CD Pipeline
+
+# DB design: MySQL runs ONLY on the GitHub runner (service container).
+# Persistence = encrypted snapshot stored in the GitHub Actions CACHE (no rclone / Google Drive).
+#   start of run : restore latest cache entry -> local MySQL (first ever run: fresh DB)
+#   every 30 min : local snapshot only (cache can only be saved at the end of the job)
+#   end of run   : stop server, final snapshot -> save as new cache entry, keep latest 3
+# Note: GitHub deletes cache entries not used for 7 days, so keep the workflow running at least weekly.
+# EXPORT: every run also uploads the encrypted snapshot as an Artifact (keeps latest 3, 14 days) so you can download a copy.
+# SERVER: gunicorn (1 worker, 8 threads) + WhiteNoise for /static/; automatic fallback to runserver if gunicorn cannot start.
+# FAST RESTART: (1) pip + cloudflared are cached and installed BEFORE waiting for the old run; (2) the old run keeps
+#   serving until the new run has finished installing (max 8 min), so the site is only down for stop + snapshot + restore.
+# AUTO-RESTART: GitHub kills any job at 6 hours. After ~5h10m this run starts a NEW run of itself
+#   (workflow_dispatch). The new run waits for this one, this one sees the newer run, stops the server,
+#   takes the final snapshot, and the new run restores it and goes live again (a few minutes gap only).
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      restore_action:
+        description: 'Empty = latest. Or snapshot file name to restore, or "list" to print available snapshots.'
+        required: false
+        default: ''
+      build_apk:
+        description: 'true = is run ke sath Rider + Vendor + Customer + Admin Android APK bhi banao (Artifacts mein milegi). Push par APK khud banti hai, yeh sirf manual run ke liye hai.'
+        required: false
+        default: 'false'
+  repository_dispatch:
+    types: [ backup_now, restore_now, migrate_now ]
+
+permissions:
+  contents: read
+  actions: write   # needed to delete old cache entries
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+
+    services:
+      local-mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: local_django_db
+        ports:
+          - 3306:3306
+        options: "--health-cmd=\"mysqladmin ping -proot\" --health-interval=10s --health-timeout=5s --health-retries=10"
+
+        
+        
+    env:
+      EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME }}
+      BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+      EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+      DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      # Pictures/media Cloudinary pe save hon (runner restart pe local media/ khali ho jata hai)
+      MEDIA_STORAGE: "cloudinary"
+      CI_MODE: 'true'
+      # Django -> runner-local MySQL (hardcoded, no secrets needed)
+      DB_HOST: "127.0.0.1"
+      DB_PORT: "3306"
+      DB_USER: "root"
+      DB_PASS: "root"
+      DB_NAME: "local_django_db"
+      BACKUP_SECRET_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_SALT_KEY: ${{ secrets.DJANGO_SALT_KEY }}
+      SUPERUSER_NAME: ${{ secrets.SUPERUSER_NAME }}
+      SUPERUSER_EMAIL: ${{ secrets.SUPERUSER_EMAIL }}
+      SUPERUSER_PASSWORD: ${{ secrets.SUPERUSER_PASSWORD }}
+      # WhatsApp automatic order updates (Meta Cloud API); khali ho to kuch nahi jata
+      WHATSAPP_CLOUD_TOKEN: ${{ secrets.WHATSAPP_CLOUD_TOKEN }}
+      WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+      # Firebase push (Rider app): service account JSON ka base64 (Django isay decode karke FCM bhejta hai)
+      FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
+      # Fixed Cloudflare tunnel domain
+      CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+      SITE_DOMAIN: "kwl.uqn88.store"
+      ALLOWED_HOSTS: "kwl.uqn88.store,localhost,127.0.0.1"
+      CSRF_TRUSTED_ORIGINS: "https://kwl.uqn88.store"
+      # License: fixed machine id (runner machine-id changes every run) + optional first-time key
+      LICENSE_MACHINE_SEED: ${{ secrets.LICENSE_MACHINE_SEED }}
+      LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
+      PYTHONUNBUFFERED: "1"
+      RUNNING_IN_TERMUX: "false"
+      # Public repo: run logs are visible to everyone, so server logs stay hidden unless you set the repo
+      # Variable SHOW_DEBUG_LOGS=true (Settings > Secrets and variables > Actions > Variables) while debugging.
+      SHOW_DEBUG_LOGS: ${{ vars.SHOW_DEBUG_LOGS }}
+
+    steps:
+      - name: Record job start time
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Restore pip cache
+        id: pip_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py313-${{ hashFiles('.github/workflows/deploy.yml') }}
+          restore-keys: |
+            pip-${{ runner.os }}-py313-
+
+      - name: Install Pips & System Tools
+        run: |
+          # apt-get update sirf tab jab seedhi install na ho (tez)
+          PKGS="mysql-client-core-8.0 libmysqlclient-dev pkg-config build-essential"
+          sudo apt-get install -y --no-install-recommends $PKGS \
+            || { sudo apt-get update && sudo apt-get install -y --no-install-recommends $PKGS; }
+          python -m pip install --upgrade pip
+          pip install mysqlclient gunicorn "django-import-export>=3.3.0" "django>=5.2,<5.3" django-dbbackup django-axes reportlab openpyxl pillow python-barcode qrcode cryptography python-dotenv requests django-pwa whitenoise django-cloudinary-storage rembg numpy firebase-admin
+
+      - name: Save pip cache (right after install, not at job end)
+        if: steps.pip_cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py313-${{ hashFiles('.github/workflows/deploy.yml') }}
+
+      - name: Cloudflared cache key (refreshes monthly)
+        run: echo "CF_MONTH=$(date +%Y-%m)" >> "$GITHUB_ENV"
+
+      - name: Restore cloudflared binary cache
+        id: cf_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/cf-bin
+          key: cloudflared-linux-amd64-${{ env.CF_MONTH }}
+
+      - name: Install Cloudflare Tunnel (cloudflared)
+        run: |
+          mkdir -p ~/cf-bin
+          if [ ! -x ~/cf-bin/cloudflared ]; then
+            curl -L --retry 3 --output ~/cf-bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+            chmod +x ~/cf-bin/cloudflared
+          else
+            echo "cloudflared restored from cache."
+          fi
+          sudo install -m 0755 ~/cf-bin/cloudflared /usr/local/bin/cloudflared
+
+      - name: Save cloudflared cache
+        if: steps.cf_cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ~/cf-bin
+          key: cloudflared-linux-amd64-${{ env.CF_MONTH }}
+
+      - name: Wait for Previous Workflow Runs to Complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The older run must finish (stop server + final snapshot) BEFORE this run restores.
+          CURRENT_RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          while true; do
+            # Agar is se NAYA run bhi aa chuka hai to yeh run kaam ka nahi (abhi tak server/DB ko haath nahi lagaya):
+            # khud ko cancel kar do, warna har beech wala run pip install + restore + server start karke
+            # tab jaakar band hota hai aur chain mein minute-ghante lag jate hain. Sirf push runs cancel hote hain
+            # (backup_now / restore_now / migrate_now wali requests kabhi cancel nahi hoti).
+            if [ "${{ github.event_name }}" = "push" ]; then
+              LATEST_RUN_ID=$(gh api "repos/$REPO/actions/runs?branch=$BRANCH&per_page=1" --jq '.workflow_runs[0].id' 2>/dev/null || echo "$CURRENT_RUN_ID")
+              if [ -n "$LATEST_RUN_ID" ] && [ "$LATEST_RUN_ID" -gt "$CURRENT_RUN_ID" ]; then
+                echo "Newer run ($LATEST_RUN_ID) already exists -> this run is superseded. Cancelling (nothing started yet)."
+                gh run cancel "$CURRENT_RUN_ID" -R "$REPO" || true
+                sleep 120
+                exit 1
+              fi
+            fi
+            # Atke hue ("ghost") queued runs: 15 minute se zyada purane queued runs asal mein kabhi shuru nahi hue
+            # (normal Cancel bhi "Failed to cancel" deta hai). Unhein force-cancel karo aur intezar mein mat gino.
+            RUNS_JSON=$(gh api "repos/$REPO/actions/runs?branch=$BRANCH&per_page=30" 2>/dev/null || echo '{"workflow_runs":[]}')
+            for ID in $(echo "$RUNS_JSON" | jq -r --argjson cur "$CURRENT_RUN_ID" '.workflow_runs[] | select(.id < $cur and .status == "queued" and ((now - (.created_at | fromdateiso8601)) > 900)) | .id'); do
+              echo "Stale queued run $ID (15+ min) -> force-cancel"
+              gh api -X POST "repos/$REPO/actions/runs/$ID/force-cancel" >/dev/null 2>&1 || gh run cancel "$ID" -R "$REPO" || true
+            done
+            OLDER_RUNS=$(echo "$RUNS_JSON" | jq -c --argjson cur "$CURRENT_RUN_ID" '[.workflow_runs[] | select(.id < $cur and (.status == "in_progress" or (.status == "queued" and ((now - (.created_at | fromdateiso8601)) <= 900)))) | .id]')
+            TOTAL_PENDING=$(echo "$OLDER_RUNS" | jq 'length')
+            if [ "${TOTAL_PENDING:-0}" -gt 0 ]; then
+              echo "Older run(s) $OLDER_RUNS still active. Holding (ID: $CURRENT_RUN_ID)..."
+              sleep 3
+            else
+              echo "No older active runs. Proceeding."
+              break
+            fi
+          done
+
+      - name: Parse Trigger Source & Inputs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VAL: ${{ github.event.inputs.restore_action }}
+          CLIENT_PAYLOAD_FILE: ${{ github.event.client_payload.file }}
+        run: |
+          RESTORE_TARGET="latest"
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            ACTION_TYPE="${{ github.event.action }}"
+            if [ "$ACTION_TYPE" = "restore_now" ]; then
+              RESTORE_TARGET="${CLIENT_PAYLOAD_FILE:-latest}"
+            fi
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Web trigger: waiting 10 seconds buffer..."
+            sleep 10
+            if [ -n "$INPUT_VAL" ]; then RESTORE_TARGET="$INPUT_VAL"; fi
+          fi
+          echo "RESTORE_TARGET=$RESTORE_TARGET" >> "$GITHUB_ENV"
+          # latest -> placeholder key (never exists, so restore-keys prefix picks the newest entry)
+          # otherwise the given value is treated as an exact cache key
+          if [ "$RESTORE_TARGET" = "latest" ] || [ "$RESTORE_TARGET" = "r" ] || [ "$RESTORE_TARGET" = "list" ] || [ "$RESTORE_TARGET" = "ls" ] || [ -z "$RESTORE_TARGET" ]; then
+            echo "RESTORE_KEY=db-snapshot-latest-placeholder" >> "$GITHUB_ENV"
+          else
+            echo "RESTORE_KEY=$RESTORE_TARGET" >> "$GITHUB_ENV"
+          fi
+          echo "Restore target: $RESTORE_TARGET"
+
+      - name: Setup Snapshot Helpers
+        run: |
+          mkdir -p "$RUNNER_TEMP/snapshots"
+          echo "SNAP_DIR=$RUNNER_TEMP/snapshots" >> "$GITHUB_ENV"
+          echo "HELPER_DIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+          # --- encrypt / decrypt helper (same Fernet scheme as old snapshots) ---
+          cat > "$RUNNER_TEMP/crypt.py" <<'PYEOF'
+          import base64, os, sys
+          from cryptography.fernet import Fernet
+          from cryptography.hazmat.primitives import hashes
+          from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+          mode, src, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+          kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                           salt=b'django_backup_salt_2026', iterations=100000)
+          f = Fernet(base64.urlsafe_b64encode(kdf.derive(os.environ['BACKUP_SECRET_KEY'].encode())))
+          data = open(src, 'rb').read()
+          open(dst, 'wb').write(f.encrypt(data) if mode == 'enc' else f.decrypt(data))
+          PYEOF
+
+          # --- snapshot script: dump -> sanity check -> encrypt -> write to SNAP_DIR (saved to cache at job end) ---
+          cat > "$RUNNER_TEMP/snapshot.sh" <<'SHEOF'
+          #!/usr/bin/env bash
+          # usage: snapshot.sh <periodic|final>
+          MODE="${1:-periodic}"
+          cd "$GITHUB_WORKSPACE"
+          exec 9>"$HELPER_DIR/snapshot.lock"
+          flock 9
+          set -uo pipefail
+
+          # --- license.key lives in a file, not in the DB: keep an encrypted copy in the cache dir ---
+          if [ -f license.key ]; then
+            python "$HELPER_DIR/crypt.py" enc license.key "$SNAP_DIR/license.key.enc" \
+              && echo "[snapshot:$MODE] license.key stored" \
+              || echo "[snapshot:$MODE] license.key store FAILED"
+          fi
+
+          TS=$(date +"%Y%m%d_%H%M%S")
+          NAME="db_snapshot_${TS}.sql.gz.enc"
+          RAW="$HELPER_DIR/raw_${TS}.sql.gz"
+
+          if ! MYSQL_PWD=root mysqldump -h 127.0.0.1 -P 3306 -u root \
+                --set-gtid-purged=OFF --column-statistics=0 --single-transaction \
+                --no-tablespaces local_django_db | gzip > "$RAW"; then
+            echo "[snapshot:$MODE] mysqldump FAILED - nothing uploaded"; exit 1
+          fi
+
+          NEW_SIZE=$(stat -c %s "$RAW")
+          OLD_SIZE=$(cat "$HELPER_DIR/restored_size" 2>/dev/null || echo 0)
+          # Safety: never overwrite good history with a near-empty dump
+          if [ "$NEW_SIZE" -lt 5000 ] || { [ "$OLD_SIZE" -gt 0 ] && [ "$NEW_SIZE" -lt $((OLD_SIZE / 2)) ]; }; then
+            echo "[snapshot:$MODE] SUSPICIOUS dump size ($NEW_SIZE bytes vs restored $OLD_SIZE) - upload skipped"
+            curl -s -H "Title: DB snapshot SKIPPED (suspicious size)" -H "Tags: warning" \
+              -d "new=$NEW_SIZE restored=$OLD_SIZE run=$GITHUB_RUN_ID" ntfy.sh/hassan_shops_db || true
+            rm -f "$RAW"; exit 1
+          fi
+
+          python "$HELPER_DIR/crypt.py" enc "$RAW" "$HELPER_DIR/$NAME" || { echo "encrypt failed"; exit 1; }
+          # keep only the newest snapshot in SNAP_DIR (the cache entry stays small)
+          rm -f "$SNAP_DIR"/db_snapshot_*.enc
+          mv "$HELPER_DIR/$NAME" "$SNAP_DIR/$NAME"
+          rm -f "$RAW"
+          echo "[snapshot:$MODE] stored $NAME ($NEW_SIZE bytes raw)"
+
+          if [ "$MODE" = "final" ]; then
+            curl -s -H "Title: DB Backup Successful" -H "Tags: white_check_mark,database" \
+              -d "Snapshot: $NAME (raw $NEW_SIZE bytes)" ntfy.sh/hassan_shops_db || true
+          fi
+          SHEOF
+          chmod +x "$RUNNER_TEMP/snapshot.sh"
+
+      - name: List available cache snapshots
+        if: ${{ env.RESTORE_TARGET == 'list' || env.RESTORE_TARGET == 'ls' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "=== AVAILABLE SNAPSHOTS (cache keys) ==="
+          gh cache list -R "${{ github.repository }}" --key db-snapshot- --sort created_at --order desc || true
+          echo "=== list done; continuing with LATEST ==="
+
+      - name: Restore snapshot from GitHub cache
+        id: restore_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/snapshots
+          key: ${{ env.RESTORE_KEY }}
+          restore-keys: |
+            db-snapshot-
+
+      - name: Restore Database from cache (or start fresh)
+        run: |
+          echo "Cache matched key: '${{ steps.restore_cache.outputs.cache-matched-key }}'"
+
+          FILE=$(ls "$SNAP_DIR"/db_snapshot_*.enc 2>/dev/null | sort | tail -n 1 || true)
+
+          # --- license.key: cache copy wins (it has the latest renewal); else bootstrap from secret LICENSE_KEY ---
+          if [ -f "$SNAP_DIR/license.key.enc" ]; then
+            python "$HELPER_DIR/crypt.py" dec "$SNAP_DIR/license.key.enc" ./license.key \
+              && echo "License restored from cache."
+          elif [ -n "${LICENSE_KEY:-}" ]; then
+            printf '%s' "$LICENSE_KEY" > ./license.key
+            echo "License written from secret LICENSE_KEY."
+          else
+            echo "No license in cache and no LICENSE_KEY secret (trial/read-only rules apply)."
+          fi
+          [ -f license.key ] && sha256sum license.key | cut -d' ' -f1 > "$HELPER_DIR/license_hash"
+
+          if [ -z "$FILE" ]; then
+            echo "No snapshot in cache -> FIRST RUN, starting with a fresh empty database."
+            echo "0" > "$HELPER_DIR/restored_size"
+            echo "DB_READY=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          echo "Restoring snapshot: $(basename "$FILE")"
+          python "$HELPER_DIR/crypt.py" dec "$FILE" ./restored.sql.gz
+          stat -c %s ./restored.sql.gz > "$HELPER_DIR/restored_size"
+          gunzip -c ./restored.sql.gz > ./restored.sql
+
+          MYSQL_PWD=root mysql -h 127.0.0.1 -P 3306 -u root -e "DROP DATABASE IF EXISTS local_django_db; CREATE DATABASE local_django_db CHARACTER SET utf8mb4;"
+          MYSQL_PWD=root mysql -h 127.0.0.1 -P 3306 -u root local_django_db < ./restored.sql
+          rm -f ./restored.sql ./restored.sql.gz
+
+          TABLES=$(MYSQL_PWD=root mysql -h 127.0.0.1 -P 3306 -u root -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='local_django_db';")
+          echo "Restore OK: $TABLES tables loaded."
+          echo "DB_READY=true" >> "$GITHUB_ENV"
+
+      - name: Apply Migrations & Ensure Superuser
+        run: |
+          python manage.py makemigrations --noinput || true
+          if python manage.py migrate --noinput; then
+            echo "Migrations applied."
+          else
+            echo "Migration conflict. Forcing state sync with --fake..."
+            python manage.py migrate --fake --noinput
+          fi
+
+          python manage.py shell -c "
+          import os
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          username = os.environ.get('SUPERUSER_NAME')
+          email = os.environ.get('SUPERUSER_EMAIL')
+          password = os.environ.get('SUPERUSER_PASSWORD')
+          if username and password:
+              user, created = User.objects.get_or_create(username=username, defaults={'email': email})
+              user.set_password(password)
+              user.is_staff = True
+              user.is_superuser = True
+              user.save()
+              print(f'Superuser {username} verified.')
+          else:
+              print('Skipping superuser (credentials not set).')
+          "
+
+      - name: Expire finished vendor launch offers
+        run: python manage.py expire_commission_promos || true
+
+      - name: Email setup check (secrets ki qeemat nahi dikhata)
+        run: python manage.py check_email || true
+
+      - name: Stop Here for migrate_now
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'migrate_now' }}
+        run: |
+          bash "$HELPER_DIR/snapshot.sh" final || true
+          curl -d "Forced migration done on local DB and snapshot saved." ntfy.sh/hshshehgag
+          echo "STOP_AFTER_MIGRATE=true" >> "$GITHUB_ENV"
+
+      - name: Process & Place PWA Icons from Project Root
+        if: env.STOP_AFTER_MIGRATE != 'true'
+        run: |
+          python -c "
+          import os
+          from PIL import Image
+
+          project_dir = os.getcwd()
+          target_dir = os.path.join(project_dir, 'ceo_module', 'static', 'ceo', 'images')
+          os.makedirs(target_dir, exist_ok=True)
+          extensions = ('.png', '.jpg', '.jpeg', '.webp')
+          found_images = [os.path.join(project_dir, f) for f in os.listdir(project_dir) if f.lower().endswith(extensions)]
+          if not found_images:
+              print('No source image found in project root.')
+          else:
+              src = found_images[0]
+              print(f'Processing source image: {src}')
+              with Image.open(src) as img:
+                  img = img.convert('RGBA')
+                  for w, h, fn in [(192, 192, 'icon-192.png'), (512, 512, 'icon-512.png')]:
+                      img.resize((w, h), Image.Resampling.LANCZOS).save(os.path.join(target_dir, fn), 'PNG')
+                      print(f'Saved: {fn}')
+          "
+
+      - name: Collect Static Files
+        if: env.STOP_AFTER_MIGRATE != 'true'
+        run: |
+          mkdir -p static
+          python manage.py collectstatic --noinput --clear
+
+      - name: Check and Kill Existing Local Processes
+        if: env.STOP_AFTER_MIGRATE != 'true'
+        run: |
+          pkill -f "manage.py runserver" || true
+          pkill -f "gunicorn_app:application" || true
+          pkill -f "cloudflared" || true
+          sleep 2
+
+      - name: Start Django Server & Cloudflare Tunnel (fixed domain)
+        if: env.STOP_AFTER_MIGRATE != 'true'
+        run: |
+          touch django.log tunnel.log
+
+          start_runserver() {
+            PYTHONUNBUFFERED=1 python -u manage.py runserver 0.0.0.0:8000 --insecure >> django.log 2>&1 &
+          }
+
+          # ---- Production server: gunicorn (falls back to runserver by itself if it cannot start) ----
+          # The project settings are not part of this workflow, so the WSGI module is detected at runtime.
+          WSGI_FILE=$(find . -maxdepth 2 -name wsgi.py -not -path "./venv/*" -not -path "./.git/*" | head -n 1)
+          WSGI_MODULE=""
+          if [ -n "$WSGI_FILE" ]; then
+            WSGI_MODULE=$(echo "${WSGI_FILE#./}" | sed 's#\.py$##; s#/#.#g')
+          fi
+          echo "WSGI module: ${WSGI_MODULE:-NOT FOUND}"
+
+          cat > gunicorn_app.py <<'PYEOF'
+          import os
+          from importlib import import_module
+
+          application = import_module(os.environ["WSGI_MODULE"]).application
+          # runserver --insecure used to serve /static/; gunicorn does not, so wrap the app with WhiteNoise
+          # (harmless if the project already uses the WhiteNoise middleware).
+          try:
+              from django.conf import settings
+              from whitenoise import WhiteNoise
+              _root = getattr(settings, "STATIC_ROOT", None)
+              _url = str(getattr(settings, "STATIC_URL", "/static/") or "/static/")
+              if _root and os.path.isdir(str(_root)) and not _url.startswith("http"):
+                  application = WhiteNoise(application, root=str(_root), prefix=_url.strip("/"))
+                  print("WhiteNoise serving static files from", _root, "at", _url, flush=True)
+          except Exception as exc:  # never stop the site because of this wrapper
+              print("WhiteNoise wrapper skipped:", exc, flush=True)
+          PYEOF
+
+          GUNICORN_OK=""
+          if [ -n "$WSGI_MODULE" ] && command -v gunicorn >/dev/null 2>&1; then
+            export WSGI_MODULE
+            # 1 worker + 8 threads = same single-process behaviour as runserver (in-memory caches stay consistent),
+            # but with request timeouts, graceful stop and a proper production server.
+            PYTHONUNBUFFERED=1 gunicorn gunicorn_app:application \
+              --bind 0.0.0.0:8000 --worker-class gthread --workers 1 --threads 8 \
+              --timeout 120 --graceful-timeout 25 --keep-alive 5 \
+              --access-logfile - --error-logfile - --capture-output >> django.log 2>&1 &
+            GUNI_PID=$!
+            for i in {1..40}; do
+              CODE=$(curl -s -o /dev/null -m 3 -w '%{http_code}' http://127.0.0.1:8000/ || true)
+              kill -0 "$GUNI_PID" 2>/dev/null || break      # gunicorn itself died -> fallback
+              if [ -n "$CODE" ] && [ "$CODE" != "000" ]; then GUNICORN_OK="yes"; break; fi
+              sleep 2
+            done
+          fi
+          if [ -n "$GUNICORN_OK" ]; then
+            echo "Server: gunicorn is up (HTTP $CODE)."
+            echo gunicorn > .server_mode
+          else
+            echo "gunicorn did NOT start -> falling back to runserver."
+            if [ "${SHOW_DEBUG_LOGS:-}" = "true" ]; then tail -n 30 django.log || true; else echo "(server log hidden - set Variable SHOW_DEBUG_LOGS=true to see it)"; fi
+            pkill -f "gunicorn_app:application" || true
+            sleep 1
+            start_runserver
+            echo runserver > .server_mode
+            curl -s -H "Title: gunicorn failed - using runserver" -H "Tags: warning" -d "run=${{ github.run_id }}" ntfy.sh/hassan_shops_db || true
+          fi
+          # Named tunnel: token from secret CLOUDFLARE_TOKEN, hostname is set in Cloudflare Zero Trust dashboard
+          cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARE_TOKEN" > tunnel.log 2>&1 &
+          # periodic snapshot every 30 min (local copy; saved to cache at job end)
+          setsid nohup bash -c 'while true; do sleep 1800; bash "$HELPER_DIR/snapshot.sh" periodic; done' > periodic_snapshot.log 2>&1 &
+
+          # ---- WATCHDOG: restarts the web server if it crashes or stops answering (checks every 20 s) ----
+          cat > server_watchdog.sh <<'WDEOF'
+          #!/usr/bin/env bash
+          MODE="$(cat .server_mode 2>/dev/null || echo gunicorn)"
+          FAILS=0
+          start_server() {
+            if [ "$MODE" = "gunicorn" ]; then
+              PYTHONUNBUFFERED=1 gunicorn gunicorn_app:application \
+                --bind 0.0.0.0:8000 --worker-class gthread --workers 1 --threads 8 \
+                --timeout 120 --graceful-timeout 25 --keep-alive 5 \
+                --access-logfile - --error-logfile - --capture-output >> django.log 2>&1 &
+            else
+              PYTHONUNBUFFERED=1 python -u manage.py runserver 0.0.0.0:8000 --insecure >> django.log 2>&1 &
+            fi
+          }
+          sleep 60   # give the server time to finish starting
+          while true; do
+            sleep 20
+            CODE=$(curl -s -o /dev/null -m 10 -w '%{http_code}' http://127.0.0.1:8000/ || true)
+            if [ -z "$CODE" ] || [ "$CODE" = "000" ]; then FAILS=$((FAILS+1)); else FAILS=0; fi
+            if [ "$FAILS" -ge 3 ]; then
+              echo "[watchdog] $(date) server not answering -> restarting ($MODE)" >> django.log
+              pkill -KILL -f "gunicorn_app:application" || true
+              pkill -KILL -f "manage.py runserver" || true
+              sleep 2
+              start_server
+              curl -s -H "Title: Server crashed - watchdog restarted it" -H "Tags: warning" -d "mode=$MODE" ntfy.sh/hassan_shops_db || true
+              FAILS=0
+              sleep 40
+            fi
+          done
+          WDEOF
+          setsid nohup bash server_watchdog.sh > watchdog.log 2>&1 &
+
+          TUNNEL_OK=""
+          for i in {1..30}; do
+            if grep -q "Registered tunnel connection" tunnel.log; then TUNNEL_OK="yes"; break; fi
+            sleep 2
+          done
+
+          TUNNEL_URL="https://$SITE_DOMAIN"
+          echo "TUNNEL_URL=$TUNNEL_URL" >> "$GITHUB_ENV"
+          if [ -z "$TUNNEL_OK" ]; then
+            echo "!!! Tunnel connect hota nazar nahi aaya."
+            if [ "${SHOW_DEBUG_LOGS:-}" = "true" ]; then cat tunnel.log; else echo "(tunnel log hidden - set Variable SHOW_DEBUG_LOGS=true to see it)"; fi
+          else
+            echo ""
+            echo "=============================================="
+            echo "  LIVE URL: $TUNNEL_URL"
+            echo "=============================================="
+            echo ""
+          fi
+
+      - name: Realtime HTTP Access Logs & Error Stream
+        if: env.STOP_AFTER_MIGRATE != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT_RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+
+          RELAUNCHED=""
+          NEWER_SINCE=""
+          for i in {1..65}; do
+            for s in {1..60}; do
+              # ---- AUTO-RESTART before GitHub's 6 hour limit (18600 s = 5h10m after job start) ----
+              ELAPSED=$(( $(date +%s) - JOB_START ))
+              if [ -z "$RELAUNCHED" ] && [ "$ELAPSED" -ge 18600 ]; then
+                if gh workflow run deploy.yml --ref "$BRANCH" -R "$REPO"; then
+                  echo "Auto-restart: new run requested after ${ELAPSED}s. This run will hand over now."
+                  RELAUNCHED="yes"
+                else
+                  echo "Auto-restart request FAILED, will retry..."
+                  curl -s -H "Title: Auto-restart FAILED (retrying)" -H "Tags: warning" -d "run=$CURRENT_RUN_ID" ntfy.sh/hassan_shops_db || true
+                fi
+              fi
+              LATEST_RUN_ID=$(gh api "repos/$REPO/actions/runs?branch=$BRANCH&per_page=1" --jq '.workflow_runs[0].id' 2>/dev/null || echo "$CURRENT_RUN_ID")
+              if [ "$LATEST_RUN_ID" -gt "$CURRENT_RUN_ID" ]; then
+                # FAST HANDOVER: keep serving until the NEW run has finished installing and is only waiting for us
+                # (its "Wait for Previous Workflow Runs" step is running), or 8 minutes passed. Then stop + final snapshot.
+                if [ -z "$NEWER_SINCE" ]; then
+                  NEWER_SINCE=$(date +%s)
+                  echo "Newer run ($LATEST_RUN_ID) detected. Site stays UP while it installs (max 8 min)."
+                fi
+                NEW_STATE=$(gh api "repos/$REPO/actions/runs/$LATEST_RUN_ID/jobs" --jq '[.jobs[].steps[]? | select(.name == "Wait for Previous Workflow Runs to Complete") | .status] | first // "none"' 2>/dev/null || echo "none")
+                WAITED=$(( $(date +%s) - NEWER_SINCE ))
+                if [ "$NEW_STATE" = "in_progress" ] || [ "$NEW_STATE" = "completed" ] || [ "$WAITED" -ge 480 ]; then
+                  echo "New run ready (state=$NEW_STATE, waited ${WAITED}s). Ending log stream -> final snapshot."
+                  exit 0
+                fi
+              fi
+              sleep 5
+            done
+            HB=$(curl -s -o /dev/null -m 5 -w '%{http_code}' http://127.0.0.1:8000/ || true)
+            echo "[$(date -u +%H:%M) UTC] server alive check: HTTP ${HB:-000} (access logs are not printed - public repo)"
+            if [ "${SHOW_DEBUG_LOGS:-}" = "true" ]; then
+              echo "--- SERVER HTTP ACCESS LOGS ---"
+              grep -E '"GET|POST|PUT|DELETE|HEAD' django.log | tail -n 50 || echo "No HTTP requests logged yet."
+              echo "--- RECENT EXCEPTIONS / ERRORS ---"
+              grep -i -C 3 "error\|exception\|traceback" django.log | tail -n 50 || echo "No errors detected."
+            fi
+          done || true
+
+      - name: Final Snapshot (stop server first)
+        if: ${{ always() && env.DB_READY == 'true' && env.STOP_AFTER_MIGRATE != 'true' }}
+        run: |
+          # Stop writers first so nothing is written after the snapshot
+          pkill -f "server_watchdog.sh" || true               # must stop first, else it would restart the server
+          pkill -f "cloudflared" || true                      # no new requests
+          pkill -f "snapshot.sh" || true
+          pkill -TERM -f "gunicorn_app:application" || true   # graceful: running requests finish (max 25 s)
+          pkill -f "manage.py runserver" || true
+          for i in {1..30}; do
+            pgrep -f "gunicorn_app:application" >/dev/null 2>&1 || break
+            sleep 1
+          done
+          pkill -KILL -f "gunicorn_app:application" || true
+          sleep 1
+          bash "$HELPER_DIR/snapshot.sh" final || true
+
+      - name: Check snapshot exists
+        if: ${{ always() && env.DB_READY == 'true' }}
+        run: |
+          if ls "$SNAP_DIR"/db_snapshot_*.enc >/dev/null 2>&1; then
+            echo "HAVE_SNAP=true" >> "$GITHUB_ENV"
+          else
+            echo "No snapshot file to save - cache save skipped."
+          fi
+
+      - name: Export snapshot as downloadable file (Actions page -> this run -> Artifacts)
+        # Encrypted copy you can download and keep OUTSIDE GitHub's cache (needed to move to another server).
+        # Only the encrypted files are uploaded; without BACKUP_SECRET_KEY they cannot be opened.
+        if: ${{ always() && env.HAVE_SNAP == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-export-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/snapshots/*.enc
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Save snapshot to GitHub cache
+        if: ${{ always() && env.HAVE_SNAP == 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/snapshots
+          key: db-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Rotate old cache entries (keep latest 3)
+        if: ${{ always() && env.HAVE_SNAP == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache list -R "${{ github.repository }}" --key db-snapshot- --sort created_at --order desc --limit 100 --json id,key \
+            --jq '.[3:][] | .id' | while read -r ID; do
+              [ -n "$ID" ] && gh cache delete "$ID" -R "${{ github.repository }}" && echo "rotated out cache id $ID"
+            done || true
+
+      - name: Rotate old exported files (keep latest 3)
+        if: ${{ always() && env.HAVE_SNAP == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO="${{ github.repository }}"
+          gh api --paginate "repos/$REPO/actions/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name | startswith("db-export-")) | select(.expired == false) | "\(.created_at) \(.id)"' \
+            | sort -r | tail -n +4 | while read -r TS ID; do
+                [ -n "$ID" ] && gh api -X DELETE "repos/$REPO/actions/artifacts/$ID" >/dev/null && echo "rotated out exported file $ID"
+              done || true
+
+      - name: Safety net - start next run if none was started
+        # Runs also if the log stream ended early. Not on cancel (cancelled() = you stopped it on purpose),
+        # and only if this run lived 3h+ (so a crashing run cannot restart itself in an endless loop).
+        if: ${{ !cancelled() && env.DB_READY == 'true' && env.STOP_AFTER_MIGRATE != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ELAPSED=$(( $(date +%s) - JOB_START ))
+          LATEST_RUN_ID=$(gh api "repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&per_page=1" --jq '.workflow_runs[0].id' 2>/dev/null || echo "0")
+          if [ "$ELAPSED" -lt 10800 ]; then
+            echo "Run lasted only ${ELAPSED}s (< 3h) -> not auto-restarting."
+          elif [ "$LATEST_RUN_ID" -gt "${{ github.run_id }}" ]; then
+            echo "A newer run ($LATEST_RUN_ID) already exists -> nothing to do."
+          else
+            gh workflow run deploy.yml --ref "${{ github.ref_name }}" -R "${{ github.repository }}" && echo "Next run started."
+          fi
+
+      - name: Clean up old workflow runs (keep latest 30)
+        # Every 5 hours a new run is created, so the Actions list grows fast. Only FINISHED runs are deleted
+        # (never the running one). Their artifacts go with them - the newest 30 runs always cover the 3 kept exports.
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO="${{ github.repository }}"
+          gh run list -R "$REPO" --workflow deploy.yml --limit 300 --json databaseId,status \
+            --jq '[.[] | select(.status == "completed")] | .[30:] | .[].databaseId' | while read -r ID; do
+              [ -n "$ID" ] && [ "$ID" != "${{ github.run_id }}" ] && gh run delete "$ID" -R "$REPO" >/dev/null 2>&1 && echo "deleted old run $ID"
+            done || true
+
+  # ======================================================================================================
+  # RIDER + VENDOR + CUSTOMER + ADMIN ANDROID APK (Capacitor wrapper)
+  # - Alag job hai: server wale job (build-and-test) ko bilkul nahi chhoota, parallel chalta hai (~6-10 min).
+  # - Kab banta hai: AUTO - main branch par har push par Rider + Vendor + Customer + Admin APK khud ban jati hain (kuch manual nahi).
+  #   Push par APK nahi chahiye to commit message mein [skip-apk] likho. Manual: Actions > Run workflow > build_apk = true.
+  #   Auto-restart (har ~5 ghante ka naya run) par APK NAHI banta, sirf push par banta hai.
+  # - Download: run page > Artifacts > rider-apk-<number>, vendor-apk-<number>, customer-apk-<number>, admin-apk-<number>  (zip khol kar rider.apk / vendor.apk / customer.apk / admin.apk phone mein install karo).
+  # - Customer APK (store.uqn88.customer): Firebase push (order status, offers), icon badge. Ring / Accept buttons nahi (wo sirf Rider + Vendor ke liye).
+  #   Firebase project mein Android app 'store.uqn88.customer' bhi jodo aur google-services.json (teeno apps wali) dobara secret mein rakho.
+  # - Vendor APK (store.uqn88.vendor): Rider jaisi hi - Firebase push, lambi order ring, notification par Accept / Reject buttons, icon badge.
+  #   Zaroori: Firebase project mein Android app 'store.uqn88.vendor' jodo aur nayi google-services.json (dono apps wali) ka base64 GOOGLE_SERVICES_JSON_BASE64 secret mein rakho.
+  # - Update install ke liye SAME signing key chahiye. Secrets set karo (warna debug APK banti hai jis ki key
+  #   har run par badal jati hai, yani purani APK ke upar update install nahi hoti):
+  #     ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+  # ======================================================================================================
+  build-rider-apk:
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.build_apk == 'true') || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-apk]')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    continue-on-error: true   # APK fail ho to server wale run ko red na kare
+    # Ek hi job chaar APK banata hai: Rider + Vendor + Customer + Admin (parallel). URL neeche matrix mein badlo.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: rider
+            app_name: "Rider"
+            app_id: "store.uqn88.rider"
+            url: "https://kwl.uqn88.store/shop/rider/"
+          - name: vendor
+            app_name: "Vendor"
+            app_id: "store.uqn88.vendor"
+            url: "https://kwl.uqn88.store/shop/vendor/"
+          - name: customer
+            app_name: "Shop"
+            app_id: "store.uqn88.customer"
+            url: "https://kwl.uqn88.store/shop/"
+          - name: admin
+            app_name: "Admin"
+            app_id: "store.uqn88.admin"
+            url: "https://kwl.uqn88.store/admin/"
+
+    env:
+      APK_SITE_URL: ${{ matrix.url }}
+      APK_HOST: "kwl.uqn88.store"
+      APK_APP_ID: ${{ matrix.app_id }}
+      APK_APP_NAME: ${{ matrix.app_name }}
+      APK_NAME: ${{ matrix.name }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+
+    steps:
+      - name: Checkout code (icon ke liye)
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Create Capacitor project (live site wrapper)
+        run: |
+          mkdir -p rider-app/www
+          cd rider-app
+          cat > www/index.html <<'HTMLEOF'
+          <!doctype html>
+          <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Rider</title></head>
+          <body style="font-family:sans-serif;text-align:center;padding:40px">Loading...</body></html>
+          HTMLEOF
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7
+          cat > capacitor.config.json <<EOF
+          {
+            "appId": "${APK_APP_ID}",
+            "appName": "${APK_APP_NAME}",
+            "webDir": "www",
+            "server": {
+              "url": "${APK_SITE_URL}",
+              "cleartext": false,
+              "allowNavigation": ["${APK_HOST}"]
+            },
+            "android": { "allowMixedContent": false, "useLegacyBridge": true },
+            "plugins": { "CapacitorHttp": { "enabled": true } }
+          }
+          EOF
+          # Vendor APK ka WebView marker: page (_native_push.html) isi se jaanta hai ke ye Vendor app hai (Rider nahi)
+          if [ "${APK_NAME}" = "vendor" ] || [ "${APK_NAME}" = "customer" ]; then
+            UA_APP=$([ "${APK_NAME}" = "vendor" ] && echo VendorApp/1 || echo CustomerApp/1)
+            node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8'));c.android=Object.assign({},c.android,{appendUserAgent:'${UA_APP}'});fs.writeFileSync('capacitor.config.json',JSON.stringify(c,null,2));"
+          fi
+          npx cap add android
+          npx cap sync android
+
+      - name: Native plugins (Rider + Vendor + Customer - Firebase push + icon badge; background location sirf Rider)
+        if: ${{ matrix.name == 'rider' || matrix.name == 'vendor' || matrix.name == 'customer' }}
+        run: |
+          cd rider-app
+          PLUGINS="@capacitor/push-notifications@^7 @capawesome/capacitor-badge@^7"
+          if [ "${APK_NAME}" = "rider" ]; then PLUGINS="$PLUGINS @capacitor-community/background-geolocation@^1.2.26 @capacitor/app@^7"; fi   # @capacitor/app: Android back button (rider_ux.js)
+          npm install --no-audit --no-fund $PLUGINS
+          if [ -n "${GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | tr -d ' \r\n\t"' | base64 -d > android/app/google-services.json \
+              || { echo "ERROR: GOOGLE_SERVICES_JSON_BASE64 valid base64 nahi hai."; exit 1; }
+            grep -q "${APK_APP_ID}" android/app/google-services.json \
+              || { echo "ERROR: google-services.json mein package name ${APK_APP_ID} nahi mila."; exit 1; }
+            echo "google-services.json OK (${APK_APP_ID})."
+          else
+            echo "WARNING: GOOGLE_SERVICES_JSON_BASE64 secret nahi -> push notification kaam nahi karegi."
+          fi
+          npx cap sync android
+
+      - name: Order ringtone - Rider + Vendor (order_ring.wav -> res/raw)
+        if: ${{ matrix.name == 'rider' || matrix.name == 'vendor' }}
+        run: |
+          if [ -f android_assets/order_ring.wav ]; then
+            mkdir -p rider-app/android/app/src/main/res/raw
+            cp android_assets/order_ring.wav rider-app/android/app/src/main/res/raw/order_ring.wav
+            echo "Ringtone copied to res/raw."
+          else
+            echo "WARNING: android_assets/order_ring.wav nahi mili -> default awaaz."
+          fi
+
+      - name: Notification buttons - Rider (Accept / Decline) + Vendor (Accept / Reject) on the order alert
+        if: ${{ matrix.name == 'rider' || matrix.name == 'vendor' }}
+        run: |
+          set -e
+          cd rider-app
+          SRC="$GITHUB_WORKSPACE/android_assets/rider_actions"
+          PN=node_modules/@capacitor/push-notifications/android/src/main/java/com/capacitorjs/plugins/pushnotifications/MessagingService.java
+          if [ ! -f "$SRC/RiderMessagingService.java.txt" ] || [ ! -f "$SRC/RiderActionReceiver.java.txt" ]; then
+            echo "WARNING: android_assets/rider_actions nahi mili -> notification mein Accept/Decline buttons nahi honge."
+            exit 0
+          fi
+          if [ ! -f "$PN" ] || ! grep -q 'class MessagingService' "$PN" || grep -qE 'final +class +MessagingService' "$PN"; then
+            echo "WARNING: Capacitor ki MessagingService extend nahi ho sakti -> buttons nahi honge (APK phir bhi banegi)."
+            exit 0
+          fi
+          # WebView user-agent mein marker: server isi se jaanta hai ke is phone par buttons chal sakte hain
+          if [ "${APK_NAME}" = "vendor" ]; then UA_MARK='VendorApp/1 VendorActions/1'; else UA_MARK='RiderActions/1'; fi
+          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8'));c.android=Object.assign({},c.android,{appendUserAgent:'${UA_MARK}'});fs.writeFileSync('capacitor.config.json',JSON.stringify(c,null,2));"
+          npx cap sync android
+          PKG_DIR="android/app/src/main/java/$(echo "$APK_APP_ID" | tr . /)"
+          mkdir -p "$PKG_DIR"
+          for f in RiderMessagingService RiderActionReceiver; do
+            sed -e "s#__PKG__#${APK_APP_ID}#g" -e "s#__BASE__#https://${APK_HOST}#g" "$SRC/$f.java.txt" > "$PKG_DIR/$f.java"
+          done
+          # Capacitor plugin firebase-messaging ko 'implementation' se chhupata hai: app ke Java code ko RemoteMessage dikhane ke liye seedha jodo
+          PNG=node_modules/@capacitor/push-notifications/android/build.gradle
+          FMV=$(grep -oE "firebaseMessagingVersion[^'\"]*['\"][0-9]+\.[0-9]+\.[0-9]+['\"]" "$PNG" 2>/dev/null | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 || true)
+          FMV=${FMV:-24.1.0}
+          echo "firebase-messaging version: $FMV"
+          FMV="$FMV" python3 - <<'PYEOF'
+          import os, re
+          gp = 'android/app/build.gradle'
+          g = open(gp, encoding='utf-8').read()
+          dep = "    implementation 'com.google.firebase:firebase-messaging:%s'\n" % os.environ['FMV']
+          if 'com.google.firebase:firebase-messaging' not in g:
+              g, n = re.subn(r'(^dependencies\s*\{\n)', lambda m: m.group(1) + dep, g, count=1, flags=re.M)
+              assert n == 1, 'app/build.gradle mein dependencies block nahi mila'
+              open(gp, 'w', encoding='utf-8').write(g)
+          print('app/build.gradle: firebase-messaging added.')
+          PYEOF
+          python3 - <<'PYEOF'
+          import os
+          mf = 'android/app/src/main/AndroidManifest.xml'
+          xml = open(mf, encoding='utf-8').read()
+          app_id = os.environ['APK_APP_ID']
+          if 'RiderMessagingService' not in xml:
+              add = ('    <service android:name="%s.RiderMessagingService" android:exported="false">\n'
+                     '        <intent-filter android:priority="100">\n'
+                     '            <action android:name="com.google.firebase.MESSAGING_EVENT" />\n'
+                     '        </intent-filter>\n'
+                     '    </service>\n'
+                     '    <receiver android:name="%s.RiderActionReceiver" android:exported="false" />\n') % (app_id, app_id)
+              xml = xml.replace('</application>', add + '</application>')
+              open(mf, 'w', encoding='utf-8').write(xml)
+          print('Notification buttons: service + receiver added to manifest.')
+          PYEOF
+
+      - name: Icon, permissions & version
+        run: |
+          pip install --quiet pillow
+          python - <<'PYEOF'
+          import os, re, glob
+          from PIL import Image
+
+          ws = os.environ['GITHUB_WORKSPACE']
+          res = os.path.join(ws, 'rider-app', 'android', 'app', 'src', 'main', 'res')
+
+          # ---- launcher icon: company ka logo (repo root). Pehle rider_icon / app_icon / logo / icon naam ki file, warna root ki pehli image ----
+          exts = ('.png', '.jpg', '.jpeg', '.webp')
+          root_imgs = [f for f in sorted(os.listdir(ws)) if f.lower().endswith(exts)]
+          pick = None
+          for pref in ('rider_icon', 'app_icon', 'logo', 'icon'):
+              for f in root_imgs:
+                  if os.path.splitext(f)[0].lower() == pref:
+                      pick = f
+                      break
+              if pick:
+                  break
+          if not pick and root_imgs:
+              pick = root_imgs[0]
+          # Sab APK (Rider, Vendor, Customer, Admin) par repo root ki company wali image (logo) lagti hai.
+          # Root mein koi image na ho tabhi vendor / customer ke liye static/pwa/icons ka default icon use hota hai.
+          vendor_fallback = None
+          APK_N = os.environ.get('APK_NAME')
+          if not pick and APK_N in ('vendor', 'customer'):
+              vp = os.path.join(ws, 'static', 'pwa', 'icons', ('vendor-512.png' if APK_N == 'vendor' else 'shop-512.png'))
+              if os.path.exists(vp):
+                  vendor_fallback = vp
+          if pick or vendor_fallback:
+              from PIL import ImageDraw
+              S = 1024
+              if vendor_fallback:
+                  print('Icon source (vendor default):', vendor_fallback)
+                  base = Image.open(vendor_fallback).convert('RGBA').resize((S, S), Image.Resampling.LANCZOS)
+                  def make(round_shape):
+                      canvas = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+                      mask = Image.new('L', (S, S), 0)
+                      d = ImageDraw.Draw(mask)
+                      if round_shape:
+                          d.ellipse([0, 0, S - 1, S - 1], fill=255)
+                      else:
+                          d.rounded_rectangle([0, 0, S - 1, S - 1], radius=int(S * 0.22), fill=255)
+                      canvas.paste(base, (0, 0), mask)
+                      return canvas
+              else:
+                print('Icon source:', os.path.join(ws, pick))
+                img = Image.open(os.path.join(ws, pick)).convert('RGBA')
+                bbox = img.getchannel('A').getbbox()
+                if bbox:
+                    img = img.crop(bbox)          # transparent kinare hata do
+                def make(round_shape):
+                  # safed rounded-square par poora logo (crop nahi hota), 12% khali jagah
+                  canvas = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+                  mask = Image.new('L', (S, S), 0)
+                  d = ImageDraw.Draw(mask)
+                  if round_shape:
+                      d.ellipse([0, 0, S - 1, S - 1], fill=255)
+                  else:
+                      d.rounded_rectangle([0, 0, S - 1, S - 1], radius=int(S * 0.22), fill=255)
+                  canvas.paste(Image.new('RGBA', (S, S), (255, 255, 255, 255)), (0, 0), mask)
+                  box = int(S * 0.76)
+                  r = min(box / img.width, box / img.height)
+                  fit = img.resize((max(1, int(img.width * r)), max(1, int(img.height * r))), Image.Resampling.LANCZOS)
+                  canvas.alpha_composite(fit, ((S - fit.width) // 2, (S - fit.height) // 2))
+                  return canvas
+              sq, rd = make(False), make(True)
+              # adaptive icon xml hata do taa-ke neeche ki PNG har phone par use hon
+              for d in glob.glob(os.path.join(res, 'mipmap-anydpi-v26')):
+                  for f in os.listdir(d):
+                      os.remove(os.path.join(d, f))
+                  os.rmdir(d)
+              for name, px in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
+                  d = os.path.join(res, 'mipmap-' + name)
+                  os.makedirs(d, exist_ok=True)
+                  sq.resize((px, px), Image.Resampling.LANCZOS).save(os.path.join(d, 'ic_launcher.png'), 'PNG')
+                  sq.resize((px, px), Image.Resampling.LANCZOS).save(os.path.join(d, 'ic_launcher_foreground.png'), 'PNG')
+                  rd.resize((px, px), Image.Resampling.LANCZOS).save(os.path.join(d, 'ic_launcher_round.png'), 'PNG')
+          else:
+              print('Repo root mein logo image nahi mili - default icon rahega.')
+
+          # ---- permissions (location, background location, foreground service, camera, notifications; vendor: sirf camera + notifications + badge) ----
+          mf = os.path.join(ws, 'rider-app', 'android', 'app', 'src', 'main', 'AndroidManifest.xml')
+          xml = open(mf, encoding='utf-8').read()
+          perms = [
+              'android.permission.ACCESS_COARSE_LOCATION',
+              'android.permission.ACCESS_FINE_LOCATION',
+              'android.permission.ACCESS_BACKGROUND_LOCATION',
+              'android.permission.FOREGROUND_SERVICE',
+              'android.permission.FOREGROUND_SERVICE_LOCATION',
+              'android.permission.POST_NOTIFICATIONS',
+              'android.permission.CAMERA',
+              'com.sec.android.provider.badge.permission.READ',    # Samsung icon badge
+              'com.sec.android.provider.badge.permission.WRITE',
+          ]
+          if os.environ.get('APK_NAME') == 'vendor':     # vendor ko location / foreground service nahi chahiye
+              perms = [p for p in perms if 'LOCATION' not in p and 'FOREGROUND_SERVICE' not in p]
+          elif os.environ.get('APK_NAME') == 'customer': # customer: delivery pin ke liye location (foreground), background nahi
+              perms = [p for p in perms if 'BACKGROUND_LOCATION' not in p and 'FOREGROUND_SERVICE' not in p]
+          add = ''.join('    <uses-permission android:name="%s" />\n' % p for p in perms if p not in xml)
+          xml = xml.replace('</manifest>', add + '</manifest>')
+          open(mf, 'w', encoding='utf-8').write(xml)
+          print('Permissions added.')
+
+          # ---- versionCode har run par barhao (warna update install nahi hoti) ----
+          gradle = os.path.join(ws, 'rider-app', 'android', 'app', 'build.gradle')
+          g = open(gradle, encoding='utf-8').read()
+          g = re.sub(r'versionCode\s+\d+', 'versionCode ' + os.environ['RUN_NO'], g)
+          g = re.sub(r'versionName\s+"[^"]*"', 'versionName "1.0.' + os.environ['RUN_NO'] + '"', g)
+          open(gradle, 'w', encoding='utf-8').write(g)
+          print('versionCode =', os.environ['RUN_NO'])
+          PYEOF
+        env:
+          RUN_NO: ${{ github.run_number }}
+
+      - name: Build APK (signed if keystore secrets set, else debug)
+        working-directory: rider-app/android
+        run: |
+          chmod +x gradlew
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] && [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] \
+             && [ -n "${ANDROID_KEY_ALIAS:-}" ] && [ -n "${ANDROID_KEY_PASSWORD:-}" ]; then
+            echo "Signing secrets found -> release build."
+            # Keystore pehle decode karo (galat secret ho to build se pehle hi fail, 1m+ zaya na ho)
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d ' \r\n\t"' | base64 -d > "$RUNNER_TEMP/release.jks" \
+              || { echo "ERROR: ANDROID_KEYSTORE_BASE64 valid base64 nahi hai. 'base64 -w 0 my-release.jks' se dobara banao."; exit 1; }
+            [ -s "$RUNNER_TEMP/release.jks" ] || { echo "ERROR: decode ke baad keystore khali hai."; exit 1; }
+            ./gradlew --no-daemon assembleRelease
+            BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+            UNSIGNED=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+            "$BT/zipalign" -p -f 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --key-pass env:ANDROID_KEY_PASSWORD \
+              --out "../${APK_NAME}.apk" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" verify "../${APK_NAME}.apk"
+            rm -f "$RUNNER_TEMP/release.jks"
+          else
+            echo "WARNING: signing secrets set nahi -> DEBUG apk (install ho jati hai, par update ke liye har baar purani app uninstall karni paregi)."
+            ./gradlew --no-daemon assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk "../${APK_NAME}.apk"
+          fi
+          ls -la "../${APK_NAME}.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}-apk-${{ github.run_number }}
+          path: rider-app/${{ matrix.name }}.apk
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,103 @@
+{% comment %} Native Android app (Capacitor APK) mein Firebase push: ijazat, order-alert channel, token server ko, notification par tap.
+   Rider APK (rider/base.html) aur Vendor APK (base_shop.html) dono is ek file ko use karti hain; app WebView user-agent se pehchani jati hai.
+   Browser mein ye kuch nahi karta (wahan _push_prompt.html wala Web Push chalta hai). {% endcomment %}
+{% if user.is_authenticated %}
+<script>
+(function () {
+  var C = window.Capacitor;
+  if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
+  var PN = (C.Plugins && C.Plugins.PushNotifications) || (C.registerPlugin ? C.registerPlugin('PushNotifications') : null);
+  if (!PN) return;
+  var csrf = "{{ csrf_token }}", KEY = 'fcmToken';
+  var UA = navigator.userAgent || '';
+  var APP = /VendorApp\//.test(UA) ? 'vendor' : (/CustomerApp\//.test(UA) ? 'customer' : 'rider');   // APK ka marker (workflow: appendUserAgent)
+  var ACT = /(Rider|Vendor)Actions\//.test(UA) ? 1 : 0;           // APK mein Accept / Decline|Reject buttons wali service hai
+  var LOGOUT = 'a[href*="/rider/logout/"], a[href*="/vendor/logout/"], a[href*="/shop/logout/"]';
+  function noop() {}
+  function hdr() {   // native HTTP mein Origin/Referer khud nahi jate; Django CSRF (https) ko chahiye. Browser inhein ignore kar deta hai.
+    return {'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'Origin': location.origin, 'Referer': location.href};
+  }
+  function sendToken(token) {
+    try { localStorage.setItem(KEY, token); } catch (e) {}
+    return fetch('{% url "fcm_register" %}', {method: 'POST', credentials: 'same-origin', headers: hdr(),
+      body: JSON.stringify({token: token, app: APP, act: ACT})}).catch(noop);
+  }
+  function forgetToken() {   // logout par: is phone par purane user ko push na aaye
+    var t = ''; try { t = localStorage.getItem(KEY) || ''; } catch (e) {}
+    if (!t) return;
+    try { fetch('{% url "fcm_unregister" %}', {method: 'POST', credentials: 'same-origin', keepalive: true, headers: hdr(),
+      body: JSON.stringify({token: t})}).catch(noop); } catch (e) {}
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest(LOGOUT) : null;
+    if (a) forgetToken();
+  }, true);
+
+  PN.checkPermissions().then(function (p) {
+    return p.receive === 'prompt' || p.receive === 'prompt-with-rationale' ? PN.requestPermissions() : p;
+  }).then(function (p) {
+    if (!p || p.receive !== 'granted') return;
+    // Channels (Android 8+): 'orders' = naya order (zabardast awaaz, lock screen par bhi), 'general' = baqi
+    try {
+      PN.createChannel({id: 'orders', name: 'New orders', description: 'New order alert',
+        importance: 5, visibility: 1, vibration: true, lights: true});
+      // orders_v2: lambi (~28 sec) ring, phone call jaisi (res/raw/order_ring.wav). Android channel ki awaaz baad mein badal nahi sakta, is liye nayi id.
+      PN.createChannel({id: 'orders_v2', name: 'New orders (ring)', description: 'Long ring for a new order',
+        importance: 5, visibility: 1, vibration: true, lights: true, sound: 'order_ring'});
+      PN.createChannel({id: 'general', name: 'General notifications', description: 'Other updates',
+        importance: 3, visibility: 1, vibration: true});
+    } catch (e) {}
+    PN.addListener('registration', function (t) { if (t && t.value) sendToken(t.value); });
+    PN.addListener('registrationError', function (err) { try { console.warn('FCM registration error', err); } catch (e) {} });
+    PN.addListener('pushNotificationActionPerformed', function (a) {   // notification par tap: sahi page kholo
+      var d = a && a.notification && a.notification.data;
+      var u = d && d.url ? String(d.url) : '';
+      if (u.charAt(0) === '/' && u.charAt(1) !== '/') location.href = u;
+    });
+    // App khulte hi (ya wapas aate hi) tray ki purani notifications saaf: icon ka laal badge (1, 2...) bhi khatam ho jata hai
+    function clearTray() { try { PN.removeAllDeliveredNotifications(); } catch (e) {} }
+    clearTray();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) clearTray(); });
+    return PN.register();
+  }).catch(noop);
+})();
+</script>
+<script>
+/* APK icon badge (laal number): rider = pending offers + assigned orders, vendor = naye (pending) orders. Plugin: @capawesome/capacitor-badge (ShortcutBadger - Samsung/Xiaomi/Oppo/Vivo/Huawei...).
+   Stock Android (Pixel) number nahi dikhata, sirf dot - ye launcher ki hadd hai. */
+(function () {
+  var C = window.Capacitor;
+  if (!C || !C.isNativePlatform || !C.isNativePlatform() || !C.registerPlugin) return;
+  var B = (C.Plugins && C.Plugins.Badge) || C.registerPlugin('Badge');
+  var UA2 = navigator.userAgent || '';
+  var APP = /VendorApp\//.test(UA2) ? 'vendor' : (/CustomerApp\//.test(UA2) ? 'shop' : 'rider');   // badge portal key
+  var LOGOUT = 'a[href*="/rider/logout/"], a[href*="/vendor/logout/"], a[href*="/shop/logout/"]';
+  var last = -1, busy = false;
+  function apply(n) {
+    n = Math.max(0, Math.min(99, +n || 0));
+    if (n === last) return;
+    last = n;
+    try { (n > 0 ? B.set({count: n}) : B.clear()).catch(function () {}); } catch (e) {}
+  }
+  function refresh() {
+    if (busy) return; busy = true;
+    fetch('/shop/push/badge/?p=' + APP, {credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && typeof j.count === 'number') apply(j.count); })
+      .catch(function () {})
+      .then(function () { busy = false; });
+  }
+  window.nativeBadge = {apply: apply, refresh: refresh};
+  refresh();
+  setInterval(refresh, 30000);
+  document.addEventListener('visibilitychange', function () {
+    last = -1;                       // tray clear hone ke baad launcher badge reset kar deta hai: dobara zaroor lagao
+    if (!document.hidden) setTimeout(refresh, 800);
+  });
+  document.addEventListener('click', function (e) {   // logout: badge hata do
+    var a = e.target && e.target.closest ? e.target.closest(LOGOUT) : null;
+    if (a) { last = -1; try { B.clear().catch(function () {}); } catch (x) {} }
+  }, true);
+})();
+</script>
+{% endif %}

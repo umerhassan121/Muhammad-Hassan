@@ -1,0 +1,18 @@
+{% extends 'customer_portal/info/base_info.html' %}
+{% load portal_i18n %}
+{% block page_title %}{% t "Return Policy" %}{% endblock %}
+{% block heading %}<i class="bi bi-arrow-return-left text-primary"></i> {% t "Return & Refund Policy" %}{% endblock %}
+{% block subheading %}{% t "Clear and simple rules" %}{% endblock %}
+
+{% block info_body %}
+<div class="info-card"><h2>{% t "Return period" %}</h2>
+  <p class="mb-0">{% t "You can request a return within <b>{} days</b> of receiving the goods." return_window_days %}</p></div>
+<div class="info-card"><h2>{% t "When a return is accepted" %}</h2>
+  <ul><li>{% t "Product arrived damaged or broken" %}</li><li>{% t "Wrong product was delivered" %}</li><li>{% t "An item was missing from the order" %}</li></ul></div>
+<div class="info-card"><h2>{% t "When a return is not accepted" %}</h2>
+  <ul><li>{% t "Used or damaged goods" %}</li><li>{% t "Without the original packaging" %}</li><li>{% t "Perishable items (food and drink), unless they arrived spoiled or wrong" %}</li></ul></div>
+<div class="info-card"><h2>{% t "How it works" %}</h2>
+  <ol><li>{% t "Contact us on WhatsApp or by phone with your order number." %}</li><li>{% t "Send a photo of the problem." %}</li><li>{% t "After checking, our team will arrange a pickup or replacement." %}</li></ol></div>
+<div class="info-card"><h2>{% t "Refund" %}</h2>
+  <p class="mb-0">{% t "Once approved, the refund is made within {} working days by the same method used for payment." refund_days %}</p></div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load img_tools %}
+{% load static %}
+
+{% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
+
+{% block content %}
+<style>
+    .ss-wrap { max-width: 760px; margin: 30px auto; padding: 0 15px; }
+    .ss-card { background: #fff; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.08); overflow: hidden; }
+    .ss-head { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #fff; padding: 24px 28px; }
+    .ss-head h3 { margin: 0; font-weight: 700; }
+    .ss-head p { margin: 6px 0 0; opacity: .9; font-size: 14px; }
+    .ss-body { padding: 26px 28px; }
+    .ss-sec { font-weight: 700; color: #2563eb; margin: 22px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #eef0f6; }
+    .ss-sec:first-child { margin-top: 0; }
+    .ss-group { margin-bottom: 16px; }
+    .ss-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    .ss-group input, .ss-group select, .ss-group textarea {
+        width: 100%; padding: 11px 14px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 15px; background: #fff; }
+    .ss-group input:focus, .ss-group select:focus, .ss-group textarea:focus { outline: 0; border-color: #2563eb; }
+    .ss-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .ss-help { font-size: 12px; color: #777; margin-top: 4px; }
+    .ss-cover { width: 100%; height: 130px; object-fit: cover; border-radius: 12px; margin-bottom: 8px; background: #f0f0f5; }
+    .ss-logo { width: 84px; height: 84px; object-fit: cover; border-radius: 16px; margin-bottom: 8px; background: #f0f0f5; }
+    .ss-check { font-size: 13px; font-weight: 400 !important; display: flex !important; align-items: center; gap: 6px; }
+    .ss-check input { width: auto; }
+    .ss-status { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .ss-status label { border: 2px solid #e5e7eb; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; margin: 0; }
+    .ss-status input { display: none; }
+    .ss-status input:checked + span { color: #2563eb; }
+    .ss-status label:has(input:checked) { border-color: #2563eb; background: #eef2ff; }
+    .ss-btn { width: 100%; padding: 13px; border: 0; border-radius: 12px; color: #fff; font-weight: 700; font-size: 16px; margin-top: 10px;
+              background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); cursor: pointer; }
+    .ss-links a { display: inline-block; margin: 14px 16px 0 0; color: #2563eb; text-decoration: none; }
+    @media (max-width: 576px) {
+        .ss-wrap { margin: 14px auto; padding: 0 10px; }
+        .ss-head { padding: 20px 18px; }
+        .ss-body { padding: 18px 16px; }
+        .ss-row { grid-template-columns: 1fr; gap: 0; }
+        .ss-group input, .ss-group select, .ss-group textarea { font-size: 16px; }
+    }
+
+    body { background: #f3f5ff; }
+    .ss-head { border-radius: 24px 24px 0 0; }
+</style>
+
+<div class="ss-wrap">
+  <div class="ss-card">
+    <div class="ss-head">
+      <h3><i class="bi bi-shop"></i> Store Settings</h3>
+      <p>This is your store page that customers see.</p>
+    </div>
+    <div class="ss-body">
+      {% include 'customer_portal/vendor/_store_location.html' %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="ss-sec">Store category</div>
+        <div class="ss-group">
+          <label>Aap ka store kis type ka hai?</label>
+          <select name="store_category">
+            <option value="">-- Select --</option>
+            {% for c in store_categories %}<option value="{{ c.id }}" {% if profile.store_category_id == c.id %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+          </select>
+          <div class="ss-help">Customers find you by this type on the stores page.</div>
+        </div>
+
+        {% if cuisines and cuisines_on %}
+        <div class="ss-group">
+          <label>Cuisines (maximum 3)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 14px">
+            {% for c in cuisines %}<label style="font-weight:500"><input type="checkbox" name="cuisines" value="{{ c.id }}" {% if c.id in my_cuisine_ids %}checked{% endif %}> {{ c.icon }} {{ c.name }}</label>{% endfor %}
+          </div>
+          <div class="ss-help">e.g. Pizza, Burger, Biryani. Customers filter stores by cuisine.</div>
+        </div>
+        {% elif cuisines %}
+        {% for c in cuisines %}{% if c.id in my_cuisine_ids %}<input type="hidden" name="cuisines" value="{{ c.id }}">{% endif %}{% endfor %}
+        {% endif %}
+
+        <div class="ss-sec">Store status</div>
+        <div class="ss-status">
+          <label><input type="radio" name="store_status" value="open" {% if profile.store_status == 'open' %}checked{% endif %}><span>🟢 Open</span></label>
+          <label><input type="radio" name="store_status" value="busy" {% if profile.store_status == 'busy' %}checked{% endif %}><span>🟠 Busy</span></label>
+          <label><input type="radio" name="store_status" value="closed" {% if profile.store_status == 'closed' %}checked{% endif %}><span>🔴 Closed</span></label>
+        </div>
+        <div class="ss-help">{% t "Closed: customers cannot order. Busy: orders are accepted but may be delayed." %} {% if profile.is_open_now %}{% t "Right now customers see your store as <b>open</b>." %}{% else %}{% t "Right now customers see your store as <b>closed</b>." %}{% endif %}</div>
+
+        <div class="ss-sec">New orders</div>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:700;"><input type="checkbox" name="auto_accept" value="1" {% if profile.auto_accept %}checked{% endif %}> Auto-accept new orders</label>
+        <div class="ss-row" style="margin-top:8px;">
+          <div class="ss-group"><label>Prep time shown to customer (minutes)</label><input type="number" name="auto_accept_prep_minutes" min="1" max="600" value="{{ profile.auto_accept_prep_minutes }}"></div>
+        </div>
+        <div class="ss-help">OFF: a loud ringtone plays on the Orders page until you Accept or Reject each new order. ON: orders are accepted automatically and the customer gets the ETA. Stock is still checked at checkout.</div>
+
+        <div class="ss-sec">Stock</div>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:700;"><input type="checkbox" name="hide_sold_out" value="1" {% if profile.hide_sold_out %}checked{% endif %}> Hide sold-out products from customers</label>
+        <div class="ss-row" style="margin-top:8px;">
+          <div class="ss-group"><label>Low-stock alert at (units, optional)</label><input type="number" name="low_stock_level" min="1" max="10000" placeholder="Default" value="{{ profile.low_stock_level|default_if_none:'' }}"></div>
+        </div>
+        <div class="ss-help">When a product reaches 0 stock it disappears from your store and the shop home, and comes back by itself when you add stock. Hidden products stay in your dashboard. You get a "Low stock" alert at the level above and a "Sold out" alert at 0.</div>
+
+        <div class="ss-sec">Timings</div>
+        <div class="ss-row">
+          <div class="ss-group"><label>Opens at</label><input type="time" name="opens_at" value="{{ profile.opens_at|time:'H:i' }}"></div>
+          <div class="ss-group"><label>Closes at</label><input type="time" name="closes_at" value="{{ profile.closes_at|time:'H:i' }}"></div>
+        </div>
+        <div class="ss-help" style="margin-top:-8px;">If both are empty, the store is always open according to its status. Overnight hours also work (e.g. 18:00 to 02:00). The times above apply to every day, unless you set a different time for a day below.</div>
+
+        <details style="margin-top:10px;" {% for d in day_rows %}{% if d.closed or d.open %}open{% endif %}{% endfor %}>
+          <summary style="font-weight:700;cursor:pointer;">Different timing for specific days (optional)</summary>
+          <div class="ss-help" style="margin:6px 0;">Leave a day empty to use the timing above. Tick "Closed" if the store is off that whole day (e.g. Friday).</div>
+          {% for d in day_rows %}
+          <div class="ss-row" style="align-items:flex-end;margin-bottom:6px;">
+            <div class="ss-group" style="min-width:90px;"><label>{{ d.name }}</label>
+              <label style="display:flex;gap:6px;align-items:center;font-weight:600;font-size:13px;"><input type="checkbox" name="day_closed_{{ d.i }}" value="1" {% if d.closed %}checked{% endif %}> Closed</label></div>
+            <div class="ss-group"><label>Opens</label><input type="time" name="day_open_{{ d.i }}" value="{{ d.open }}"></div>
+            <div class="ss-group"><label>Closes</label><input type="time" name="day_close_{{ d.i }}" value="{{ d.close }}"></div>
+          </div>
+          {% endfor %}
+        </details>
+
+        <div class="ss-sec">Delivery</div>
+        <div class="ss-group"><label>Who delivers your orders?</label>
+          <select name="delivery_by" id="deliveryBy">
+            <option value="vendor" {% if profile.delivery_by != 'platform' %}selected{% endif %}>Own delivery (my riders)</option>
+            <option value="platform" {% if profile.delivery_by == 'platform' %}selected{% endif %}>Platform riders</option>
+          </select>
+          <div class="ss-help" id="platformInfo" style="display:none">{% t "Platform riders deliver your orders. The delivery fee and time are set by the admin, so you do not need to enter them." %} <b>Rs. {{ platform_delivery.fee|floatformat:0 }} &middot; {{ platform_delivery.time_min }}-{{ platform_delivery.time_max }} min</b></div>
+        </div>
+        <div class="ss-group"><label>Minimum order (Rs.)</label><input type="number" name="min_order_amount" min="0" step="0.01" value="{{ profile.min_order_amount|stringformat:'s' }}"></div>
+        <div id="ownDelivery">
+        <div class="ss-group"><label>Delivery fee (Rs.)</label><input type="number" name="delivery_fee" min="0" step="0.01" value="{{ profile.delivery_fee|stringformat:'s' }}"></div>
+        {% if distance_fee_on %}
+        <div class="ss-row">
+          <div class="ss-group"><label>Fee per km (Rs.)</label><input type="number" name="fee_per_km" min="0" step="0.01" value="{{ profile.fee_per_km|stringformat:'s' }}"></div>
+          <div class="ss-group"><label>Free radius (km)</label><input type="number" name="free_radius_km" min="0" step="0.1" value="{{ profile.free_radius_km|stringformat:'s' }}"></div>
+        </div>
+        {% else %}
+        <input type="hidden" name="fee_per_km" value="{{ profile.fee_per_km|stringformat:'s' }}">
+        <input type="hidden" name="free_radius_km" value="{{ profile.free_radius_km|stringformat:'s' }}">
+        {% endif %}
+        <div class="ss-row">
+          <div class="ss-group"><label>Delivery time - min (minutes)</label><input type="number" name="delivery_time_min" min="5" max="600" value="{{ profile.delivery_time_min }}"></div>
+          <div class="ss-group"><label>Delivery time - max (minutes)</label><input type="number" name="delivery_time_max" min="5" max="600" value="{{ profile.delivery_time_max }}"></div>
+        </div>
+        </div>
+        {% if distance_fee_on %}
+        <div class="ss-group"><label>Max delivery distance (km)</label><input type="number" name="max_delivery_km" min="0" step="0.1" value="{{ profile.max_delivery_km|default_if_none:''|stringformat:'s' }}" placeholder="Empty = no limit">
+          <div class="ss-help">{% t "Fee = the delivery fee above + the per-km fee for every km beyond the free radius. Distance is measured from the customer’s map pin to your store location, so your store location must be set." %}{% if not profile.lat %} <b>{% t "(not set yet)" %}</b>{% endif %} {% t "If per-km is 0, only the fixed fee applies." %}</div></div>
+        {% else %}
+        <input type="hidden" name="max_delivery_km" value="{{ profile.max_delivery_km|default_if_none:''|stringformat:'s' }}">
+        {% endif %}
+        <script>
+        (function(){
+          var sel=document.getElementById('deliveryBy'), own=document.getElementById('ownDelivery'), info=document.getElementById('platformInfo');
+          if(!sel||!own) return;
+          function sync(){ var plat=sel.value==='platform'; own.style.display=plat?'none':''; if(info) info.style.display=plat?'':'none'; }
+          sel.addEventListener('change',sync); sync();
+        })();
+        </script>
+
+        <div class="ss-group">
+          <label>Delivery areas</label>
+          {% if area_groups %}
+          <input type="hidden" name="areas_mode" value="pick">
+          {% for city, items in area_groups %}
+          <div style="margin:8px 0 4px;font-weight:700;color:#2563eb">{{ city }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px 14px">
+            {% for label, on in items %}
+            <label style="font-weight:500;display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" name="delivery_areas_pick" value="{{ label }}" style="width:auto"{% if on %} checked{% endif %}> {{ label }}</label>
+            {% endfor %}
+          </div>
+          {% endfor %}
+          <label style="margin-top:10px">More areas (if not in the list)</label>
+          <textarea name="delivery_areas_extra" rows="2" maxlength="500" placeholder="e.g. Chak 45, Basti Maluk">{{ area_extra }}</textarea>
+          <div class="ss-help">Tick the areas where you deliver. If the customer’s “Deliver to” area is in the list, they can see your store.</div>
+          {% else %}
+          <textarea name="delivery_areas" rows="2" maxlength="1000" placeholder="e.g. Gulberg, DHA, Johar Town">{{ profile.delivery_areas }}</textarea>
+          <div class="ss-help">{% t "Areas where you deliver, separated by commas. If the customer’s “Deliver to” area is in this list, they can see your store." %} {% t "If left empty, only customers in your city ({}) will see your store." profile.city|default:"-" %}</div>
+          {% endif %}
+        </div>
+
+        <div class="ss-sec">About your store</div>
+        <div class="ss-group">
+          <label>Description</label>
+          <textarea name="store_description" rows="3" maxlength="1000" placeholder="Aap kya bechte hain, khaasiyat...">{{ profile.store_description }}</textarea>
+        </div>
+        <div class="ss-row">
+          <div class="ss-group">
+            <label>Logo</label>
+            {% if profile.logo %}<img class="ss-logo" src="{{ profile.logo|thumb:160 }}" alt="">
+              <label class="ss-check"><input type="checkbox" name="remove_logo" value="1"> Remove logo</label>{% endif %}
+            <input type="file" name="logo" accept="image/*">
+          </div>
+          <div class="ss-group">
+            <label>Cover photo</label>
+            {% if profile.cover_image %}<img class="ss-cover" src="{{ profile.cover_image|thumb:720 }}" alt="">
+              <label class="ss-check"><input type="checkbox" name="remove_cover" value="1"> Remove cover</label>{% endif %}
+            <input type="file" name="cover_image" accept="image/*">
+          </div>
+        </div>
+        <div class="ss-help">JPG/PNG/WEBP, up to 5 MB. Logo: square image (e.g. 512&times;512). Cover photo: wide photo of your food/shop (e.g. 1200&times;400), not the logo, otherwise it gets cropped.</div>
+
+        <button type="submit" class="ss-btn">Save Store Settings</button>
+      </form>
+      <form method="post" action="{% url 'vendor_test_push' %}" style="margin-top:18px;">
+        {% csrf_token %}
+        <div class="ss-help">🔔 <b>Test ring:</b> tap the button, then close the app. After 15 seconds your phone should ring like a new order. (Works in the Vendor APK.)</div>
+        <button type="submit" class="ss-btn" style="background:#fff;color:#16a34a;border:1.5px solid #16a34a;">Send test ring</button>
+      </form>
+      <div class="ss-links">
+        {% if profile.is_approved %}<a href="{% url 'store_detail' profile.pk %}"><i class="bi bi-eye"></i> How customers see my store</a>{% endif %}
+        <a href="{% url 'vendor_dashboard' %}"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

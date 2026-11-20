@@ -1,0 +1,101 @@
+{% load portal_i18n %}
+{# Jari delivery ka card: ek bara "agla kaam" button + baqi "More actions" mein. Context: r (order card), SHOP, unassign_reasons #}
+{% with st=r.di.status %}
+<div class="card oc">
+  <div class="row"><span class="no">#{{ r.order.order_no }}</span>
+    <span class="pill {% if st == 'assigned' %}{% else %}b{% endif %}">{% if st == 'assigned' %}Pick up the order{% else %}Deliver to the customer{% endif %}</span></div>
+
+  <div class="stop{% if st == 'assigned' %} now{% endif %}"><span class="ic">📍</span><span><b>{{ r.store }}</b>{% if r.store_addr %}<small>{{ r.store_addr }}</small>{% endif %}</span></div>
+  <div class="stop{% if st != 'assigned' %} now{% endif %}"><span class="ic">🏠</span><span><b>{{ r.order.customer.name }}</b>{% if r.cust_addr %}<small>{{ r.cust_addr }}</small>{% endif %}</span></div>
+
+  {% if r.is_cod %}<div class="cod">💵 {% t "Cash on Delivery — collect Rs. {} from the customer" r.total|floatformat:0 %}</div>
+  {% else %}<div class="paid">✅ Already paid — do not collect cash</div>{% endif %}
+
+  <details class="items"><summary>🧾 {{ r.items|length }} item(s)</summary>
+    {% for it in r.items %}<div class="row"><span>{{ it.qty|floatformat:"-2" }} × {{ it.product.name }}</span></div>{% endfor %}
+  </details>
+
+  {# ---- Agla kaam (sirf ek bara button) ---- #}
+  <div class="next">
+  {% if st == 'assigned' %}
+    {% if r.store_issue %}
+      <div class="cod">⚠️ {% t "Reported: <b>{}</b> ({}). The store was told. Wait for them, or give the order back." r.store_issue.get_reason_display r.store_issue.reported_at|time:"H:i" %}</div>
+    {% endif %}
+    {% if r.di.arrived_store_at %}
+      <div class="paid">📍 Arrived at store {{ r.di.arrived_store_at|time:"H:i" }}</div>
+      {% include 'customer_portal/rider/_act_pickup.html' %}
+    {% else %}
+      <form method="post" action="{% url 'rider_order_action' r.order.id 'arrived_store' %}">{% csrf_token %}
+        <button class="hb go">📍 I arrived at the store</button></form>
+      <details class="skip"><summary>Already picked up?</summary>{% include 'customer_portal/rider/_act_pickup.html' %}</details>
+    {% endif %}
+  {% else %}
+    {% if r.fail %}
+      <div class="cod">⚠️ Problem reported: <b>{{ r.fail.get_reason_display }}</b>
+        {% if r.fail.customer_ready %}<br>🙋 The customer says they are ready — please deliver.
+        {% elif r.fail_left > 0 %}<br>⏳ {% t "Wait {} more minute(s) for the customer, then you can return the order." r.fail_min %}
+        {% else %}<br>You can now return the order to the store.{% endif %}</div>
+      {% if not r.fail.customer_ready and r.fail_left <= 0 %}
+      <form method="post" action="{% url 'rider_order_action' r.order.id 'return' %}" onsubmit="return confirm('{% t "Take this order back to the store?" %}');">{% csrf_token %}
+        <button class="hb l">↩️ Return to store</button></form>
+      {% endif %}
+    {% endif %}
+    {% if r.di.arrived_customer_at %}
+      <div class="paid">📍 Arrived at customer {{ r.di.arrived_customer_at|time:"H:i" }}</div>
+      {% include 'customer_portal/rider/_act_deliver.html' %}
+    {% else %}
+      <form method="post" action="{% url 'rider_order_action' r.order.id 'arrived_customer' %}">{% csrf_token %}
+        <button class="hb go">📍 I arrived at the customer</button></form>
+      <details class="skip"><summary>Already handed over?</summary>{% include 'customer_portal/rider/_act_deliver.html' %}</details>
+    {% endif %}
+  {% endif %}
+  </div>
+
+  {# ---- Baqi sab kaam: More actions ---- #}
+  <details class="moreact"><summary>⋯ More actions</summary>
+    <div class="mgrid">
+      {% if SHOP.rider_inapp_nav_enabled and r.nav_inapp %}<a class="hb l" href="{% url 'rider_navigate' r.order.id %}">📍 Navigate in app</a>{% endif %}
+      {% if r.nav %}
+        <a class="hb l" href="{{ r.nav.google }}" target="_blank" rel="noopener">🗺️ Google Maps</a>
+        <a class="hb l" href="{{ r.nav.waze }}" target="_blank" rel="noopener">🚗 Waze</a>
+      {% endif %}
+      {% if r.store_phone %}<a class="hb l" href="tel:{{ r.store_phone }}">📞 Call store</a>{% endif %}
+      {% if r.map_store %}<a class="hb l" href="{{ r.map_store }}" target="_blank" rel="noopener">🧭 Store map</a>{% endif %}
+      {% if r.cust_phone %}<a class="hb l" href="tel:{{ r.cust_phone }}">📞 Call customer</a>{% endif %}
+      {% if r.wa_cust %}<a class="hb l" href="{{ r.wa_cust }}" target="_blank" rel="noopener">💬 WhatsApp</a>{% endif %}
+      {% if r.map_pin %}<a class="hb l" href="{{ r.map_pin }}" target="_blank" rel="noopener">📍 Pin</a>{% endif %}
+      {% if r.map_cust %}<a class="hb l" href="{{ r.map_cust }}" target="_blank" rel="noopener">🧭 Customer map</a>{% endif %}
+      {% if SHOP.shop_order_chat_enabled %}<button type="button" class="hb l" onclick="OrderChat.open({{ r.order.id }}, 'rider')">💬 Customer chat<span class="oc-badge" data-chat-badge="{{ r.order.id }}" data-chat-channel="rider"></span></button>{% endif %}
+    </div>
+
+    {% if st == 'assigned' %}
+      {% if not r.store_issue %}
+      <details class="sub"><summary>⚠️ Problem at the store</summary>
+        <form method="post" action="{% url 'rider_order_action' r.order.id 'store_issue' %}">{% csrf_token %}
+          <select name="reason" class="proof-in hin" required>
+            {% for k, label in r.issue_reasons %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+          </select>
+          <input type="text" name="note" maxlength="200" class="proof-in hin" placeholder="Note (required for Other)">
+          <button class="hb o">Tell the store</button>
+        </form></details>
+      {% endif %}
+      <details class="sub"><summary>↩️ Can't take this order</summary>
+        <form method="post" action="{% url 'rider_order_action' r.order.id 'unassign' %}" onsubmit="return confirm('{% t "Give this order back? Another rider will get it." %}');">{% csrf_token %}
+          <select name="reason" class="proof-in hin" required>
+            {% for k, label in unassign_reasons %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+          </select>
+          <button class="hb o">Give back order</button>
+        </form></details>
+    {% elif not r.fail %}
+      <details class="sub"><summary>⚠️ Can't deliver</summary>
+        <form method="post" action="{% url 'rider_order_action' r.order.id 'fail' %}">{% csrf_token %}
+          <select name="reason" class="proof-in hin" required>
+            {% for k, label in r.fail_reasons %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+          </select>
+          <input type="text" name="note" maxlength="200" class="proof-in hin" placeholder="Note (required for Other)">
+          <button class="hb o">Report problem</button>
+        </form></details>
+    {% endif %}
+  </details>
+</div>
+{% endwith %}

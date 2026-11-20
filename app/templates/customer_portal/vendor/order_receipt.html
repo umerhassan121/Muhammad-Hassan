@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt {{ order.order_no }}</title>
+<style>
+  @page { size: {{ width_mm }}mm auto; margin: 2mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Courier New", monospace; font-size: {% if width_mm == 58 %}11px{% else %}13px{% endif %}; color: #000; background: #fff;
+         width: {{ width_mm }}mm; margin: 0 auto; padding: 2mm; }
+  h1 { font-size: 1.3em; text-align: center; margin: 0 0 2px; }
+  .c { text-align: center; } .r { text-align: right; } .b { font-weight: bold; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { vertical-align: top; padding: 1px 0; }
+  .note { font-size: .9em; padding-left: 8px; }
+  .big { font-size: 1.4em; }
+  .toolbar { text-align: center; margin: 8px 0; font-family: sans-serif; }
+  @media print { .toolbar { display: none; } }
+</style>
+</head>
+<body{% if auto_print %} onload="window.print()"{% endif %}>
+<div class="toolbar">
+  <button onclick="window.print()">Print</button>
+  <a href="?w=58">58 mm</a> | <a href="?w=80">80 mm</a>
+  <div style="margin-top:6px">
+    Thermal printer:
+    <button id="pr-bt" type="button">Bluetooth</button>
+    <button id="pr-usb" type="button">USB</button>
+    <button id="pr-serial" type="button">Serial / COM</button>
+    <div id="pr-msg" style="font-size:12px;margin-top:4px"></div>
+  </div>
+</div>
+
+<h1>{{ profile.business_name }}</h1>
+{% if company_name %}<div class="c">{{ company_name }}</div>{% endif %}
+<hr>
+<div class="c big b">#{{ order.order_no }}</div>
+<div class="c">{{ order.order_date|date:"d M Y, H:i" }}</div>
+{% if p.scheduled_for %}<div class="c b">SCHEDULED: {{ order.scheduled_for|date:"d M Y, H:i" }}</div>{% endif %}
+{% if order.prep_minutes %}<div class="c">Prep time: {{ order.prep_minutes }} min</div>{% endif %}
+<hr>
+<div><span class="b">{{ p.customer.name }}</span></div>
+{% if p.customer.phone %}<div>Tel: {{ p.customer.phone }}</div>{% endif %}
+{% if p.customer.address %}<div>{{ p.customer.address }}</div>{% endif %}
+<hr>
+<table>
+  {% for i in items %}
+  <tr>
+    <td>{{ i.qty|floatformat:"-2" }} x {{ i.product.name }}</td>
+    <td class="r">{{ i.price|floatformat:2 }}</td>
+  </tr>
+  {% if i.options_text %}<tr><td colspan="2" class="note">+ {{ i.options_text }}</td></tr>{% endif %}
+  {% if i.note %}<tr><td colspan="2" class="note b">NOTE: {{ i.note }}</td></tr>{% endif %}
+  {% endfor %}
+</table>
+<hr>
+<table>
+  <tr><td>Items</td><td class="r">{{ p.subtotal }}</td></tr>
+  <tr><td>Delivery</td><td class="r">{{ p.delivery_fee }}</td></tr>
+  <tr class="b"><td>TOTAL</td><td class="r">{{ p.total }}</td></tr>
+  <tr><td>Payment</td><td class="r">{% if is_cod %}Cash on delivery{% else %}{{ p.payment_method|upper }}{% endif %}</td></tr>
+  {% if is_cod %}<tr class="b"><td>Cash to collect</td><td class="r">{{ p.cash_due }}</td></tr>{% endif %}
+</table>
+<hr>
+<div class="c">Printed {{ printed_at|date:"d M Y, H:i" }}</div>
+<script>
+/* Direct thermal printing from the browser (Chrome / Edge; needs HTTPS).
+   Bluetooth = BLE printers (Android, Windows, macOS, ChromeOS). USB = WebUSB (Android; on Windows the printer needs a WinUSB driver).
+   Serial = Bluetooth-classic (paired COM port) or USB-serial printers on desktop. iPhone / iPad Safari: not supported - use Print. */
+(function () {
+  var URL_BYTES = "{% url 'vendor_order_escpos' order.pk %}?w={{ width_mm }}";
+  var msg = document.getElementById('pr-msg');
+  function say(t, bad) { msg.textContent = t; msg.style.color = bad ? '#b00020' : '#0a6b2d'; }
+  function b64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function getBytes() {
+    return fetch(URL_BYTES, {credentials: 'same-origin'}).then(function (r) {
+      if (!r.ok) throw new Error('Could not load receipt (' + r.status + ')'); return r.json();
+    }).then(function (j) { return b64(j.data); });
+  }
+  // common BLE printer services (generic + vendor ones); the first writable characteristic is used
+  var BLE_SERVICES = ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455', 0xff00, 0xffe0, 0xfee7, 0xff12];
+
+  async function printBluetooth(bytes) {
+    if (!navigator.bluetooth) throw new Error('Bluetooth printing is not supported in this browser. Use Chrome / Edge.');
+    var dev = await navigator.bluetooth.requestDevice({acceptAllDevices: true, optionalServices: BLE_SERVICES});
+    var server = await dev.gatt.connect(), chr = null;
+    var services = await server.getPrimaryServices();
+    for (var s of services) {
+      var chars = await s.getCharacteristics();
+      for (var c of chars) { if (c.properties.write || c.properties.writeWithoutResponse) { chr = c; break; } }
+      if (chr) break;
+    }
+    if (!chr) throw new Error('This device has no writable printer channel (is it a printer?)');
+    var size = 100;                                          // small chunks: many BLE printers drop big writes
+    for (var i = 0; i < bytes.length; i += size) {
+      var part = bytes.slice(i, i + size);
+      if (chr.properties.writeWithoutResponse && chr.writeValueWithoutResponse) await chr.writeValueWithoutResponse(part);
+      else await chr.writeValue(part);
+      await sleep(30);
+    }
+    dev.gatt.disconnect();
+  }
+
+  async function printUsb(bytes) {
+    if (!navigator.usb) throw new Error('USB printing is not supported in this browser. Use Chrome / Edge.');
+    var dev = (await navigator.usb.getDevices())[0] || await navigator.usb.requestDevice({filters: []});
+    await dev.open();
+    if (dev.configuration === null) await dev.selectConfiguration(1);
+    var iface = null, ep = null;
+    dev.configuration.interfaces.forEach(function (i) {
+      i.alternates.forEach(function (a) {
+        if (a.interfaceClass === 7 || !iface) {              // 7 = printer class (else first with a bulk OUT)
+          a.endpoints.forEach(function (e) { if (e.direction === 'out' && e.type === 'bulk' && (!ep || a.interfaceClass === 7)) { iface = i; ep = e; } });
+        }
+      });
+    });
+    if (!iface) throw new Error('No printer endpoint found on this USB device.');
+    await dev.claimInterface(iface.interfaceNumber);
+    for (var i = 0; i < bytes.length; i += 4096) await dev.transferOut(ep.endpointNumber, bytes.slice(i, i + 4096));
+    await dev.close();
+  }
+
+  async function printSerial(bytes) {
+    if (!navigator.serial) throw new Error('Serial printing is not supported in this browser. Use Chrome / Edge on a computer.');
+    var port = (await navigator.serial.getPorts())[0] || await navigator.serial.requestPort();
+    await port.open({baudRate: 9600});
+    var w = port.writable.getWriter();
+    await w.write(bytes);
+    w.releaseLock();
+    await port.close();
+  }
+
+  function wire(id, fn, label) {
+    document.getElementById(id).addEventListener('click', async function () {
+      try { say('Preparing ' + label + '…'); var bytes = await getBytes(); say('Sending to ' + label + '…'); await fn(bytes); say('Sent to printer.'); }
+      catch (e) { say((e && e.message) || String(e), true); }
+    });
+  }
+  wire('pr-bt', printBluetooth, 'Bluetooth printer');
+  wire('pr-usb', printUsb, 'USB printer');
+  wire('pr-serial', printSerial, 'serial printer');
+})();
+</script>
+</body>
+</html>

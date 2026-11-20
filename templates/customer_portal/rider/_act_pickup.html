@@ -1,0 +1,8 @@
+{# Picked up form (store se order uthaya). Context: r (order card) #}
+<form method="post" action="{% url 'rider_order_action' r.order.id 'pickup' %}">{% csrf_token %}
+  {% if SHOP.rider_pickup_code_required %}
+  <label class="proof-lbl">🔑 Pickup code <b style="color:#dc2626">*</b> <small>(ask the store)</small></label>
+  <input type="text" name="pickup_code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required placeholder="4-digit code" class="proof-in hin">
+  {% endif %}
+  <button class="hb go o">📦 Picked up</button>
+</form>

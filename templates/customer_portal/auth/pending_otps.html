@@ -1,0 +1,184 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+{% load portal_i18n %}
+
+{% block title %}Pending OTPs - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_pending_otps.css' %}?v=1">{% endblock %}
+
+{% block content %}
+
+
+<div class="otps-container">
+    
+    <div class="page-header">
+        <i class="bi bi-key-fill"></i>
+        <h2>Pending OTPs</h2>
+        <p>Find your OTP and verify your order</p>
+    </div>
+    
+    <div class="otps-body">
+        
+        <div class="info-banner">
+            <i class="bi bi-info-circle-fill"></i>
+            <strong>This page shows your pending OTPs.</strong>
+            <br>
+            Verify the OTP to place the order. Find your OTP in the list below.
+        </div>
+        
+        {% if has_otps %}
+        
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-num">{{ total_pending }}</div>
+                <div class="stat-label">Total Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num">5</div>
+                <div class="stat-label">Minutes Valid</div>
+            </div>
+        </div>
+        
+        <div class="refresh-bar">
+            <small class="text-muted">
+                <i class="bi bi-clock-history"></i> Live Updates
+            </small>
+            <a href="{% url 'pending_otps' %}" class="refresh-btn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </a>
+        </div>
+        
+        {% for otp in pending_otps %}
+        <div class="otp-card">
+            
+            <div class="otp-card-header">
+                <div>
+                    <div class="otp-card-name">
+                        <i class="bi bi-person-circle"></i>
+                        {% if otp.customer_name %}{{ otp.customer_name }}{% else %}{% t "Customer" %}{% endif %}
+                    </div>
+                    <div class="otp-card-phone">
+                        📱 {{ otp.masked_phone }}
+                    </div>
+                </div>
+                <div class="otp-badge">
+                    ⏱ {{ otp.expires_in }}
+                </div>
+            </div>
+            
+            <div class="otp-card-body">
+                
+                <div class="otp-field">
+                    <div class="otp-field-label">OTP Code</div>
+                    <div class="otp-field-value code" 
+                         id="otp-code-{{ otp.id }}">
+                        {{ otp.otp_code }}
+                    </div>
+                </div>
+                
+                {% if otp.order_token %}
+                <div class="otp-field">
+                    <div class="otp-field-label">Order Token</div>
+                    <div class="otp-field-value token" 
+                         id="otp-token-{{ otp.id }}">
+                        {{ otp.order_token }}
+                    </div>
+                </div>
+                {% endif %}
+                
+            </div>
+            
+            <div class="otp-card-footer">
+                
+                <a href="{% url 'quick_verify_otp' otp.id %}" 
+                   class="btn-verify-quick">
+                    <i class="bi bi-shield-check"></i> Verify Now
+                </a>
+                
+                <button type="button" 
+                        class="btn-copy" 
+                        onclick="copyDetails('{{ otp.otp_code }}', '{{ otp.order_token|default:'' }}', this)"
+                        title="Copy OTP & Token">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+                
+            </div>
+            
+        </div>
+        {% endfor %}
+        
+        {% else %}
+        
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h4>No Pending OTPs</h4>
+            <p>
+                There is no pending OTP right now. 
+                Place a new order to generate an OTP.
+            </p>
+            <a href="{% url 'shop_home' %}" class="btn-shop">
+                <i class="bi bi-shop"></i> Shop Now
+            </a>
+        </div>
+        
+        {% endif %}
+        
+        <div class="back-links">
+            <a href="{% url 'customer_login' %}">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+            <a href="{% url 'shop_home' %}">
+                <i class="bi bi-shop"></i> Shop
+            </a>
+        </div>
+        
+    </div>
+    
+</div>
+
+<script>
+function copyDetails(otpCode, token, btn) {
+    let text = '📱 {% t "OTP Code" %}: ' + otpCode;
+    if (token) {
+        text += '\n🔑 {% t "Order Token" %}: ' + token;
+    }
+    text += '\n\n{% t "Verify at" %}: ' + window.location.origin + '/shop/verify-otp-later/';
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            showCopied(btn);
+        }).catch(function() {
+            fallbackCopy(text, btn);
+        });
+    } else {
+        fallbackCopy(text, btn);
+    }
+}
+
+function fallbackCopy(text, btn) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showCopied(btn);
+    } catch (err) {
+        alert('❌ {% t "Copy failed. Please manually note the details." %}');
+    }
+    document.body.removeChild(textarea);
+}
+
+function showCopied(btn) {
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+    btn.classList.add('copied');
+    setTimeout(function() {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('copied');
+    }, 1500);
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,535 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load img_tools %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_no }} - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_order_detail.css' %}?v=1">{% endblock %}
+
+{% block content %}
+
+<!-- ✅ Hide Mobile Bottom Navigation on Order Detail Page -->
+
+<div class="container py-4 so-shop">
+    {% include 'customer_portal/_order_polish.html' %}
+
+    <!-- Back -->
+    <a href="{% url 'my_orders' %}" class="btn btn-outline-secondary btn-sm mb-3">
+        <i class="bi bi-arrow-left"></i> Back to Orders
+    </a>
+    {% if order.status == 'delivered' or order.status == 'invoiced' or order.status == 'cancelled' %}
+    <form method="post" action="{% url 'reorder' order.id %}" class="d-inline ms-2">{% csrf_token %}
+        <button type="submit" class="btn btn-success btn-sm mb-3"><i class="bi bi-arrow-repeat"></i> Reorder</button>
+    </form>
+    <details class="d-inline-block ms-2 mb-3 align-top">
+        <summary class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Repeat this order</summary>
+        <form method="post" action="{% url 'repeat_plan_create' order.id %}" class="card card-body mt-2" style="max-width:320px">{% csrf_token %}
+            <label class="form-label small mb-1">How often?</label>
+            <select name="frequency" class="form-select form-select-sm mb-2" onchange="this.form.weekday.style.display=this.value==='weekly'?'block':'none'">
+                <option value="daily">Every day</option>
+                <option value="weekly">Every week</option>
+            </select>
+            <select name="weekday" class="form-select form-select-sm mb-2" style="display:none">
+                <option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option>
+                <option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+            </select>
+            <label class="form-label small mb-1">Remind me at</label>
+            <input type="time" name="time_of_day" value="08:00" class="form-control form-control-sm mb-2" required>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        </form>
+    </details>
+    {% endif %}
+
+    {% if order.big_vehicle_state == 'proposed' %}
+    <div class="card border-warning mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-1">🚚 Bari gari ka kiraya</h5>
+            <p class="mb-2">Aap ke order ka saman bhaari hai, is liye <b>{{ order.big_vehicle_type }}</b> se bheja jayega.</p>
+            <div class="fs-4 fw-bold mb-1">Rs. {{ order.big_vehicle_fee|floatformat:0 }}</div>
+            {% if order.big_vehicle_note %}<p class="text-muted small mb-2">{{ order.big_vehicle_note }}</p>{% endif %}
+            <p class="small text-muted mb-3">Manzoor karne par yeh kiraya delivery fee ban jayega aur order ka total badal jayega.</p>
+            <div class="d-flex gap-2 flex-wrap">
+                <form method="post" action="{% url 'big_vehicle_respond' order.id %}">{% csrf_token %}<input type="hidden" name="choice" value="approve"><button type="submit" class="btn btn-success">Manzoor hai</button></form>
+                <form method="post" action="{% url 'big_vehicle_respond' order.id %}" onsubmit="return confirm('Order cancel ho jayega. Kya aap cancel karna chahte hain?');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button type="submit" class="btn btn-outline-danger">Order cancel karein</button></form>
+            </div>
+        </div>
+    </div>
+    {% elif order.big_vehicle_state == 'approved' %}
+    <div class="alert alert-info mb-3">
+        🚚 <b>Bari gari:</b> {{ order.big_vehicle_type }} &middot; Kiraya Rs. {{ order.big_vehicle_fee|floatformat:0 }}
+        {% if order.vehicle_no %}<br>Gari ka number: <b>{{ order.vehicle_no }}</b>{% endif %}
+        {% if order.big_vehicle_driver_phone %}<br>Driver: <a href="tel:{{ order.big_vehicle_driver_phone }}">{{ order.big_vehicle_driver_phone }}</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Hero -->
+    <div class="so-hero">
+        <div>
+            <h2><i class="bi bi-receipt"></i> {% t "Order #{}" order.order_no %}</h2>
+            <p><i class="bi bi-calendar"></i> {{ order.order_date|date:"d M, Y - h:i A" }}</p>
+            {% if order.scheduled_for %}<p><i class="bi bi-clock"></i> {% t "Schedule:" %} <strong>{{ order.scheduled_for|date:"d M, Y - h:i A" }}</strong></p>{% endif %}
+            <div class="mt-2">
+            {% if order.status == 'pending' %}
+                <span class="badge bg-warning text-dark">⏳ Pending</span>
+            {% elif order.status == 'confirmed' %}
+                <span class="badge bg-info">✅ Confirmed</span>
+            {% elif order.status == 'processing' %}
+                <span class="badge bg-primary">⚙️ Processing</span>
+            {% elif order.status == 'ready' %}
+                <span class="badge bg-primary">📦 Ready to Ship</span>
+            {% elif order.status == 'partially_delivered' %}
+                <span class="badge bg-info">🚚 Partially Delivered</span>
+            {% elif order.status == 'delivered' %}
+                <span class="badge bg-success">🎉 Delivered</span>
+            {% elif order.status == 'cancelled' %}
+                <span class="badge bg-danger">❌ Cancelled</span>
+            {% endif %}
+            </div>
+        </div>
+        <div class="so-hero-right">
+            <div class="so-total-lbl">Order Total</div>
+            <div class="so-total-val">Rs. {% if is_store_order %}{{ grand_total|floatformat:0 }}{% else %}{{ total_amount|floatformat:0 }}{% endif %}</div>
+            <div class="odx1"><i class="bi bi-cash-coin"></i> Cash on Delivery</div>
+        </div>
+    </div>
+
+    {% if is_store_order %}
+    <div class="alert alert-light border mb-3">
+        <b><i class="bi bi-shop"></i> {{ store_name }}</b>
+        {% if order.status == 'confirmed' and order.prep_minutes %}
+            <span class="d-block small text-muted">{% t "Store accepted the order &middot; ready in ~{} minutes" order.prep_minutes %}</span>
+        {% elif order.status == 'ready' %}
+            <span class="d-block small text-success">Your order is ready 📦</span>
+        {% elif order.status == 'pending' %}
+            <span class="d-block small text-muted">Waiting for the store to respond...
+                {% if accept_deadline %}<b id="acceptCountdown" data-deadline="{{ accept_deadline|date:'c' }}" data-order="{{ order.id }}"></b>{% endif %}
+            </span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if store_rejected %}
+    <div class="card border-danger shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold text-danger mb-2">❌ {% t "{} did not accept the order" store_name %}</h6>
+            <p class="mb-2"><b>Wajah:</b> {{ order.reject_reason }}</p>
+            <p class="mb-0 small text-muted">💰 {{ refund_note }}</p>
+            {% if suggested_stores %}
+            <hr>
+            <div class="fw-bold mb-2">You can order from these stores:</div>
+            <div class="d-flex flex-column gap-2">
+                {% for st in suggested_stores %}
+                <a href="{% url 'store_detail' st.pk %}" class="btn btn-outline-primary text-start">
+                    <i class="bi bi-shop"></i> {{ st.business_name }}
+                    <span class="small text-muted">&middot; {% t "{}-{} min" st.eff_time_min st.eff_time_max %}{% if st.min_order_amount > 0 %} &middot; {% t "Min Rs. {}" st.min_order_amount|floatformat:0 %}{% endif %}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <a href="{% url 'store_list' %}" class="btn btn-link px-0 mt-2">View all stores</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if failure %}
+    <div class="card border-0 shadow-sm mb-3" style="border-left:4px solid #dc2626 !important"><div class="card-body py-3">
+      {% if failure.status == 'waiting' %}
+        <div class="fw-semibold mb-1">⚠️ Your rider could not deliver: {{ failure.get_reason_display }}</div>
+        {% if rider_di.rider %}<div class="small mb-2">Please contact the rider: <a href="tel:{{ rider_di.rider.phone }}">📞 {{ rider_di.rider.phone }}</a></div>{% endif %}
+        {% if failure.customer_ready %}<div class="small text-success">✅ You told the rider you are ready.</div>
+        {% else %}<form method="post" action="{% url 'customer_ready_for_rider' order.id %}">{% csrf_token %}
+          <button class="btn btn-primary btn-sm">🙋 I am ready</button></form>{% endif %}
+      {% else %}
+        ↩️ Your order was returned to the store. Our team will contact you.
+      {% endif %}
+    </div></div>
+    {% endif %}
+
+    {% if tip or can_tip %}
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body py-3">
+      {% if tip %}
+        💝 You tipped your rider: <b>Rs. {{ tip.amount|floatformat:0 }}</b>
+      {% else %}
+        <div class="fw-semibold mb-2">💝 Tip your rider
+          <small class="text-muted fw-normal">· {% t "Wallet: Rs. {}" tip_wallet|floatformat:0 %}</small></div>
+        <form method="post" action="{% url 'tip_rider' order.id %}" class="d-flex flex-wrap gap-2 align-items-center">{% csrf_token %}
+          {% for p in tip_presets %}<button type="submit" name="amount" value="{{ p }}" class="btn btn-outline-primary btn-sm">Rs. {{ p }}</button>{% endfor %}
+          <input type="number" name="custom" min="1" step="1" inputmode="numeric" placeholder="Other" class="form-control form-control-sm" style="width:90px">
+          <button type="submit" class="btn btn-primary btn-sm">Send</button>
+        </form>
+      {% endif %}
+    </div></div>
+    {% endif %}
+
+    {% if delivery_otp %}
+    <div class="card border-0 shadow-sm mb-3" style="border-left:4px solid #f59e0b !important"><div class="card-body py-3 text-center">
+        <div class="small text-muted">🔑 Delivery code — tell it to the rider only when you receive your order</div>
+        <div class="odx2">{{ delivery_otp }}</div>
+    </div></div>
+    {% endif %}
+
+    {% if review_rider or rider_di %}
+    {% if rider_di.rider %}
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body py-3">
+        🏍️ <b>Rider:</b> {{ rider_di.rider.name }}
+        <a href="tel:{{ rider_di.rider.phone }}" class="ms-2">📞 {{ rider_di.rider.phone }}</a>
+    </div></div>
+    {% endif %}
+    {% endif %}
+
+    {% if SHOP.shop_order_chat_enabled %}
+    <div class="card border-0 shadow-sm mb-3"><div class="card-body py-3 d-flex flex-wrap gap-2">
+        {% if is_store_order %}<button type="button" class="btn btn-outline-primary btn-sm"
+            onclick="OrderChat.open({{ order.id }}, 'vendor', [['vendor','Store']{% if rider_di.rider %},['rider','Rider']{% endif %}])">
+            💬 Chat with store<span class="oc-badge" data-chat-badge="{{ order.id }}" data-chat-channel="vendor"></span></button>{% endif %}
+        {% if rider_di.rider %}<button type="button" class="btn btn-outline-primary btn-sm"
+            onclick="OrderChat.open({{ order.id }}, 'rider', [{% if is_store_order %}['vendor','Store'],{% endif %}['rider','Rider']])">
+            💬 Chat with rider<span class="oc-badge" data-chat-badge="{{ order.id }}" data-chat-channel="rider"></span></button>{% endif %}
+    </div></div>
+    {% include 'customer_portal/_order_chat_panel.html' %}
+    {% endif %}
+
+    {% if can_review %}
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body">
+      <h5 class="mb-3">⭐ Tell us about your experience</h5>
+      <form method="post" action="{% url 'rate_order' order.id %}">{% csrf_token %}
+        {% if is_store_order %}
+        <div class="mb-3">
+          <div class="fw-semibold mb-1">🏪 {{ store_name }}</div>
+          <div class="rv-stars">{% for i in "54321" %}<input type="radio" id="vr{{ i }}" name="vendor_rating" value="{{ i }}"><label for="vr{{ i }}">★</label>{% endfor %}</div>
+          <input class="form-control mt-2" name="vendor_comment" maxlength="300" placeholder="Write about the goods/store (optional)">
+        </div>
+        {% endif %}
+        {% if review_rider %}
+        <div class="mb-3">
+          <div class="fw-semibold mb-1">🏍️ {% t "Rider: {}" review_rider.name %}</div>
+          <div class="rv-stars">{% for i in "54321" %}<input type="radio" id="rr{{ i }}" name="rider_rating" value="{{ i }}"><label for="rr{{ i }}">★</label>{% endfor %}</div>
+          <input class="form-control mt-2" name="rider_comment" maxlength="300" placeholder="Write about the delivery (optional)">
+        </div>
+        {% endif %}
+        <button class="btn btn-primary w-100">Submit rating</button>
+      </form>
+    </div></div>
+    {% elif review %}
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body">
+      <h6 class="mb-2">⭐ Your rating</h6>
+      {% if review.vendor_rating %}<div>🏪 {{ store_name }}: <b class="odx3">{{ review.vendor_rating }}/5 ★</b>{% if review.vendor_comment %} — {{ review.vendor_comment }}{% endif %}</div>{% endif %}
+      {% if review.vendor_reply %}<div class="odx4">💬 <b>{{ store_name }}</b> {% t "replied:" %} {{ review.vendor_reply }}</div>{% endif %}
+      {% if review.rider_rating %}<div>🏍️ {% t "Rider:" %} <b class="odx3">{{ review.rider_rating }}/5 ★</b>{% if review.rider_comment %} — {{ review.rider_comment }}{% endif %}</div>{% endif %}
+    </div></div>
+    {% endif %}
+
+    {% if dispute %}
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="mb-0">⚠️ Your issue: {{ dispute.get_reason_display }}</h6>
+        <span class="badge {% if dispute.status == 'resolved' %}bg-success{% elif dispute.status == 'rejected' %}bg-secondary{% elif dispute.status == 'under_review' %}bg-info{% else %}bg-warning text-dark{% endif %}">{{ dispute.get_status_display }}</span>
+      </div>
+      {% if dispute.description %}<p class="text-muted small mb-2">{{ dispute.description }}</p>{% endif %}
+      {% if dispute.status == 'resolved' %}
+        <div class="alert alert-success mb-0 py-2">{% t "<b>{}</b> has been returned to your wallet." dispute.refund_amount %}{% if dispute.admin_note %} {{ dispute.admin_note }}{% endif %}</div>
+      {% elif dispute.status == 'rejected' %}
+        <div class="alert alert-secondary mb-0 py-2">{{ dispute.admin_note|default:"The dispute was rejected." }}</div>
+      {% else %}
+        <div class="text-muted small">We are looking into your issue. You will be told as soon as we have a reply.</div>
+      {% endif %}
+    </div></div>
+    {% elif can_dispute %}
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body">
+      <h6 class="mb-1">⚠️ Had a problem?</h6>
+      <div class="text-muted small mb-3">{% t "You can report a problem up to {} hours after delivery." dispute_window_hours %}</div>
+      <form method="post" action="{% url 'dispute_create' order.id %}" enctype="multipart/form-data">{% csrf_token %}
+        <select class="form-select mb-2" name="reason" required>
+          <option value="">Choose the reason</option>
+          {% for code, label in dispute_reasons %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+        </select>
+        <textarea class="form-control mb-2" name="description" rows="3" maxlength="2000" placeholder="What happened? (write a few details)"></textarea>
+        <input class="form-control mb-3" type="file" name="photo" accept="image/*">
+        <button class="btn btn-outline-danger w-100">Report problem</button>
+      </form>
+    </div></div>
+    {% endif %}
+
+    <!-- Status Timeline -->
+    {% if order.status != 'cancelled' %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">📦 Order Status</h6>
+            <div class="timeline">
+                {% for status_code, icon, label in status_steps %}
+                <div class="timeline-step {% if forloop.counter0 <= current_index %}completed{% endif %} {% if forloop.counter0 == current_index %}current{% endif %}">
+                    <div class="timeline-icon">
+                        {% if forloop.counter0 < current_index %}✅
+                        {% elif forloop.counter0 == current_index %}🔄
+                        {% else %}{{ icon }}{% endif %}
+                    </div>
+                    <div class="timeline-label">{{ label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        <i class="bi bi-x-circle"></i> 
+        <strong>Order Cancelled</strong><br>
+        {% if order.notes %}
+        <small>{{ order.notes }}</small>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        
+        <!-- Order Items -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bag"></i> {% t "Order Items ({})" items.count %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image|thumb:480 }}" 
+                                                 style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ item.product.name }}</div>
+                                                {% if item.options_text %}<small class="text-muted d-block">{{ item.options_text }}</small>{% endif %}
+                                                {% if item.note %}<small class="text-muted d-block">📝 {{ item.note }}</small>{% endif %}
+                                                {% if item.product.serial_no %}
+                                                <small class="text-muted">{{ item.product.serial_no }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">{{ item.qty }}</td>
+                                    <td class="text-end">Rs. {{ item.price|floatformat:0 }}</td>
+                                    <td class="text-end fw-bold">Rs. {{ item.total_amt|floatformat:0 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                {% if is_store_order %}
+                                <tr>
+                                    <td colspan="3" class="text-end">Delivery fee:</td>
+                                    <td class="text-end">Rs. {{ order.delivery_fee|floatformat:0 }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if order.discount_value > 0 %}
+                                <tr>
+                                    <td colspan="3" class="text-end text-success">Coupon discount:</td>
+                                    <td class="text-end text-success">- Rs. {{ order.discount_value|floatformat:0 }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if order.pro_delivery_waived > 0 %}
+                                <tr>
+                                    <td colspan="3" class="text-end odx5">⭐ Pro: delivery fee waived:</td>
+                                    <td class="text-end odx5">Rs. {{ order.pro_delivery_waived|floatformat:0 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Total:</td>
+                                    <td class="text-end fw-bold text-success fs-5">
+                                        Rs. {% if is_store_order %}{{ grand_total|floatformat:0 }}{% else %}{{ total_amount|floatformat:2 }}{% endif %}
+                                    </td>
+                                </tr>
+                                {% if is_store_order and order.wallet_paid > 0 %}
+                                <tr>
+                                    <td colspan="3" class="text-end text-success">👛 Paid from wallet:</td>
+                                    <td class="text-end text-success">- Rs. {{ order.wallet_paid|floatformat:0 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Cash to pay:</td>
+                                    <td class="text-end fw-bold">Rs. {{ cash_due|floatformat:0 }}</td>
+                                </tr>
+                                {% endif %}
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Info -->
+        <div class="col-lg-4">
+            
+            <!-- Customer Info -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person"></i> Customer</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <div class="text-muted small">Name</div>
+                        <div class="fw-bold">{{ order.customer.name }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-muted small">Phone</div>
+                        <div class="fw-bold">{{ order.customer.contact_number }}</div>
+                    </div>
+                    {% if order.ship_address %}
+                    <div>
+                        <div class="text-muted small">Delivery Address</div>
+                        <div id="orderShipAddress">{{ order.ship_address }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.can_change_address %}
+                    <form method="post" action="{% url 'change_order_address' order.id %}" class="mt-3" id="changeAddrForm">
+                        {% csrf_token %}
+                        <label class="form-label small fw-bold" for="newShipAddress">Address badlein (sirf is order ke liye)</label>
+                        <textarea name="address" id="newShipAddress" class="form-control" rows="2" maxlength="500" required>{{ order.ship_address }}</textarea>
+                        <input type="hidden" name="lat" id="newShipLat"><input type="hidden" name="lng" id="newShipLng">
+                        <button type="button" id="newShipPinBtn" class="btn btn-sm btn-outline-secondary mt-2">📍 Pin my current location</button>
+                        <button type="submit" class="btn btn-sm btn-primary mt-2">Address update karein</button>
+                        <div class="small mt-1" id="newShipPinMsg"></div>
+                        <script>
+                        (function(){
+                          var b=document.getElementById('newShipPinBtn'),m=document.getElementById('newShipPinMsg');
+                          if(!b)return;
+                          b.addEventListener('click',function(){
+                            if(!navigator.geolocation){m.textContent='Browser location support nahi karta';return;}
+                            m.textContent='Location le raha hoon...';
+                            navigator.geolocation.getCurrentPosition(function(p){
+                              document.getElementById('newShipLat').value=p.coords.latitude;
+                              document.getElementById('newShipLng').value=p.coords.longitude;
+                              m.textContent='✅ Pin lag gaya. Ab "Address update karein" dabayen.';
+                            },function(){m.textContent='❌ Location ki ijazat dein';},{enableHighAccuracy:true,timeout:20000});
+                          });
+                        })();
+                        </script>
+                        <div class="text-muted small mt-1">Store accept karne ke baad address nahi badal sakta. Door ke area mein jane par delivery fee badal sakti hai.</div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Notes -->
+            {% if order.notes %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Notes</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 small">{{ order.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cancel Button -->
+            {% if order.status == 'pending' or order.status == 'confirmed' and not order.vendor_id %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <button type="button" 
+                            class="btn btn-outline-danger w-100"
+                            onclick="showCancelModal()">
+                        <i class="bi bi-x-circle"></i> Cancel Order
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Cancel Order</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Do you want to cancel this order?</p>
+                <label class="form-label">Reason:</label>
+                <select id="cancelReason" class="form-select mb-2">
+                    <option value="Changed my mind">Changed my mind</option>
+                    <option value="Ordered by mistake">Ordered by mistake</option>
+                    <option value="Found better price">Found better price</option>
+                    <option value="Delivery taking too long">Delivery taking too long</option>
+                    <option value="Other">Other</option>
+                </select>
+                <textarea id="cancelNotes" class="form-control" rows="2" placeholder="Additional notes (optional)"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCancel()">
+                    <i class="bi bi-x-circle"></i> Cancel Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+(function () {
+    var el = document.getElementById('acceptCountdown');
+    if (!el) return;
+    var end = new Date(el.dataset.deadline).getTime();
+    var key = 'acceptReload' + el.dataset.order;
+    function tick() {
+        var left = Math.round((end - Date.now()) / 1000);
+        if (left > 0) {
+            el.textContent = '(' + Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2) + ' ' + '{% t "left" %})';
+            return;
+        }
+        el.textContent = '{% t "(Time is up, checking...)" %}';
+        clearInterval(timer);
+        if (!sessionStorage.getItem(key)) {           // sirf ek baar reload, loop nahi
+            sessionStorage.setItem(key, '1');
+            setTimeout(function () { location.reload(); }, 3000);
+        }
+    }
+    var timer = setInterval(tick, 1000);
+    tick();
+})();
+
+function showCancelModal() {
+    new bootstrap.Modal(document.getElementById('cancelModal')).show();
+}
+
+function confirmCancel() {
+    const reason = document.getElementById('cancelReason').value;
+    const notes = document.getElementById('cancelNotes').value;
+    
+    fetch('{% url "cancel_order_customer" order.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `reason=${encodeURIComponent(reason + (notes ? ': ' + notes : ''))}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            shopUx.ok(data.message);
+            setTimeout(function () { location.reload(); }, 1200);
+        } else {
+            shopUx.error(data.message);
+        }
+    })
+    .catch(function () { shopUx.netError(); });
+}
+</script>
+
+
+{% endblock %}

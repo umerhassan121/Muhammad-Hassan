@@ -1,0 +1,69 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+
+{% block title %}Saved addresses - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_addresses.css' %}?v=1">{% endblock %}
+
+{% block content %}
+<div class="ad-wrap">
+  <div class="ad-head">
+    <a href="{% url 'my_account' %}" class="ad-back" aria-label="Back to account"><i class="bi bi-chevron-left"></i></a>
+    <h1>Saved addresses</h1>
+  </div>
+
+  {% if addresses %}
+  <div class="ad-list">
+    {% for a in addresses %}
+    <div class="ad-card {% if a.is_default %}is-default{% endif %}">
+      <div class="ad-top">
+        <span class="ad-type">{{ a.get_address_type_display }}</span>
+        {% if a.is_default %}<span class="ad-badge">Delivering here</span>{% endif %}
+      </div>
+      <div class="ad-name">{{ a.full_name }} <small>{{ a.phone }}</small></div>
+      <div class="ad-line">{{ a.address_line_1 }}, {{ a.city }}{% if a.postal_code %}, {{ a.postal_code }}{% endif %}</div>
+      {% if a.landmark %}<div class="ad-land"><i class="bi bi-signpost-2"></i> {{ a.landmark }}</div>{% endif %}
+      <div class="ad-actions">
+        {% if not a.is_default %}
+        <form method="post" action="{% url 'address_set_default' a.pk %}">{% csrf_token %}<button type="submit" class="ad-btn main">Deliver here</button></form>
+        {% endif %}
+        <a href="?edit={{ a.pk }}#adForm" class="ad-btn">Edit</a>
+        <form method="post" action="{% url 'address_delete' a.pk %}" onsubmit="return confirm('Remove this address?');">{% csrf_token %}<button type="submit" class="ad-btn danger">Remove</button></form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ad-empty"><i class="bi bi-geo-alt"></i><p>No saved addresses yet. Add your first one below.</p></div>
+  {% endif %}
+
+  {% if can_add or edit %}
+  <form method="post" action="{% url 'address_save' %}" class="ad-form" id="adForm">
+    {% csrf_token %}
+    <h2>{% if edit %}Edit address{% else %}Add a new address{% endif %}</h2>
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.pk }}">{% endif %}
+    <div class="ad-types" role="radiogroup" aria-label="Address type">
+      {% for val, label in address_types %}
+      <label><input type="radio" name="address_type" value="{{ val }}" {% if edit and edit.address_type == val %}checked{% elif not edit and val == 'home' %}checked{% endif %}><span>{{ label }}</span></label>
+      {% endfor %}
+    </div>
+    <label class="ad-f">Full name<input name="full_name" required maxlength="100" value="{% if edit %}{{ edit.full_name }}{% else %}{{ customer.name }}{% endif %}"></label>
+    <label class="ad-f">Phone<input name="phone" required inputmode="tel" maxlength="15" placeholder="03XX XXXXXXX" value="{% if edit %}{{ edit.phone }}{% else %}{{ customer.contact_number }}{% endif %}"></label>
+    <label class="ad-f">Full address<textarea name="address_line_1" required rows="3" maxlength="255" placeholder="House, street, area">{% if edit %}{{ edit.address_line_1 }}{% endif %}</textarea></label>
+    <div class="ad-row">
+      <label class="ad-f">City<input name="city" required maxlength="100" value="{% if edit %}{{ edit.city }}{% endif %}"></label>
+      <label class="ad-f">Postal code<input name="postal_code" maxlength="10" inputmode="numeric" value="{% if edit %}{{ edit.postal_code|default:'' }}{% endif %}"></label>
+    </div>
+    <label class="ad-f">Landmark (optional)<input name="landmark" maxlength="200" placeholder="Near mosque, opposite park" value="{% if edit %}{{ edit.landmark|default:'' }}{% endif %}"></label>
+    {% if not edit or not edit.is_default %}
+    <label class="ad-chk"><input type="checkbox" name="make_default" value="1" {% if not addresses %}checked{% endif %}> Deliver my orders here</label>
+    {% endif %}
+    <div class="ad-save">
+      <button type="submit" class="ad-btn main big">Save address</button>
+      {% if edit %}<a href="{% url 'my_addresses' %}" class="ad-btn big">Cancel</a>{% endif %}
+    </div>
+  </form>
+  {% else %}
+  <p class="ad-limit">You can save up to {{ max_addresses }} addresses. Remove one to add another.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{# Promote page ke andar: {% include "customer_portal/vendor/_ads_report.html" %}  (context: report, today, running, pending) #}
+{% if running or pending %}
+<div class="v-card"><div class="v-card-body">
+  <h5 class="v-title">Daily budget</h5>
+  {% if today %}
+    <p style="margin:0 0 10px;">
+      Today: Rs. {{ today.spent }}{% if today.budget %} of Rs. {{ today.budget }}{% else %} (no limit){% endif %}
+      {% if today.exhausted %}<span class="v-badge v-badge--warn">Budget used up - paused for today</span>{% endif %}
+    </p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="budget">
+    <div class="v-field">
+      <label for="daily_budget">Rs. per day</label>
+      <input id="daily_budget" name="daily_budget" type="number" min="0" step="0.01" class="v-input"
+             value="{% if running %}{{ running.daily_budget }}{% elif pending %}{{ pending.daily_budget }}{% endif %}">
+      <div class="v-help">0 = no limit</div>
+    </div>
+    <button type="submit" class="v-btn v-btn--sm">Save budget</button>
+  </form>
+</div></div>
+{% endif %}
+
+<div class="v-card"><div class="v-card-body">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <h5 class="v-title" style="margin:0;">Ads report (last {{ report.days }} days)</h5>
+    <a class="v-btn v-btn--outline v-btn--sm" href="?export=csv&days={{ report.days }}">Download CSV</a>
+  </div>
+  <div class="v-stats">
+    <div class="v-stat"><b>{{ report.total.impressions }}</b><small>Impressions</small></div>
+    <div class="v-stat"><b>{{ report.total.clicks }}</b><small>Clicks ({{ report.total.ctr }}%)</small></div>
+    <div class="v-stat"><b>{{ report.total.orders }}</b><small>Orders</small></div>
+    <div class="v-stat"><b>Rs. {{ report.total.spend }}</b><small>Spend</small></div>
+  </div>
+  <div class="v-table-wrap">
+    <table class="v-table">
+      <thead><tr><th>Date</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Orders</th><th>Order value</th><th>Spend</th><th>Cost / order</th></tr></thead>
+      <tbody>
+      {% for r in report.rows %}
+        <tr><td>{{ r.day }}</td><td>{{ r.impressions }}</td><td>{{ r.clicks }}</td><td>{{ r.ctr }}%</td><td>{{ r.orders }}</td>
+            <td>{{ r.order_value }}</td><td>{{ r.spend }}</td><td>{{ r.cost_per_order|default:"-" }}</td></tr>
+      {% empty %}
+        <tr><td colspan="8" class="v-empty">No data yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div></div>

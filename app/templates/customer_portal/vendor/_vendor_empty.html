@@ -1,0 +1,8 @@
+{# Shared khali screen. Include karein with: icon (bi-...), title, text, cta_url, cta_label, compact.
+   Text English mein likhein - Urdu VENDOR_DEFAULTS (app/i18n/vendor_step6.py) se aata hai. #}
+<div class="v-empty-state{% if compact %} v-empty-state--compact{% endif %}" role="status">
+  <i class="bi {{ icon|default:'bi-inbox' }} v-empty-state__icon" aria-hidden="true"></i>
+  <h4 class="v-empty-state__title">{{ title }}</h4>
+  {% if text %}<p class="v-empty-state__text">{{ text }}</p>{% endif %}
+  {% if cta_url and cta_label %}<a class="v-btn v-empty-state__cta" href="{{ cta_url }}">{{ cta_label }}</a>{% endif %}
+</div>

@@ -1,0 +1,15 @@
+{% load portal_i18n %}
+{# Delivered form (customer ko order diya). Context: r (order card) #}
+<form method="post" enctype="multipart/form-data" action="{% url 'rider_order_action' r.order.id 'deliver' %}"
+      onsubmit="return confirm('{% if r.is_cod %}{% t "Order handed to the customer and Rs. {} cash collected?" r.total|floatformat:0 %}{% else %}{% t "Order handed to the customer?" %}{% endif %}');">{% csrf_token %}
+  <div class="proof">
+    {% if SHOP.rider_delivery_otp_required %}
+    <label class="proof-lbl">🔑 Delivery code <b style="color:#dc2626">*</b> <small>(ask the customer)</small></label>
+    <input type="text" name="delivery_otp" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required placeholder="4-digit code" class="proof-in hin">
+    {% endif %}
+    <label class="proof-lbl">📸 Delivery photo{% if SHOP.rider_proof_photo_required %} <b style="color:#dc2626">*</b>{% else %} <small>(optional)</small>{% endif %}</label>
+    <input type="file" name="proof_photo" accept="image/*" capture="environment"{% if SHOP.rider_proof_photo_required %} required{% endif %} class="proof-in hin">
+    <input type="text" name="receiver_name" maxlength="100" placeholder="Who received the order? (name, optional)" class="proof-in hin">
+  </div>
+  <button class="hb go">🎉 Delivered{% if r.is_cod %} / Cash collected{% endif %}</button>
+</form>

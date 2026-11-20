@@ -1,0 +1,30 @@
+{% extends 'customer_portal/info/base_info.html' %}
+{% load portal_i18n %}
+{% block page_title %}{% t "About Us" %}{% endblock %}
+{% block heading %}<i class="bi bi-info-circle text-primary"></i> {% t "About {}" company_name %}{% endblock %}
+{% block subheading %}{{ company_tagline }}{% endblock %}
+
+{% block info_body %}
+<div class="info-card text-center">
+  {% if company_logo %}<img src="{{ company_logo }}" alt="{{ company_name }}" style="max-height:80px;" class="mb-3">{% endif %}
+  <p class="mb-0">{% t "{} works to give you quality products, fair prices and reliable delivery. Our aim is to make shopping easy, clear and worry-free." company_name %}</p>
+</div>
+<div class="info-card">
+  <h2>{% t "What we offer" %}</h2>
+  <ul>
+    <li>{% t "Genuine, quality products" %}</li>
+    <li>{% t "Clear prices, no hidden charges" %}</li>
+    <li>{% t "Direct contact for order tracking and help" %}</li>
+    <li>{% t "Easy returns and refunds" %}</li>
+  </ul>
+</div>
+<div class="info-card">
+  <h2>{% t "Contact" %}</h2>
+  <ul>
+    {% if company_address %}<li>{% t "Address" %}: {{ company_address }}</li>{% endif %}
+    {% if company_contact_number %}<li>{% t "Phone" %}: <span dir="ltr">{{ company_contact_number }}</span></li>{% endif %}
+    {% if company_email %}<li>{% t "Email" %}: {{ company_email }}</li>{% endif %}
+    {% if company_website %}<li>{% t "Website" %}: <a href="{{ company_website }}" target="_blank" rel="noopener">{{ company_website }}</a></li>{% endif %}
+  </ul>
+</div>
+{% endblock %}

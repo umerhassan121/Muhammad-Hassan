@@ -1,0 +1,48 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% block title %}POS / printer connection{% endblock %}
+
+{% block content %}
+<div class="v-page">
+  <div class="v-card">
+    <div class="v-card-head"><h3>POS / printer connection</h3></div>
+    <div class="v-card-body">
+      <p class="v-muted">Connect your POS or printer app to your orders with a private token. Anyone with this token can read and update your orders, so keep it secret.</p>
+
+{% if new_token %}
+      <p><b>Your new token (shown only once):</b></p>
+      <p><code style="word-break:break-all;user-select:all">{{ new_token }}</code></p>
+{% elif token_rec %}
+      <p>Token active: <code>{{ token_rec.prefix }}&hellip;</code>
+        &middot; created {{ token_rec.created_at|date:"d M Y, H:i" }}
+        &middot; {% if token_rec.last_used_at %}last used {{ token_rec.last_used_at|date:"d M Y, H:i" }}{% else %}never used{% endif %}</p>
+{% else %}
+      <p class="v-muted">No token yet.</p>
+{% endif %}
+
+      <form method="post" style="display:inline">{% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <button class="v-btn" type="submit">{% if token_rec or new_token %}Replace token{% else %}Create token{% endif %}</button>
+      </form>
+{% if token_rec %}
+      <form method="post" style="display:inline" onsubmit="return confirm('Revoke the token? Connected devices will stop working.')">{% csrf_token %}
+        <input type="hidden" name="action" value="revoke">
+        <button class="v-btn" type="submit">Revoke</button>
+      </form>
+{% endif %}
+    </div>
+  </div>
+
+  <div class="v-card">
+    <div class="v-card-head"><h3>API</h3></div>
+    <div class="v-card-body">
+      <p>Send the header <code>Authorization: Bearer &lt;token&gt;</code>. Base URL: <code>{{ api_base }}</code></p>
+      <ul>
+        <li><code>GET orders/?status=new|active|done&amp;since_id=N</code></li>
+        <li><code>POST orders/&lt;id&gt;/accept|reject|ready|delivered/</code> (JSON: <code>prep_minutes</code>, <code>reason_code</code>, <code>reason_note</code>)</li>
+        <li><code>GET menu/</code></li>
+        <li><code>POST menu/&lt;product_id&gt;/availability/</code> (JSON: <code>{"available": true}</code>)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'customer_portal/info/base_info.html' %}
+{% load portal_i18n %}
+{% block page_title %}{% t "Privacy Policy" %}{% endblock %}
+{% block heading %}<i class="bi bi-shield-lock text-primary"></i> {% t "Privacy Policy" %}{% endblock %}
+{% block subheading %}{% t "Your data, your trust" %}{% endblock %}
+
+{% block info_body %}
+<div class="info-card"><h2>{% t "What information we collect" %}</h2>
+  <ul><li>{% t "Name, phone number, email" %}</li><li>{% t "Delivery address" %}</li><li>{% t "Order details" %}</li><li>{% t "Chat messages (if you use live chat)" %}</li></ul></div>
+<div class="info-card"><h2>{% t "How we use it" %}</h2>
+  <p class="mb-0">{% t "This information is used only to complete your order, deliver it, track it and help you." %}</p></div>
+<div class="info-card"><h2>{% t "Sharing" %}</h2>
+  <p class="mb-0">{% t "We do not sell your data. The seller sees your name, phone and (until a rider is assigned) your address so they can prepare your order. The rider sees your address and phone only during that delivery. After the order is complete, the seller no longer sees your address and your phone number is masked." %}</p></div>
+<div class="info-card"><h2>{% t "Security" %}</h2>
+  <p class="mb-0">{% t "The whole site runs on HTTPS. Your address and other sensitive information are stored encrypted in the database. Still, no system can guarantee 100% security." %}</p></div>
+<div class="info-card"><h2>{% t "Your rights" %}</h2>
+  <ul>
+    <li>{% url 'my_account' as u_my_account %}{% t "View and change your information: <a href='{}'>My Account</a>." u_my_account %}</li>
+    <li>{% url 'delete_my_account' as u_delete_my_account %}{% t "Delete your account and personal data: <a href='{}'>Delete Account</a> in My Account. Any running order or unpaid balance must be completed first. The order amount may be kept for accounting, but not your personal information." u_delete_my_account %}</li>
+    <li>{% if company_email %}{% t "Any other question: {}." company_email %}{% else %}{% t "Any other question: contact us." %}{% endif %}</li>
+  </ul></div>
+<p class="info-updated">{% t "Last updated" %}: {% now "d M Y" %}</p>
+{% endblock %}

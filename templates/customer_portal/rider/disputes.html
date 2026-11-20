@@ -1,0 +1,22 @@
+{% extends 'customer_portal/rider/base.html' %}
+{% load portal_i18n %}
+{% block title %}Issues{% endblock %}
+{% block header %}<div class="top"><div class="nm">⚠️ Issues</div><div class="hi">Customer reports on your deliveries</div></div>{% endblock %}
+{% block body %}
+<div class="wrap">
+  <div class="tabs">
+    {% for key, label in tabs.items %}<a class="btn s {% if tab == key %}o{% else %}l{% endif %}" href="?tab={{ key }}">{{ label }}</a>{% endfor %}
+  </div>
+  {% for r in rows %}
+  <a class="card link" href="{% url 'rider_dispute_detail' r.d.pk %}">
+    <div class="row"><span class="no">#{{ r.d.sale_order.order_no }}</span>
+      {% if r.d.is_open %}
+        {% if r.responded %}<span class="pill g">Replied</span>{% else %}<span class="pill">Reply needed</span>{% endif %}
+      {% else %}<span class="pill b">{{ r.d.get_status_display }}</span>{% endif %}
+    </div>
+    <div class="row"><span>{{ r.d.get_reason_display }}</span><small>{{ r.customer }}</small></div>
+    <div class="row"><small>{{ r.d.created_at|date:"d M, h:i A" }}</small></div>
+  </a>
+  {% empty %}<div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">✅</div><div class="r-empty__title">{% if tab == 'open' %}{% t "No open issues" %}{% else %}{% t "No closed issues yet" %}{% endif %}</div></div>{% endfor %}
+</div>
+{% endblock %}

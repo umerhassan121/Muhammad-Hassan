@@ -1,0 +1,100 @@
+{% comment %}
+  Shop theme picker: navbar mein palette button + theme chunne ka panel.
+  Choice cookie 'shop_theme' mein (1 saal) aur page par foran lagti hai (reload nahi).
+  CSS: static/css/shop_themes.css. Naam yahan, app/templatetags/shop_theme_tags.py (THEMES) aur CSS mein same hone chahiye.
+{% endcomment %}
+{% load portal_i18n %}
+{% if SHOP_THEME %}
+<script>
+/* Boot: cookie ki theme body par foran lagao (cached / purana HTML ho tab bhi flash na ho) */
+(function () {
+    var NAMES = ['maximal', 'glass', 'clay', 'liquid', 'spatial', 'bento', 'soft', 'minimal', 'market', 'luxury', 'fresh'];
+    var DARK = ['spatial', 'luxury'];
+    function cookieTheme() {
+        var m = document.cookie.match(/(?:^|;\s*)shop_theme=([a-z]+)/);
+        return m && NAMES.indexOf(m[1]) > -1 ? m[1] : 'maximal';
+    }
+    function apply(t) {
+        var b = document.body;
+        if (!b) return;
+        b.classList.remove('mx', 'th');
+        NAMES.forEach(function (n) { b.classList.remove('th-' + n); });
+        if (t === 'maximal') { b.classList.add('mx'); }
+        else { b.classList.add('th', 'th-' + t); }
+        if (DARK.indexOf(t) > -1) { b.setAttribute('data-bs-theme', 'dark'); } else { b.removeAttribute('data-bs-theme'); }
+        document.querySelectorAll('[data-shop-theme]').forEach(function (btn) {
+            var on = btn.getAttribute('data-shop-theme') === t;
+            btn.classList.toggle('on', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+    window.shopThemeApply = apply;
+    window.shopThemeSet = function (t) {
+        if (NAMES.indexOf(t) < 0) return;
+        try { document.cookie = 'shop_theme=' + t + '; path=/; max-age=31536000; SameSite=Lax'; } catch (e) {}
+        apply(t);
+    };
+    apply(cookieTheme());
+    document.addEventListener('DOMContentLoaded', function () { apply(cookieTheme()); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) apply(cookieTheme()); });
+})();
+</script>
+
+<button type="button" class="nav-action-btn thp-btn" id="thpBtn" aria-haspopup="dialog" aria-controls="thpPanel" aria-expanded="false" aria-label="{% t 'Theme' %}" title="{% t 'Theme' %}">
+    <i class="bi bi-palette2" aria-hidden="true"></i>
+</button>
+
+<div class="thp-overlay" id="thpOverlay"></div>
+<div class="thp-panel" id="thpPanel" role="dialog" aria-modal="true" aria-labelledby="thpTitle" hidden>
+    <div class="thp-head">
+        <b id="thpTitle">{% t 'Choose a look' %}</b>
+        <button type="button" class="thp-x" id="thpClose" aria-label="{% t 'Close' %}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+    <div class="thp-list" data-no-i18n>
+        <button type="button" class="thp-opt" data-shop-theme="maximal"><span class="thp-sw" style="background:linear-gradient(135deg,#ffd93b 0 33%,#ff3d8b 33% 66%,#19e3b1 66%)"></span><span class="thp-tx"><b>Maximalism</b><small>Bold, colourful, playful</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="glass"><span class="thp-sw" style="background:linear-gradient(135deg,#8ab4ff,#b79bff,#ffa6d8)"></span><span class="thp-tx"><b>Glassmorphism</b><small>Frosted glass on soft colour</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="clay"><span class="thp-sw" style="background:linear-gradient(135deg,#e8e2ff,#7c6cff)"></span><span class="thp-tx"><b>Claymorphism</b><small>Puffy, rounded, 3D clay</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="liquid"><span class="thp-sw" style="background:linear-gradient(135deg,#ffd9d9,#ee6a7c)"></span><span class="thp-tx"><b>Liquid Glass</b><small>Clear, shiny, fluid panels</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="spatial"><span class="thp-sw" style="background:linear-gradient(135deg,#0f1524,#3b82f6)"></span><span class="thp-tx"><b>Spatial UI</b><small>Dark, floating panels</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="bento"><span class="thp-sw" style="background:linear-gradient(135deg,#ece8ff 50%,#5b3df5 50%)"></span><span class="thp-tx"><b>Bento Grid</b><small>Neat mixed-size tiles</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="soft"><span class="thp-sw" style="background:linear-gradient(135deg,#e4eaf4,#ff7a45)"></span><span class="thp-tx"><b>Skeuomorphism</b><small>Soft raised and pressed surfaces</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="minimal"><span class="thp-sw" style="background:linear-gradient(135deg,#fff 50%,#111827 50%)"></span><span class="thp-tx"><b>Clean Minimal</b><small>White, big photos, clear price</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="market"><span class="thp-sw" style="background:linear-gradient(135deg,#ff8a3d,#ff5a00)"></span><span class="thp-tx"><b>Modern Marketplace</b><small>Bold brand colour, app-like</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="luxury"><span class="thp-sw" style="background:linear-gradient(135deg,#0b0b0d 50%,#d4af37 50%)"></span><span class="thp-tx"><b>Dark Luxury</b><small>Black and gold, premium feel</small></span></button>
+        <button type="button" class="thp-opt" data-shop-theme="fresh"><span class="thp-sw" style="background:linear-gradient(135deg,#dcfce7,#16a34a)"></span><span class="thp-tx"><b>Fresh Organic</b><small>Soft green, fresh and natural</small></span></button>
+    </div>
+</div>
+
+<script>
+(function () {
+    var btn = document.getElementById('thpBtn');
+    var panel = document.getElementById('thpPanel');
+    var overlay = document.getElementById('thpOverlay');
+    if (!btn || !panel || !overlay) return;
+    function isOpen() { return !panel.hidden; }
+    function open() {
+        panel.hidden = false; overlay.classList.add('open'); btn.setAttribute('aria-expanded', 'true');
+        if (window.shopThemeApply) {
+            var cur = (document.cookie.match(/(?:^|;\s*)shop_theme=([a-z]+)/) || [])[1] || 'maximal';
+            window.shopThemeApply(cur);
+        }
+        var first = panel.querySelector('.thp-opt.on') || panel.querySelector('.thp-opt');
+        if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+    }
+    function close() {
+        panel.hidden = true; overlay.classList.remove('open'); btn.setAttribute('aria-expanded', 'false');
+        try { btn.focus({ preventScroll: true }); } catch (e) {}
+    }
+    btn.addEventListener('click', function () { if (isOpen()) close(); else open(); });
+    overlay.addEventListener('click', close);
+    document.getElementById('thpClose').addEventListener('click', close);
+    panel.addEventListener('click', function (e) {
+        var o = e.target.closest ? e.target.closest('[data-shop-theme]') : null;
+        if (!o) return;
+        window.shopThemeSet(o.getAttribute('data-shop-theme'));
+        close();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen()) close(); });
+})();
+</script>
+{% endif %}

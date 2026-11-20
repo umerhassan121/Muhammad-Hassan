@@ -1,0 +1,141 @@
+/* auth/verify_login_otp.html ka style (Step 6). Sirf us page par `extra_css` se load hota hai. */
+/* --- blok 1 (57 bytes) --- */
+    body {
+        padding-bottom: 20px !important;
+    }
+
+/* --- blok 2 (2622 bytes) --- */
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+.auth-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+.auth-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+.auth-header h2 {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: #1a1a2e;
+    margin-bottom: 5px;
+}
+.auth-header p {
+    font-size: 0.9rem;
+}
+.info-box {
+    background: #fff4ec;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.info-box i {
+    color: #3b82f6;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.info-box strong {
+    color: #1e40af;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+    display: block;
+}
+.otp-input {
+    text-align: center;
+    font-size: 1.5rem !important;
+    letter-spacing: 10px;
+    font-weight: 700;
+    padding: 15px !important;
+    border-radius: 10px;
+    border: 2px solid #eef0f5;
+}
+.otp-input:focus {
+    border-color: #d9480f;
+    box-shadow: 0 0 0 3px rgba(217,72,15, 0.1);
+    outline: none;
+}
+.btn-auth {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-auth:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(217,72,15, 0.4);
+}
+.auth-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eef0f5;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+.btn-link {
+    background: none;
+    border: none;
+    color: #d9480f;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-size: 0.9rem;
+}
+.btn-link:hover {
+    color: #1e40af;
+}
+.back-to-login {
+    text-align: center;
+    margin-top: 15px;
+}
+.back-to-login a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.back-to-login a:hover {
+    color: #d9480f;
+}
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 20px;
+    }
+    .auth-header h2 {
+        font-size: 1.3rem;
+    }
+    .otp-input {
+        font-size: 1.3rem !important;
+        letter-spacing: 8px;
+    }
+}
+
+    body { background: #f3f5ff; }
+    .auth-card { border-radius: 28px; }
+    .btn-auth { border-radius: 30px; }

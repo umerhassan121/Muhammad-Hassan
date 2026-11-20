@@ -1,0 +1,425 @@
+/* =====================================================================
+   SHOP POLISH (v10) - customer home / header / nav bar / RTL / skeleton
+   shop_theme.css ke BAAD load hoti hai (base_shop.html). Sirf yahi file badal kar look tune karein.
+   1 header brand | 2 language | 5 hero | 7 category chips | 12 tab pill | 13 trust row
+   14 skeleton | 15 Urdu RTL | 16 PWA lift
+   ===================================================================== */
+
+/* ---------- 1. Header: bada logo + ek hi jagah poora naam ---------- */
+html body .shop-brand{flex-direction:row!important;align-items:center!important;gap:10px!important;text-align:start;padding:0}
+html body .shop-brand .brand-logo-wrap{height:48px;min-width:48px;padding:3px;border-radius:14px;box-shadow:none;border:1px solid var(--t-line);background:#fff}
+html body .shop-brand .brand-logo-img{height:40px!important;max-width:120px!important;width:auto;object-fit:contain}
+html body .shop-brand .brand-monogram{width:48px;font-size:1.4rem}
+html body .shop-brand .brand-name{
+  display:block;max-width:min(42vw,170px)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:'Fraunces',Georgia,serif;font-size:1.1rem;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.15;
+  background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
+  color:var(--t-ink)!important;-webkit-text-fill-color:currentColor}
+html body .shop-brand:hover .brand-name{color:var(--t-brand)!important}
+html body .shop-navbar{border-bottom:1px solid var(--t-line);box-shadow:0 2px 10px rgba(28,25,23,.05);padding:6px 0}
+@media (max-width:575px){
+  html body .shop-brand .brand-logo-wrap{height:44px;min-width:44px}
+  html body .shop-brand .brand-logo-img{height:36px!important;max-width:96px!important}
+  html body .shop-brand .brand-monogram{width:44px}
+}
+
+/* ---------- 2. Language: ek saaf toggle (voice ki zubaan site ki zubaan se chalti hai) ---------- */
+.voice-lang-btn,[data-voice-lang-btn]{display:none!important}
+html body .shop-navbar .erp-lang-switch{gap:0!important;padding:2px;border:1.5px solid var(--t-ink);border-radius:999px;background:#fff}
+html body .shop-navbar .erp-lang-switch a{border:0!important;opacity:1!important;background:transparent!important;color:var(--t-ink)!important;
+  padding:5px 12px!important;border-radius:999px!important;font-size:.8rem!important;font-weight:600;line-height:1.3;min-height:32px;display:inline-flex;align-items:center}
+html body .shop-navbar .erp-lang-switch a[style*="font-weight:700"]{background:var(--t-ink)!important;color:#fff!important}
+
+/* ---------- 5. Hero: chhota, taake pehli screen par products nazar aayein ---------- */
+html{scroll-padding-top:calc(var(--navbar-h,64px) + 8px)}
+html body .app-header{padding:8px 16px 0!important}
+html body .app-location{margin-bottom:8px;border-width:1px;font-size:13px}
+html body .hero-eyebrow{display:none}
+html body .hero-copy{margin:0 2px 10px}
+html body .hero-copy h1{font-size:25px;line-height:1.12;margin:0 0 4px}
+html body .hero-copy p{font-size:13px;line-height:1.4;margin:0}
+html body .app-search{height:50px;border-width:1px;box-shadow:0 2px 0 var(--t-ink)}
+
+/* ---------- 7. Category chips: har category ka apna icon, horizontal scroll ---------- */
+html body .cat-grid{scroll-snap-type:x proximity;margin:12px 0 2px;padding-inline-end:40px;
+  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
+html[dir=rtl] body .cat-grid{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to left,#000 calc(100% - 36px),transparent)}
+html body .cat-tile{scroll-snap-align:start;border-width:1px;min-height:48px}
+html body .cat-icon{border-width:1px}
+
+/* ---------- 12. Neeche ki bar: patli, active tab ki chhoti saaf pill (sirf icon ke peeche) ---------- */
+@media (max-width:991.98px){
+  :root{--sm-h:78px}
+  html body .sm-bar{padding:4px}
+  html body .sm-tab{min-height:52px;gap:3px;font-size:11px;padding:4px 2px;border-radius:16px}
+  html body .sm-tab.active{background:transparent;color:#fff}
+  html body .sm-tab .sm-ico{font-size:20px;padding:4px 16px;border-radius:999px;transition:background .2s,color .2s}
+  html body .sm-tab.active .sm-ico{background:var(--t-sun);color:var(--t-ink)}
+  html body .sm-tab.active .sm-lbl{color:#fff;font-weight:700}
+  html body .sm-badge{top:-3px;inset-inline-start:auto;inset-inline-end:4px;border-width:1.5px}
+}
+.sm-item[hidden]{display:none!important}
+button.sm-item{width:100%;border:0;background:none;text-align:start;font:inherit;color:inherit;cursor:pointer}
+
+/* ---------- 13. Trust row: delivery time, COD, WhatsApp ---------- */
+html body .info-strip{padding:12px 16px 2px;gap:8px}
+html body .info-chip{background:#fff!important;border:1px solid var(--t-line)!important;border-radius:999px!important;padding:8px 14px;
+  font-size:13px;font-weight:600;color:var(--t-ink)!important;white-space:nowrap;text-decoration:none;box-shadow:none!important}
+html body .info-chip i{color:var(--t-leaf)!important;font-size:16px}
+html body .info-chip.info-wa i{color:#25d366!important}
+html body a.info-chip:hover{border-color:var(--t-ink)!important}
+
+/* ---------- 14. Skeleton: image aane tak halki chamak ---------- */
+@keyframes sk-shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-on{background-image:linear-gradient(100deg,#f1e9db 30%,#fffaf1 50%,#f1e9db 70%)!important;background-size:200% 100%;animation:sk-shim 1.3s linear infinite}
+img.sk-img{opacity:0;transition:opacity .35s ease}
+img.sk-img.is-loaded{opacity:1}
+@media (prefers-reduced-motion:reduce){.sk-on{animation:none}img.sk-img{transition:none}}
+
+/* ---------- 15. Urdu: poora RTL layout + Nastaliq font ---------- */
+html[lang=ur]{--erp-rtl-font:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}
+html[lang=ur] body *:not(.bi):not([class^="bi-"]):not([class*=" bi-"]){letter-spacing:0!important}
+html[lang=ur] body .hero-copy h1{font-size:1.65rem;line-height:1.9}
+html[lang=ur] body .hero-copy p{font-size:.95rem;line-height:1.9}
+html[lang=ur] body .shop-brand .brand-name{font-family:var(--erp-rtl-font);font-size:1.05rem}
+html[lang=ur] body .sm-lbl,html[lang=ur] body .info-chip,html[lang=ur] body .cat-name{line-height:1.9}
+html[lang=ur] body .sm-tab{font-size:12px}
+html[dir=rtl]{--t-hard:-3px 3px 0 var(--t-ink)}
+html[dir=rtl] body .promo-card .promo-emoji{right:auto;left:14px}
+html[dir=rtl] body .promo-card h3,html[dir=rtl] body .promo-card p{text-align:start}
+html[dir=rtl] body .deal-off{left:auto;right:8px}
+html[dir=rtl] body .product-price .currency{margin-right:0;margin-left:2px}
+html[dir=rtl] body .row-head .bi-chevron-right,html[dir=rtl] body .sm-go,html[dir=rtl] body .bi-arrow-right-circle-fill,html[dir=rtl] body .bi-chevron-right{transform:scaleX(-1)}
+html[dir=rtl] body .app-search .search-actions{margin-inline-start:auto}
+
+/* ---------- 16. PWA install patti neeche ki bar ke ooper ---------- */
+@media (max-width:991.98px){body.has-shop-bar{--pwa-lift:78px}}
+
+/* =====================================================================
+   v11: Quick access grid (Account sheet) | Orders live dot | Urdu tab labels
+   ===================================================================== */
+.sm-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:6px 16px 4px}
+.sm-q{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;border-radius:16px;text-decoration:none;
+  background:var(--t-paper,#f6efe3);border:1px solid var(--t-line,#e9e1d4);color:var(--t-ink,#1c1917);font-weight:700;font-size:14px;line-height:1.25;
+  -webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s}
+.sm-q:hover,.sm-q:active{background:#fff;border-color:var(--t-ink,#1c1917);color:var(--t-ink,#1c1917)}
+.sm-q:focus-visible{outline:2px solid var(--t-ink,#1c1917);outline-offset:2px}
+.sm-q:last-child:nth-child(odd){grid-column:1/-1}
+.sm-qi{flex:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;
+  background:var(--t-sun,#ffd66b);color:var(--t-ink,#1c1917)}
+.sm-qt{min-width:0;overflow:hidden;text-overflow:ellipsis}
+html[lang=ur] body .sm-qt{overflow:visible;line-height:1.9;font-weight:400;font-size:15px}
+
+/* Orders tab: order raaste mein ho to halka sa dhadakta hara dot (icon ke upar, badge se alag kone mein) */
+.sm-live{position:absolute;top:-2px;inset-inline-start:4px;width:9px;height:9px;border-radius:50%;background:#22c55e;
+  border:1.5px solid var(--t-ink,#1c1917)}
+.sm-live::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #22c55e;opacity:0;animation:sm-live-pulse 1.8s ease-out infinite}
+@keyframes sm-live-pulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.sm-live::after{animation:none}}
+@media (min-width:992px){.sm-live{position:static;margin-inline-start:2px;border-color:#fff}}
+
+/* Tab labels: chhoti screen par bhi poore, Urdu (Nastaliq) ke upar-neeche ke nishan kat'te nahi */
+html body .sm-lbl{font-size:11px}
+@media (max-width:359px){html body .sm-lbl{font-size:10.5px}html body .sm-tab{padding-inline:0}}
+html[lang=ur] body .sm-lbl{overflow:visible;text-overflow:clip;font-size:12px;line-height:1.9;padding-block:1px;font-weight:400!important}
+html[lang=ur] body .sm-tab{min-height:56px;gap:1px}
+html[lang=ur] body .sm-tab.active .sm-lbl{font-weight:400!important}
+
+/* ---------- 14. Compact home rows: Stores near you / Trending / Hot deals (chhote, professional cards) ---------- */
+html body .deal-track,html body .reco-track{gap:10px;padding:4px 16px 14px}
+html body .deal-card{flex:0 0 132px;border-radius:16px}
+html body .reco-card{flex:0 0 132px;border-radius:16px}
+html body .deal-img{aspect-ratio:4/3;padding:6px}
+html body .reco-img{aspect-ratio:4/3}
+html body .deal-off{left:6px;top:6px;font-size:10px;border-radius:6px}
+html body .deal-name{margin:7px 9px 1px;font-size:.78rem;min-height:2.5em}
+html body .deal-price{margin:0 9px 9px;font-size:.9rem}
+html body .deal-price s{font-size:.7rem}
+html body .reco-body{padding:7px 9px 9px;gap:4px}
+html body .reco-name{font-size:.78rem}
+html body .reco-sub{font-size:.66rem;padding:1px 7px}
+html body .reco-price{font-size:.9rem;margin-top:0}
+html body .reco-again{flex:0 0 190px}
+
+html body .store-track{gap:10px;padding:4px 16px 14px}
+html body .store-track .stl{flex:0 0 min(68%,220px);border-radius:16px}
+html body .store-track .stl-cover{height:84px}
+html body .store-track .stl-logo{left:10px;bottom:-20px;width:42px;height:42px}
+html body .store-track .stl-flag{top:7px;left:7px;font-size:.62rem;padding:2px 8px}
+html body .store-track .stl-body{padding:26px 11px 11px}
+html body .store-track .stl-name{font-size:.95rem}
+html body .store-track .stl-tags{font-size:.72rem;margin-top:1px}
+html body .store-track .stl-line{font-size:.7rem;margin-top:3px}
+html body .store-track .stl-meta{gap:4px;margin-top:7px;font-size:.7rem}
+html body .store-track .stl-meta>span{padding:2px 7px;font-size:.7rem}
+html body .store-track .store-more{flex:0 0 120px}
+
+/* ---------- 15. Stores page: compact + double-border bug fix ----------
+   Theme ne label.st-type/.st-chip/.st-pill par bhi pill border laga di thi, aur andar ka span bhi border rakhta hai
+   (kali arcs / double outline). Ab label saaf hai, styling sirf span par. */
+html body label.st-type,html body label.st-chip,html body label.st-pill{
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin:0}
+
+/* hero */
+html body .st-wrap{margin-top:8px}
+html body .st-hero{padding:14px 14px 16px;margin:0 0 12px;border-radius:20px;box-shadow:3px 3px 0 var(--t-ink)}
+html body .st-hero h1{font-size:19px;line-height:1.2;margin:0 0 2px}
+html body .st-hero p{font-size:12.5px;margin:0 0 10px}
+html body .st-area{font-size:12.5px;margin-bottom:6px}
+html body .st-search{height:42px;border-radius:14px;box-shadow:2px 2px 0 var(--t-ink)}
+html body .st-search input{padding:0 10px;font-size:14px}
+html body .st-search i{font-size:16px;padding-left:12px}
+html body .st-search button{font-size:13px;padding:0 14px;margin:4px;border-radius:10px}
+html body .st-search .st-mic{padding:0 12px}
+
+/* store types (All, Fashion...) */
+html body .st-types{gap:8px;padding:2px 2px 8px;margin-bottom:0}
+html body .st-type span{flex-direction:row;gap:6px;min-width:0;padding:6px 12px;border-radius:999px;border:1.5px solid var(--t-ink);
+  background:#fff;color:var(--t-ink);font-size:13px;font-weight:700;white-space:nowrap}
+html body .st-type span b{font-size:16px}
+html body .st-type span small{font-size:10.5px;margin-left:2px}
+html body .st-type input:checked+span{background:var(--t-ink);border-color:var(--t-ink);color:#fff}
+html body .st-type input:checked+span small{color:#d6d3d1}
+
+/* chips (All / Juice) */
+html body .st-chips{gap:6px;padding:2px 2px 6px;margin-bottom:2px}
+html body .st-chip span{padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:700;border:1.5px solid var(--t-line);background:#fff;color:var(--t-ink)}
+html body .st-chip input:checked+span{background:var(--t-brand);border-color:var(--t-brand);color:#fff}
+
+/* filter pills + sort */
+html body .st-bar{gap:8px;margin-bottom:10px}
+html body .st-pills{gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;padding:2px}
+html body .st-pills::-webkit-scrollbar{display:none}
+html body .st-pill{flex:0 0 auto}
+html body .st-pill span{padding:5px 11px;font-size:12px;font-weight:700;border:1.5px solid var(--t-line);border-radius:999px;background:#fff;color:var(--t-ink);white-space:nowrap}
+html body .st-pill input:checked+span{background:var(--t-ink);border-color:var(--t-ink);color:#fff}
+html body .st-sort select{padding:6px 10px;font-size:13px;border:1.5px solid var(--t-line);border-radius:10px}
+html body .st-note{padding:7px 12px;font-size:12px;border-radius:12px;margin-bottom:10px}
+html body .st-count{font-size:12.5px;margin-bottom:8px}
+
+/* store cards in the list */
+html body .stl-grid{gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+html body .stl-grid .stl{border-radius:16px}
+html body .stl-grid .stl-cover{height:92px}
+html body .stl-grid .stl-logo{left:10px;bottom:-20px;width:42px;height:42px}
+html body .stl-grid .stl-flag{top:7px;left:7px;font-size:.62rem;padding:2px 8px}
+html body .stl-grid .stl-body{padding:26px 12px 12px}
+html body .stl-grid .stl-name{font-size:1rem}
+html body .stl-grid .stl-tags{font-size:.74rem}
+html body .stl-grid .stl-line{font-size:.72rem;margin-top:3px}
+html body .stl-grid .stl-meta{gap:4px;margin-top:8px}
+html body .stl-grid .stl-meta>span{padding:2px 8px;font-size:.72rem}
+@media (max-width:575.98px){html body .stl-grid{grid-template-columns:1fr}}
+html body .st-search button.st-mic{background:transparent!important;color:var(--t-ink);margin:0;padding:0 10px;font-size:18px;border-radius:0}
+
+/* ---------- 16. Cart page: compact + professional ---------- */
+html body .cart-title{font-size:1.25rem}
+html body .cart-badge{font-size:.7rem;padding:4px 10px}
+html body .container.py-4:has(.cart-card){padding-top:12px!important}
+html body .alert.alert-light.border{padding:8px 12px;border-radius:14px;margin-bottom:10px!important}
+html body .free-ship{padding:8px 12px;margin-bottom:10px;border-radius:14px}
+html body .free-ship-text{font-size:.78rem;margin-bottom:6px}
+html body .free-ship-bar{height:6px}
+html body .cart-card{border-radius:16px}
+html body .cart-card .card-body{padding:10px 12px!important}
+html body .cart-item .row{--bs-gutter-y:.5rem}
+html body .cart-item-image,html body .cart-item-placeholder{width:56px;height:56px;border-radius:12px}
+html body .cart-item-name{font-size:.88rem;margin-bottom:2px!important}
+html body .cart-item-price{font-size:.78rem}
+html body .cart-item-line{font-size:.72rem}
+html body .qty-control{height:34px;border:1.5px solid var(--t-line)!important;border-radius:999px;background:#fff}
+html body .qty-btn{width:34px;min-width:34px;font-size:.8rem;background:transparent}
+html body .qty-input{width:36px;height:100%;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:0;font-size:.88rem}
+html body .cart-item-total{font-size:.95rem;margin-bottom:4px}
+html body .btn-remove-item{min-height:32px;min-width:32px;padding:2px 10px;font-size:.75rem;border-radius:999px}
+html body .cart-card hr.my-3{margin:8px 0!important}
+html body .summary-card .card-body{padding:12px 14px!important}
+html body .summary-title{font-size:1rem;margin-bottom:6px!important}
+html body .summary-row{padding:4px 0;font-size:.85rem}
+html body .summary-card hr.my-3{margin:8px 0!important}
+html body .cod-pill{font-size:.7rem;padding:2px 9px;background:#fff;border:1.5px solid var(--t-ink);color:var(--t-ink)}
+html body .grand-total-section{padding:10px 14px;border-radius:14px;margin-bottom:10px!important;box-shadow:2px 2px 0 var(--t-ink)}
+html body .grand-total-label{font-size:.9rem}
+html body .grand-total-value{font-size:1.15rem}
+/* ek hi tarah ka button: pulse/shine hata diya, theme ka brand colour */
+html body .btn-checkout-pro,html body .btn-checkout-mobile-pro{animation:none!important;background:var(--t-brand)!important;border:1.5px solid var(--t-ink);box-shadow:3px 3px 0 var(--t-ink)!important;border-radius:14px}
+html body .btn-checkout-pro::after{display:none}
+html body .btn-checkout-pro{min-height:44px;padding:9px 12px}
+html body .btn-checkout-pro .cp-icon{font-size:20px}
+html body .btn-checkout-pro .cp-text strong{font-size:.95rem}
+html body .btn-checkout-pro .cp-text small{font-size:.7rem}
+html body .btn-checkout-pro .cp-right{font-size:.9rem;padding:5px 9px;background:rgba(255,255,255,.22)}
+html body .cart-cta-hint{font-size:12px;margin-bottom:6px}
+html body .cart-cta-hint i{animation:none}
+html body .cart-trust{font-size:11px;gap:4px 10px;margin-top:8px}
+html body .mobile-checkout-bar{border-top:1.5px solid var(--t-ink);padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px))}
+html body .mobile-checkout-total{font-size:1.1rem;color:var(--t-ink)}
+html body .btn-checkout-mobile-pro{min-height:42px;padding:8px 16px;font-size:.92rem}
+/* mobile par neeche wali bar hai, to summary ka bara button/hint dobara na dikhao */
+@media (max-width:991.98px){
+  html body .summary-card .cart-cta-hint,html body .summary-card .btn-checkout-pro{display:none}
+  html body .summary-card{position:static}
+}
+
+/* ---------- 17. Track page: theme ke mutabiq + compact ---------- */
+html body:has(.so-shop){background:var(--t-paper,#faf5ee)!important}
+html body .so-shop h1{font-size:1.4rem}
+html body .so-shop>.text-center.mb-4{margin-bottom:12px!important}
+html body .so-shop>.text-center p{font-size:.85rem;margin-bottom:0}
+html body .track-form-card{padding:14px 16px;border-radius:18px;box-shadow:3px 3px 0 var(--t-ink)!important}
+html body .track-form-card .form-control{padding:8px 12px;font-size:.9rem;border-radius:12px}
+html body .track-form-card .form-label{font-size:.78rem;margin-bottom:2px}
+html body .track-form-card .btn-primary{background:var(--t-ink)!important;color:#fff!important;border:1.5px solid var(--t-ink);border-radius:12px;font-weight:700;padding:9px;box-shadow:none}
+html body .order-header-card{padding:12px 16px;border-radius:18px;box-shadow:3px 3px 0 var(--t-ink)!important}
+html body .order-header-card .order-num{font-size:1.05rem!important;word-break:break-all}
+html body .order-label{font-size:.62rem;margin-bottom:2px}
+html body .so-shop .card .card-body{padding:12px 14px}
+html body .track-timeline{padding:6px 0;flex-wrap:nowrap}
+html body .track-timeline::before{display:block;top:25px;left:8%;right:8%}
+html body .track-step{flex:1 1 0;min-width:0;margin-bottom:0}
+html body .track-icon{width:34px;height:34px;font-size:.95rem;margin-bottom:5px;border-width:2px}
+html body .track-step.completed .track-icon{background:var(--t-leaf,#10b981)}
+html body .track-step.current .track-icon{background:var(--t-brand);transform:scale(1.08);animation:none;box-shadow:0 0 0 4px rgba(217,72,15,.18)}
+html body .track-label{font-size:.6rem}
+html body .help-card{background:var(--t-soft,#fff3e8);border:1.5px dashed var(--t-line);border-radius:16px;padding:12px 14px}
+
+/* ---------- 18. Account page: compact + professional ---------- */
+html body:has(.account-header){background:var(--t-paper,#faf5ee)!important;padding-bottom:90px!important}
+html body .account-header{padding:16px 0 40px;text-align:left;border-radius:0 0 22px 22px}
+html body .account-header .container{display:grid;grid-template-columns:60px 1fr;column-gap:14px;align-items:center}
+html body .account-header .avatar-circle{grid-row:1 / span 3;width:60px;height:60px;margin:0;font-size:26px;border-radius:50%}
+html body .account-header h2{font-size:1.15rem;margin:0 0 2px;line-height:1.2}
+html body .account-header p{font-size:.8rem;margin:0;line-height:1.4}
+html body .stats-grid{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:-26px;margin-bottom:14px}
+html body .stat-card{padding:10px 4px;border-radius:14px!important;box-shadow:none;border:1.5px solid var(--t-ink)!important}
+html body .stat-card .stat-icon{font-size:17px;margin-bottom:4px}
+html body .stat-card .stat-value{font-size:1.15rem;margin-bottom:3px;color:var(--t-ink)!important}
+html body .stat-card .stat-label{font-size:.58rem;letter-spacing:.2px;text-transform:uppercase}
+html body .stat-card:hover{transform:none;box-shadow:none!important}
+
+html body .ref-card{padding:12px 14px;border-radius:18px;margin-bottom:14px;box-shadow:3px 3px 0 var(--t-ink)!important}
+html body .ref-card h3{font-size:.95rem;margin-bottom:2px}
+html body .ref-card .ref-sub{font-size:.75rem;line-height:1.4;margin-bottom:10px}
+html body .ref-code-row{padding:7px 10px;border-radius:12px;margin-bottom:6px;background:#fff}
+html body .ref-code-row .ref-label{font-size:.6rem;color:var(--t-mut)!important}
+html body .ref-code-row .ref-value{font-size:.85rem}
+html body .ref-btn{min-height:36px;padding:6px 12px;font-size:.75rem;border-radius:10px}
+html body .ref-wa{padding:9px;margin:8px 0;font-size:.85rem;border-radius:12px}
+html body .ref-stats{gap:6px}
+html body .ref-stats div{padding:6px 2px;font-size:.65rem;background:rgba(255,255,255,.7);border-radius:10px}
+html body .ref-stats b{font-size:1rem}
+
+html body .menu-section,html body .recent-orders-section{border-radius:16px;border:1.5px solid var(--t-line);box-shadow:none;margin-bottom:14px}
+html body .menu-item{padding:9px 14px}
+html body .menu-item .menu-icon{width:34px;height:34px;margin-right:12px;font-size:16px;border-radius:10px}
+html body .menu-item .menu-icon.danger{background:#fee2e2!important;color:#b91c1c!important;border-color:#b91c1c}
+html body .menu-item .menu-text strong{font-size:.88rem;margin-bottom:0}
+html body .menu-item .menu-text small{font-size:.7rem}
+html body .menu-item .menu-arrow{font-size:14px}
+html body .section-title{padding:10px 14px;font-size:.9rem}
+html body .order-item{padding:10px 14px}
+html body .order-item .order-no{font-size:.82rem;margin-bottom:1px}
+html body .order-item .order-date{font-size:.7rem}
+html body .order-item .order-amount{font-size:.82rem;color:var(--t-ink);margin-right:8px}
+html body .order-item .order-status{font-size:.6rem;padding:2px 8px}
+html body .no-orders{padding:22px 16px}
+html body .no-orders i{font-size:38px;margin-bottom:8px}
+html body .no-orders h5{font-size:1rem}
+html body .no-orders p{font-size:.8rem;margin-bottom:0}
+html body .btn-shop-now{min-height:40px;padding:8px 18px;font-size:.85rem;margin-top:10px;background:var(--t-brand)!important;border:1.5px solid var(--t-ink);box-shadow:2px 2px 0 var(--t-ink);border-radius:12px}
+html body .btn-shop-now:hover{transform:none;box-shadow:2px 2px 0 var(--t-ink)}
+
+/* ---------- 19. /track-order/ (track_order_public.html): theme + compact ---------- */
+html body:has(.track-hero){background:var(--t-paper,#faf5ee)!important}
+html body .container.py-4:has(.track-hero){padding-top:10px!important}
+html body .track-hero{background:var(--t-sun,#ffd66b)!important;color:var(--t-ink);border:1.5px solid var(--t-ink);border-radius:20px;
+  box-shadow:3px 3px 0 var(--t-ink);padding:16px 16px 18px;margin-bottom:14px}
+html body .track-hero h1{font-size:1.2rem;font-weight:700;color:var(--t-ink);margin:0 0 4px}
+html body .track-hero p{font-size:.8rem;opacity:1;color:rgba(28,25,23,.78)}
+html body .search-card{padding:14px 14px 16px;border-radius:18px;border:1.5px solid var(--t-ink);box-shadow:3px 3px 0 var(--t-ink);margin-bottom:14px}
+html body .search-card .row{--bs-gutter-y:.6rem}
+html body .search-card .form-label{font-size:.7rem;margin-bottom:4px;color:var(--t-ink);letter-spacing:.4px}
+html body .search-card .form-control{padding:9px 12px;font-size:.9rem;border:1.5px solid var(--t-line);border-radius:12px}
+html body .search-card .form-control:focus{border-color:var(--t-ink);box-shadow:3px 3px 0 var(--t-brand)}
+html body .search-btn{background:var(--t-ink)!important;color:#fff;border-radius:12px;padding:10px 18px;font-size:.92rem;box-shadow:none;border:1.5px solid var(--t-ink)}
+html body .search-btn:hover{transform:none;box-shadow:none;background:var(--t-brand)!important}
+
+html body .order-info-card{background:var(--t-ink)!important;border-radius:18px;padding:14px 16px;margin-bottom:12px}
+html body .order-info-card h5{font-size:.95rem;margin-bottom:8px;color:var(--t-sun,#ffd66b)}
+html body .order-info-row{padding:6px 0;font-size:.82rem}
+html body .rider-card,html body .pickup-card{background:#fff!important;border:1.5px solid var(--t-ink);border-radius:16px;padding:12px 14px;margin:12px 0;box-shadow:2px 2px 0 var(--t-ink)}
+html body .rider-card h6,html body .pickup-card h6{color:var(--t-ink);font-size:.9rem;margin-bottom:8px}
+html body .rider-info{font-size:.82rem;margin-bottom:4px}
+html body .pickup-card p{color:var(--t-ink);font-size:.82rem;margin-bottom:4px}
+html body .rider-call-btn{background:var(--t-ink);border-radius:12px;padding:8px 16px;font-size:.85rem;margin-top:6px}
+html body .rider-call-btn:hover{background:var(--t-brand);transform:none}
+html body .error-box{padding:10px 14px;font-size:.85rem;border-radius:12px}
+
+html body .timeline-container{padding:14px 14px 16px;border-radius:18px;border:1.5px solid var(--t-line);box-shadow:none}
+html body .timeline-container h5{font-size:.95rem;margin-bottom:10px!important}
+html body .timeline-step{gap:12px;padding-bottom:16px}
+html body .timeline-step::before{left:17px;top:38px}
+html body .timeline-icon{width:36px;height:36px;font-size:16px;border:1.5px solid var(--t-line);background:#fff}
+html body .timeline-step.completed::before{background:var(--t-leaf,#2e7d32)}
+html body .timeline-step.completed .timeline-icon{background:var(--t-leaf,#2e7d32);border-color:var(--t-ink);box-shadow:none}
+html body .timeline-step.current .timeline-icon{background:var(--t-sun,#ffd66b);color:var(--t-ink);border-color:var(--t-ink);box-shadow:0 0 0 4px rgba(217,72,15,.16);animation:none}
+html body .timeline-content{padding-top:3px}
+html body .timeline-title{font-size:.88rem;margin-bottom:1px}
+html body .timeline-time{font-size:.72rem;margin-bottom:3px}
+html body .timeline-desc{font-size:.8rem;line-height:1.4;margin-bottom:3px}
+html body .timeline-meta{font-size:.72rem;padding:3px 9px;background:var(--t-paper,#faf5ee)}
+html body .proof-photo{max-width:150px;border-radius:12px}
+html body .empty-state{padding:30px 16px}
+html body .empty-state i{font-size:2.4rem;margin-bottom:10px}
+
+/* ---------- 13. Fix: product page Add to Cart bar + price box + neeche ki bar ---------- */
+/* Price box halka hai (theme), isliye label / purani qeemat gehre rang mein (pehle safed thi = nazar nahi aati thi) */
+html body .product-price-section,html body .product-price-section .product-price-label,html body .product-price-section .original-price{color:var(--t-ink,#1c1917)}
+html body .product-price-section .product-price-label{opacity:.75}
+html body .product-price-section .original-price{opacity:.7}
+html body .product-price-section .product-price-value .currency{color:var(--t-ink,#1c1917)}
+@media (max-width:991.98px){
+  /* Bar poori chauri, theek (opaque) background, dock ke bilkul ooper */
+  html body .pd-bar{left:0!important;right:0!important;width:auto!important;max-width:100vw;box-sizing:border-box;opacity:1!important;
+    background:#fff!important;border-top:1.5px solid var(--t-ink,#1c1917);border-radius:20px 20px 0 0;padding:10px 12px 12px;overflow:hidden}
+  html body.has-shop-bar .pd-bar{bottom:calc(var(--sm-h,78px) + 10px + env(safe-area-inset-bottom,0px))!important;z-index:1029}
+  html body .pd-bar .pd-actions{gap:8px;flex-wrap:nowrap;min-width:0}
+  html body .pd-bar .pd-qty{flex:0 0 auto}
+  html body .pd-bar .pd-qty button{width:38px;height:38px;font-size:18px}
+  html body .pd-bar .pd-qty span{min-width:24px}
+  html body .pd-bar .pd-add{flex:1 1 0;min-width:0;padding:10px 8px;font-size:13.5px;gap:6px;justify-content:center;overflow:hidden}
+  html body .pd-bar .pd-add>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html body .pd-bar .pd-buy{flex:0 0 44px;width:44px;min-height:44px;padding:0;display:flex;align-items:center;justify-content:center}
+  /* Content bar ke neeche chhup na jaye */
+  html body.has-shop-bar{padding-bottom:calc(150px + var(--sm-h,78px) + env(safe-area-inset-bottom,0px))!important}
+  /* Account sheet band ho to kabhi bhi bar ke peeche jhalak na de */
+  html body .sm-sheet:not(.open){transform:translateY(calc(100% + 60px));box-shadow:none;pointer-events:none}
+  html body .sm-bar{left:14px!important;right:14px!important;width:auto}
+}
+
+/* ---------- 14. Neeche ki bar: safed dock (dark footer ke saath mil nahi jati) ---------- */
+@media (max-width:991.98px){
+  html body .sm-bar{background:#fff!important;border:1.5px solid var(--t-ink,#1c1917)!important;
+    box-shadow:0 8px 24px rgba(28,25,23,.28)!important}
+  html body .sm-tab{color:#78716c}
+  html body .sm-tab.active{color:var(--t-ink,#1c1917);background:transparent}
+  html body .sm-tab.active .sm-lbl{color:var(--t-ink,#1c1917);font-weight:800}
+  html body .sm-tab.active .sm-ico{background:var(--t-sun,#ffd66b);color:var(--t-ink,#1c1917)}
+  html body .sm-badge{border-color:#fff}
+}
+
+/* ---------- 15. APK (Android WebView) / installed app scroll fix ---------- */
+/* Masla: shop.css mein html + body dono par overflow-x:hidden aur html{height:100%} tha, aur pichhla patch
+   html/body ko overflow:auto + touch-action:pan-y bana raha tha. Android WebView / installed app mein ye
+   nested scroll-container ban jate hain aur touch-scroll atak jata hai.
+   Ab: html aur body overflow:visible (sirf viewport scroll karta hai), side ka overflow body par
+   overflow-x:clip se roka jata hai (clip scroll-container nahi banata). touch-action default (auto) hai,
+   taake neeche scroll + carousel ki side swipe dono chalen. */
+html{height:auto!important;min-height:100%;overflow:visible!important}
+html body{overflow:visible!important;overflow-x:clip!important;touch-action:auto!important;-webkit-overflow-scrolling:touch}
+@supports not (overflow-x:clip){ html body{overflow-x:hidden!important;overflow-y:visible!important} }
+/* Menu / sidebar khula ho tabhi page lock ho */
+html body.sm-lock{overflow:hidden!important}
+
+/* Double-tap zoom band, normal tap/scroll/swipe chalte rahen */
+html body{touch-action:manipulation!important}

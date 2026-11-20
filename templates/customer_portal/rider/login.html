@@ -1,0 +1,189 @@
+{% load portal_i18n %}
+{% load static %}
+<!DOCTYPE html>
+<!-- rider-auth -->
+<html lang="{{ LANG_CODE|default:'en' }}" dir="{{ LANG_DIR|default:'ltr' }}"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5c2e">
+<title>{% t "Rider Login - {}" company_name %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Rang badalne hon to sirf in 4 line ko badlein */
+  :root{--brand:#16a34a;--brand-dark:#15803d;--deep:#0b3d22;--mid:#0f5c2e;
+        --ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--field:#f6f8f7}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;min-height:100vh;min-height:100dvh;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);background:var(--deep)}
+  .shell{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;flex:0 0 auto;overflow:hidden;color:#fff;text-align:center;
+    padding:max(16px,env(safe-area-inset-top)) 24px 64px;
+    background:radial-gradient(120% 90% at 85% 0%,rgba(74,222,128,.28) 0%,rgba(74,222,128,0) 55%),
+               linear-gradient(165deg,var(--mid) 0%,var(--deep) 100%)}
+  .hero:before{content:"";position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(rgba(255,255,255,.09) 1.2px,transparent 1.2px);background-size:22px 22px;
+    -webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 90%);mask-image:linear-gradient(180deg,#000 0%,transparent 90%)}
+  .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.12)}
+  .r1{width:260px;height:260px;top:-110px;right:-90px}
+  .r2{width:170px;height:170px;bottom:-70px;left:-50px}
+  .hero>*{position:relative;z-index:1}
+  .lang{text-align:right;min-height:28px;color:#fff}
+  .logo{width:96px;height:96px;margin:8px auto 16px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 6px rgba(255,255,255,.16),0 14px 32px rgba(0,0,0,.28);overflow:hidden}
+  .logo img{width:100%;height:100%;object-fit:contain;padding:8px}
+  .logo svg{width:46px;height:46px}
+  .hero h2{margin:0;font-size:21px;font-weight:800;letter-spacing:.2px}
+  .tag{display:inline-block;margin-top:8px;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.4px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+  .perks{display:none;margin:34px auto 0;max-width:320px;text-align:left;gap:14px;flex-direction:column}
+  .perk{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;color:rgba(255,255,255,.92)}
+  .perk i{flex:0 0 38px;height:38px;border-radius:12px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center}
+  .perk svg{width:19px;height:19px}
+
+  /* ---------- form sheet ---------- */
+  .sheet{flex:1 0 auto;margin-top:-34px;position:relative;z-index:2;background:#fff;border-radius:30px 30px 0 0;
+    padding:30px 22px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center}
+  .box{width:100%;max-width:400px}
+  h1{margin:0 0 6px;font-size:clamp(24px,6.5vw,28px);font-weight:800;line-height:1.15;letter-spacing:-.3px}
+  .sub{margin:0 0 24px;color:var(--muted);font-size:14.5px;line-height:1.55}
+  .m{display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;padding:12px 14px;border-radius:14px;font-size:14px;font-weight:600;line-height:1.45}
+  .error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  .success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+  .warning,.info{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+  label{display:block;margin:0 0 7px;font-size:13px;font-weight:600;color:#334155}
+  .field{margin-bottom:18px}
+  .in{position:relative}
+  .in svg.ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:#94a3b8;pointer-events:none;transition:color .15s}
+  .in:focus-within svg.ic{color:var(--brand)}
+  input{display:block;width:100%;height:56px;padding:0 14px 0 46px;border:1.5px solid var(--line);border-radius:16px;background:var(--field);
+    color:var(--ink);font:inherit;font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
+  input::placeholder{color:#a3aebd}
+  input:hover{border-color:#cbd5e1}
+  input:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 4px rgba(22,163,74,.15)}
+  .pw input{padding-right:54px}
+  .toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:12px;background:transparent;
+    color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s}
+  .toggle:hover{color:var(--brand-dark);background:#eef2f0}
+  .toggle svg{width:20px;height:20px}
+  .forgot{text-align:right;margin:-6px 0 20px}
+  .forgot a{font-size:13.5px;font-weight:600;color:var(--brand-dark);text-decoration:none}
+  .forgot a:hover{text-decoration:underline}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:56px;border:0;border-radius:16px;color:#fff;font:inherit;
+    font-size:16px;font-weight:700;letter-spacing:.2px;cursor:pointer;
+    background:linear-gradient(135deg,#22c55e 0%,var(--brand-dark) 100%);box-shadow:0 10px 24px rgba(22,163,74,.34);
+    transition:transform .1s,box-shadow .15s,filter .15s}
+  .btn:hover{filter:brightness(1.04);box-shadow:0 12px 28px rgba(22,163,74,.4)}
+  .btn:active{transform:scale(.985)}
+  .btn[disabled]{opacity:.8;cursor:default}
+  .btn svg{width:19px;height:19px}
+  .spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:none}
+  .btn.busy .spin{display:inline-block}.btn.busy .go{display:none}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .or{display:flex;align-items:center;gap:12px;margin:24px 0 16px;color:#94a3b8;font-size:12.5px;font-weight:500}
+  .or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+  .reg{display:flex;align-items:center;justify-content:center;height:52px;border-radius:16px;border:1.5px solid #bbe5c8;background:#f3fbf6;
+    color:var(--brand-dark);font-size:15px;font-weight:700;text-decoration:none;transition:background .15s,border-color .15s}
+  .reg:hover{background:#e7f7ed;border-color:#86d3a1}
+  .back{margin:18px 0 0;text-align:center;font-size:13px}
+  .back a{color:var(--muted);text-decoration:none;font-weight:600}
+  .back a:hover{color:var(--ink)}
+  .foot{margin-top:auto;padding-top:26px;text-align:center;font-size:12px;color:#a3aebd}
+
+  /* ---------- tablet / desktop: do hisse wala card ---------- */
+  @media (min-width:860px){
+    body{background:linear-gradient(160deg,#e9f5ee 0%,#d6ecdf 100%);display:flex;align-items:center;justify-content:center;padding:28px}
+    .shell{flex-direction:row;align-items:stretch;min-height:0;width:100%;max-width:920px;border-radius:30px;overflow:hidden;
+      box-shadow:0 30px 70px rgba(11,61,34,.28)}
+    .hero{flex:0 0 400px;display:flex;flex-direction:column;justify-content:center;padding:48px 40px}
+    .lang{position:absolute;top:18px;left:22px;right:auto;text-align:left}
+    .logo{width:112px;height:112px}
+    .perks{display:flex}
+    .sheet{margin:0;border-radius:0;flex:1;justify-content:center;padding:48px 44px}
+    .foot{margin-top:28px}
+  }
+  @media (max-width:859px) and (max-height:560px) and (orientation:landscape){.hero{padding-bottom:44px}.logo{width:60px;height:60px;margin-bottom:8px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
+</style></head><body>
+<div class="shell">
+
+  <section class="hero">
+    <span class="ring r1"></span><span class="ring r2"></span>
+    <div class="lang">{% include 'components/lang_switch.html' %}</div>
+    <div class="logo">{% if company_logo %}<img src="{{ company_logo }}" alt="{{ company_name }}">{% else %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="2.5"/><circle cx="18.5" cy="17" r="2.5"/><path d="M8 17h5l3-7h-4"/><path d="M16 10l1.5 4"/><path d="M5 12h4"/></svg>{% endif %}</div>
+    <h2>{{ company_name }}</h2>
+    <span class="tag">{% t "Delivery Partner App" %}</span>
+    <div class="perks">
+      <div class="perk"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></i>Live order alerts and navigation</div>
+      <div class="perk"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/></svg></i>Track your earnings and cash</div>
+      <div class="perk"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></i>Secure and verified sign in</div>
+    </div>
+  </section>
+
+  <main class="sheet">
+    <div class="box">
+      <h1>{% t "Welcome back" %}</h1>
+      <p class="sub">{% t "Sign in to start receiving delivery orders." %}</p>
+
+      {% for m in messages %}<div class="m {{ m.tags }}" role="alert">{{ m }}</div>{% endfor %}
+
+      <form method="post" id="loginForm" novalidate>{% csrf_token %}
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <div class="in">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>
+            <input id="phone" type="tel" name="phone" placeholder="03XX XXXXXXX" required autocomplete="username" inputmode="tel">
+          </div>
+        </div>
+        <div class="field pw">
+          <label for="password">Password</label>
+          <div class="in">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            <input id="password" type="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="toggle" aria-label="Show or hide password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="forgot"><a href="{% url 'rider_forgot_password' %}">Forgot password?</a></div>
+        <button type="submit" class="btn" id="loginBtn">
+          <span class="spin" aria-hidden="true"></span><span class="lbl">Login</span>
+          <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </form>
+
+      {% if SHOP.rider_register_enabled %}
+      <div class="or">{% t "New rider?" %}</div>
+      <a class="reg" href="{% url 'rider_register' %}">Register as a Rider</a>
+      {% endif %}
+      <p class="back"><a href="{% url 'shop_home' %}">&larr; Back to shop</a></p>
+    </div>
+    <div class="foot">&copy; {% now "Y" %} {{ company_name }}</div>
+  </main>
+
+</div>
+<script>
+  (function () {
+    var t = document.querySelector('.toggle'), i = document.getElementById('password');
+    t.addEventListener('click', function () {
+      i.type = i.type === 'password' ? 'text' : 'password';
+      t.style.color = i.type === 'text' ? '#15803d' : '';
+    });
+    var f = document.getElementById('loginForm'), b = document.getElementById('loginBtn'), l = b.querySelector('.lbl');
+    f.addEventListener('submit', function () {
+      if (!f.phone.value.trim() || !f.password.value) return;
+      b.classList.add('busy'); b.disabled = true; l.textContent = 'Signing in…';
+    });
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) { b.classList.remove('busy'); b.disabled = false; l.textContent = 'Login'; }
+    });
+  })();
+</script>
+<script src="{% static 'js/password_ui.js' %}" defer></script>
+{% include 'components/i18n.html' %}
+</body></html>

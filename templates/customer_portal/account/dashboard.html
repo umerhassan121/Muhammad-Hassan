@@ -1,0 +1,232 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load static %}
+
+{% block title %}My Account - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_account.css' %}?v=2">{% endblock %}
+
+{% block content %}
+
+
+<!-- Account Header -->
+<div class="account-header">
+    <div class="container">
+        <div class="avatar-circle">
+            {{ customer.name|slice:":1"|upper }}
+        </div>
+        <h2>{{ customer.name }}</h2>
+        <p><i class="bi bi-phone"></i> {{ customer.contact_number }}</p>
+        {% if customer.email %}
+        <p><i class="bi bi-envelope"></i> {{ customer.email }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Quick links (Talabat style account menu) -->
+    <div class="ql-grid">
+        <a href="{% url 'my_addresses' %}" class="ql-item"><i class="bi bi-geo-alt-fill"></i><span>Addresses</span></a>
+        <a href="{% url 'my_orders' %}" class="ql-item"><i class="bi bi-receipt"></i><span>Orders</span></a>
+        {% if SHOP.shop_favorites_enabled %}<a href="{% url 'favorites_page' %}" class="ql-item"><i class="bi bi-heart-fill"></i><span>Favourites</span></a>{% endif %}
+        {% if SHOP.shop_wallet_enabled %}<a href="{% url 'wallet_page' %}" class="ql-item"><i class="bi bi-wallet2"></i><span>Wallet</span></a>{% endif %}
+        {% if SHOP.shop_pro_enabled %}<a href="{% url 'pro_page' %}" class="ql-item"><i class="bi bi-patch-check-fill"></i><span>Pro</span></a>{% endif %}
+        <a href="{% url 'repeat_plans' %}" class="ql-item"><i class="bi bi-arrow-repeat"></i><span>Repeat</span></a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        
+        <div class="stat-card total">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value">{{ stats.total_orders }}</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+        
+        <div class="stat-card pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value">{{ stats.pending_orders }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        
+        <div class="stat-card delivered">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ stats.delivered_orders }}</div>
+            <div class="stat-label">Delivered</div>
+        </div>
+        
+        <div class="stat-card cancelled">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value">{{ stats.cancelled_orders }}</div>
+            <div class="stat-label">Cancelled</div>
+        </div>
+        
+    </div>
+
+    {% if referral %}
+    <!-- Invite a friend (Referral) -->
+    <div class="ref-card" id="referralCard">
+        <h3>🎁 Invite a friend, earn rewards</h3>
+        <div class="ref-sub">
+            {% if referral.referrer_reward > 0 and referral.referee_reward > 0 %}{% t 'When your friend joins with your link and gets their <b>first order delivered</b>, you get <b>Rs. {}</b> and your friend gets <b>Rs. {}</b> in the wallet.' referral.referrer_reward|floatformat:0 referral.referee_reward|floatformat:0 %}
+            {% elif referral.referrer_reward > 0 %}{% t 'When your friend joins with your link and gets their <b>first order delivered</b>, you get <b>Rs. {}</b> in the wallet.' referral.referrer_reward|floatformat:0 %}
+            {% elif referral.referee_reward > 0 %}{% t 'When your friend joins with your link and gets their <b>first order delivered</b>, your friend gets <b>Rs. {}</b> in the wallet.' referral.referee_reward|floatformat:0 %}{% endif %}
+            {% if referral.min_order > 0 %}{% t 'The first order must be Rs. {} or more.' referral.min_order|floatformat:0 %}{% endif %}
+        </div>
+
+        <div class="ref-code-row">
+            <div class="ref-grow"><div class="ref-label">Your code</div><div class="ref-value" id="refCode">{{ referral.code }}</div></div>
+            <button type="button" class="ref-btn" data-copy="{{ referral.code }}">Copy code</button>
+        </div>
+        <div class="ref-code-row">
+            <div class="ref-grow"><div class="ref-label">Your link</div><div class="ref-value" id="refLink">{{ referral.link }}</div></div>
+            <button type="button" class="ref-btn" data-copy="{{ referral.link }}">Copy link</button>
+        </div>
+
+        <a class="ref-wa" href="{{ referral.whatsapp_url }}" target="_blank" rel="noopener">
+            <i class="bi bi-whatsapp"></i> Share on WhatsApp
+        </a>
+
+        <div class="ref-stats">
+            <div><b>{{ referral.invited }}</b>Friends joined</div>
+            <div><b>{{ referral.rewarded }}</b>Rewarded</div>
+            <div class="earn"><b>Rs. {{ referral.earned|floatformat:0 }}</b>You earned</div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        function flash(btn) {
+            var old = btn.textContent; btn.textContent = '{% t "Copied" %} \u2713'; btn.classList.add('copied');
+            setTimeout(function () { btn.textContent = old; btn.classList.remove('copied'); }, 1600);
+        }
+        function fallbackCopy(text) {
+            var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+            document.body.appendChild(t); t.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(t);
+        }
+        document.querySelectorAll('#referralCard [data-copy]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var text = btn.getAttribute('data-copy');
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(function () { flash(btn); }, function () { fallbackCopy(text); flash(btn); });
+                } else { fallbackCopy(text); flash(btn); }
+            });
+        });
+    })();
+    </script>
+    {% endif %}
+
+    <!-- Menu Section -->
+    <div class="menu-section">
+        
+        <a href="{% url 'my_orders' %}" class="menu-item">
+            <div class="menu-icon primary">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="menu-text">
+                <strong>My Orders</strong>
+                <small>View all your orders</small>
+            </div>
+            <div class="menu-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'track_order' %}" class="menu-item">
+            <div class="menu-icon info">
+                <i class="bi bi-truck"></i>
+            </div>
+            <div class="menu-text">
+                <strong>Track Order</strong>
+                <small>Track your order status</small>
+            </div>
+            <div class="menu-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'shop_home' %}" class="menu-item">
+            <div class="menu-icon success">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div class="menu-text">
+                <strong>Continue Shopping</strong>
+                <small>Browse our products</small>
+            </div>
+            <div class="menu-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'delete_my_account' %}" class="menu-item">
+            <div class="menu-icon danger">
+                <i class="bi bi-trash3"></i>
+            </div>
+            <div class="menu-text">
+                <strong>Delete Account</strong>
+                <small>Remove your personal data</small>
+            </div>
+            <div class="menu-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{% url 'customer_logout' %}" class="menu-item">
+            <div class="menu-icon danger">
+                <i class="bi bi-box-arrow-right"></i>
+            </div>
+            <div class="menu-text">
+                <strong>Logout</strong>
+                <small>Sign out from your account</small>
+            </div>
+            <div class="menu-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+        </a>
+        
+    </div>
+
+    <!-- Recent Orders Section -->
+    <div class="recent-orders-section">
+        
+        <div class="section-title">
+            <i class="bi bi-clock-history text-primary"></i>
+            Recent Orders
+        </div>
+        
+        {% if recent_orders %}
+            {% for order in recent_orders %}
+            <a href="{% url 'order_detail_customer' order.id %}" class="order-item">
+                <div class="order-info">
+                    <div class="order-no">{% t "Order #{}" order.order_no %}</div>
+                    <div class="order-date">
+                        <i class="bi bi-calendar"></i> 
+                        {{ order.order_date|date:"d M, Y" }}
+                    </div>
+                </div>
+                <div class="order-amount">
+                    Rs. {{ order.calculated_total|floatformat:0 }}
+                </div>
+                <div class="order-status status-{{ order.status }}">
+                    {{ order.get_status_display }}
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="no-orders">
+                <i class="bi bi-inbox"></i>
+                <h5>No Orders Yet</h5>
+                <p>You have not placed any order yet.</p>
+                <a href="{% url 'shop_home' %}" class="btn-shop-now">
+                    <i class="bi bi-shop"></i> Start Shopping
+                </a>
+            </div>
+        {% endif %}
+        
+    </div>
+
+</div>
+
+
+{% endblock %}

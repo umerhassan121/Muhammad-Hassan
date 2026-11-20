@@ -1,0 +1,67 @@
+{% extends 'customer_portal/rider/base.html' %}
+{% block title %}Settings{% endblock %}
+{% block header %}<div class="top"><div class="nm">⚙️ Settings</div><div class="hi">{{ rider.name }} · {{ rider.phone }}</div></div>{% endblock %}
+{% block body %}
+<div class="wrap">
+  <div class="card st">
+    <h3>👤 My profile</h3>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="profile">
+      <label for="p_name">Full name</label>
+      <input id="p_name" type="text" name="name" value="{{ rider.name }}" maxlength="100" required>
+      <label for="p_phone">Phone number</label>
+      <input id="p_phone" type="text" value="{{ rider.phone }}" disabled>
+      <small class="mut">To change your phone number, please contact the admin.</small>
+      <label for="p_vehicle">Vehicle <small>(optional)</small></label>
+      <input id="p_vehicle" type="text" name="vehicle" value="{{ rider.vehicle }}" maxlength="50" placeholder="Bike / Car">
+      <button class="btn o mt">Save profile</button>
+    </form>
+  </div>
+
+  <div class="card st">
+    <h3>🔔 Alerts</h3>
+    <label for="soundSel">New order sound</label>
+    <select id="soundSel">
+      <option value="on">On</option>
+      <option value="off">Off</option>
+    </select>
+    <small class="mut">Turn this off if you do not want to hear a sound when a new order arrives. This is saved on this phone only.</small>
+  </div>
+
+  <div class="card st">
+    <h3>🔔 Test ring</h3>
+    <small class="mut">Tap the button, then close the app. After 15 seconds your phone should ring like a new order.</small>
+    <form method="post" action="{% url 'rider_test_push' %}">{% csrf_token %}
+      <button class="btn o mt">Send test ring</button>
+    </form>
+  </div>
+
+  {% include 'customer_portal/rider/_battery_saver.html' %}
+
+  <div class="card st">
+    <h3>🌐 Language</h3>
+    <div class="mt">{% include 'components/lang_switch.html' %}</div>
+  </div>
+
+  <div class="card st">
+    <h3>🔑 Change password</h3>
+    <form method="post" autocomplete="off">{% csrf_token %}<input type="hidden" name="action" value="password">
+      <label for="pw_old">Current password</label>
+      <input id="pw_old" type="password" name="old_password" required autocomplete="current-password">
+      <label for="pw_new">New password</label>
+      <input id="pw_new" type="password" name="new_password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+      <label for="pw_conf">Confirm new password</label>
+      <input id="pw_conf" type="password" name="confirm" required minlength="6" autocomplete="new-password">
+      <button class="btn o mt">Change password</button>
+    </form>
+  </div>
+
+  <a href="{% url 'rider_logout' %}" class="btn l mt">Logout</a>
+</div>
+<script>
+(function(){
+  var s = document.getElementById('soundSel');
+  try{ s.value = localStorage.getItem('riderSound') || 'on'; }catch(e){}
+  s.addEventListener('change', function(){ try{ localStorage.setItem('riderSound', s.value); }catch(e){} });
+})();
+</script>
+{% endblock %}

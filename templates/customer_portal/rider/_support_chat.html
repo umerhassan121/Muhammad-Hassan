@@ -1,0 +1,40 @@
+{% load portal_i18n %}
+<div class="sc-box">
+  <div class="sc-list" id="scList"><div class="sc-empty" id="scEmpty">{{ chat_empty|default:"No messages yet. Write to us below." }}</div></div>
+  <form class="sc-form" id="scForm" autocomplete="off">
+    <input id="scInput" maxlength="1000" placeholder="Write a message…" required>
+    <button type="submit">Send</button>
+  </form>
+</div>
+<input type="hidden" id="scCsrf" value="{{ csrf_token }}">
+<script>
+(function(){
+  var LIST='{{ chat_list_url }}', SEND='{{ chat_send_url }}';
+  var box=document.getElementById('scList'), empty=document.getElementById('scEmpty');
+  var form=document.getElementById('scForm'), input=document.getElementById('scInput');
+  var csrf=document.getElementById('scCsrf').value, last=0, lastDay='', busy=false;
+  function add(m){
+    if(m.id<=last) return; last=m.id;
+    if(empty){empty.remove();empty=null;}
+    if(m.day!==lastDay){lastDay=m.day;var d=document.createElement('div');d.className='sc-day';d.textContent=m.day;box.appendChild(d);}
+    var el=document.createElement('div');el.className='sc-m '+(m.mine?'me':'them');
+    el.appendChild(document.createTextNode(m.text));
+    var t=document.createElement('small');t.textContent=m.time;el.appendChild(t);box.appendChild(el);
+  }
+  function poll(){
+    if(busy||document.hidden) return; busy=true;
+    fetch(LIST+(last?('?after='+last):''),{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(d){
+      if(d&&d.success&&d.messages.length){var atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<80||!last;
+        d.messages.forEach(add); if(atEnd) box.scrollTop=box.scrollHeight;}
+    }).catch(function(){}).then(function(){busy=false;});
+  }
+  form.addEventListener('submit',function(e){
+    e.preventDefault(); var text=input.value.trim(); if(!text) return; input.value='';
+    fetch(SEND,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+      body:JSON.stringify({message:text})}).then(function(r){return r.json();}).then(function(d){
+      if(d.success){add(d.message);box.scrollTop=box.scrollHeight;}else{alert(d.message||'{% t "Could not send." %}');input.value=text;}
+    }).catch(function(){alert('{% t "Network error. Please try again." %}');input.value=text;});
+  });
+  poll(); setInterval(poll,4000); document.addEventListener('visibilitychange',poll);
+})();
+</script>

@@ -1,0 +1,148 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load static %}
+{% load portal_i18n %}
+
+{% block title %}Login - {{ company_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_login.css' %}?v=1">{% endblock %}
+
+{% block content %}
+
+
+<div class="login-container">
+    
+    <div class="login-card">
+        
+        <!-- Header -->
+        <div class="login-header">
+            <div class="login-icon">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <h3>Customer Login</h3>
+            <p>Welcome back! Please login to continue</p>
+        </div>
+        
+        <!-- Body -->
+        <div class="login-body">
+            
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-message 
+                        {% if message.tags == 'error' %}alert-error
+                        {% elif message.tags == 'success' %}alert-success
+                        {% elif message.tags == 'warning' %}alert-warning
+                        {% else %}alert-info{% endif %}">
+                        <i class="bi bi-{% if message.tags == 'error' %}exclamation-circle-fill{% elif message.tags == 'success' %}check-circle-fill{% elif message.tags == 'warning' %}exclamation-triangle-fill{% else %}info-circle-fill{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Login Form -->
+            <form method="POST" id="loginForm">
+                {% csrf_token %}
+                
+                <!-- ✅ Hidden next field -->
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+                
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">
+                        <i class="bi bi-phone-fill"></i> Phone Number
+                    </label>
+                    <input type="tel" 
+                           name="phone" 
+                           id="phone" 
+                           placeholder="03XXXXXXXXX"
+                           required
+                           autocomplete="tel"
+                           inputmode="tel"
+                           autofocus>
+                </div>
+                
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="password">
+                        <i class="bi bi-lock-fill"></i> Password
+                    </label>
+                    <input type="password" 
+                           name="password" 
+                           id="password" 
+                           placeholder="Enter your password"
+                           required
+                           autocomplete="current-password">
+                    <div style="text-align:right;margin-top:6px"><a href="{% url 'forgot_password' %}" style="font-size:13.5px;color:#d9480f;text-decoration:none">Forgot password?</a></div>
+                </div>
+                
+                <!-- Submit -->
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Login</span>
+                </button>
+                
+            </form>
+            
+        </div>
+        
+        <!-- Footer -->
+        <div class="login-footer">
+            <p>
+                Don't have an account? 
+                {% if SHOP.customer_register_enabled %}
+                <a href="{% url 'customer_register' %}">Register as a customer</a>
+                {% endif %}
+            </p>
+        </div>
+        
+    </div>
+    
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Phone input — only digits
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9+\-\s]/g, '');
+    });
+    
+    // Form submit — disable button
+    const form = document.getElementById('loginForm');
+    const btn = document.getElementById('loginBtn');
+    
+    form.addEventListener('submit', function(e) {
+        const phone = phoneInput.value.trim();
+        const password = document.getElementById('password').value;
+        
+        if (!phone || phone.replace(/[^0-9]/g, '').length < 10) {
+            e.preventDefault();
+            alert('❌ {% t "Please enter a valid phone number" %}');
+            phoneInput.focus();
+            return false;
+        }
+        
+        if (!password) {
+            e.preventDefault();
+            alert('❌ {% t "Please enter your password" %}');
+            document.getElementById('password').focus();
+            return false;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> {% t "Logging in..." %}';
+    });
+    
+    // Enter key navigation
+    phoneInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('password').focus();
+        }
+    });
+});
+</script>
+
+<script src="{% static 'js/password_ui.js' %}" defer></script>
+{% endblock %}

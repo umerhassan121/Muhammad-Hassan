@@ -1,0 +1,153 @@
+{% load pwa_portal static %}
+{% pwa_portal_meta %}
+<script>
+/* Service worker + "Update available" bar.
+ * - Naya version milne par upar bar: "Update" dabane par naya version lag jata hai.
+ * - "Later" dabane par is session mein dobara nahi poochta; magar agle page par jate hi naya version khud lag jata hai
+ *   (sirf agar form mein unsaved data na ho) - installed app band hi na ho to bhi update atka nahi rehta.
+ * - Pehli dafa install par chhota message: "App offline ke liye tayyar".
+ */
+if ('serviceWorker' in navigator) {
+  (function () {
+    var userAsked = false, regRef = null, dirty = false, hadController = !!navigator.serviceWorker.controller;
+    var ur = /^ur/i.test(document.documentElement.lang || '');
+    var TXT = ur ? {msg: 'نیا ورژن دستیاب ہے', btn: 'اپ ڈیٹ', later: 'بعد میں', ready: 'ایپ آف لائن کے لیے تیار ہے'}
+                 : {msg: 'A new version is available', btn: 'Update', later: 'Later', ready: 'App is ready for offline use'};
+    var SS = 'pwa_update_later';
+    function snoozed() { try { return sessionStorage.getItem(SS) === '1'; } catch (e) { return false; } }
+    document.addEventListener('input', function (e) {
+      var t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) dirty = true;
+    }, true);
+
+    function updateBar(reg) {
+      if (document.getElementById('pwa-update-bar') || snoozed()) return;
+      var mk = function () {
+        var b = document.createElement('div');
+        b.id = 'pwa-update-bar';
+        b.setAttribute('role', 'alert');
+        b.style.cssText = 'position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:100000;' +
+          'background:#111827;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;display:flex;' +
+          'align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.35);' +
+          'font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto';
+        b.innerHTML = '<span style="flex:1">\uD83D\uDD04 ' + TXT.msg + '</span>' +
+          '<button id="pwa-refresh" style="background:#22c55e;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:600">' + TXT.btn + '</button>' +
+          '<button id="pwa-later" aria-label="' + TXT.later + '" style="background:transparent;color:#fff;border:0;font-size:20px;line-height:1">&times;</button>';
+        document.body.appendChild(b);
+        document.getElementById('pwa-later').onclick = function () {
+          try { sessionStorage.setItem(SS, '1'); } catch (e) {}
+          b.remove();
+        };
+        document.getElementById('pwa-refresh').onclick = function () {
+          userAsked = true;
+          if (reg.waiting) reg.waiting.postMessage({type: 'SKIP_WAITING'}); else location.reload();
+        };
+      };
+      if (document.body) mk(); else document.addEventListener('DOMContentLoaded', mk);
+    }
+    function watch(reg) {
+      regRef = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) updateBar(reg);
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing;
+        if (!w) return;
+        w.addEventListener('statechange', function () {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) updateBar(reg);
+          if (w.state === 'activated' && !hadController && window.pwaToast) window.pwaToast('\u2705 ' + TXT.ready, 3000);
+        });
+      });
+    }
+    // Agla page kholte waqt (link click) waiting update khud laga do - reload nahi, naya page naye version se aayega
+    document.addEventListener('click', function (e) {
+      if (!regRef || !regRef.waiting || dirty || userAsked) return;
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a || e.defaultPrevented || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+      try { if (new URL(a.href, location.href).origin !== location.origin) return; } catch (err) { return; }
+      regRef.waiting.postMessage({type: 'SKIP_WAITING'});
+    }, true);
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (userAsked) { userAsked = false; location.reload(); }   // sirf user ke Update dabane par reload
+    });
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/serviceworker.js', {scope: '/'}).then(function () {
+        return navigator.serviceWorker.getRegistration();   // is page ko control karne wali registration (/shop/ par push worker)
+      }).then(function (reg) {
+        if (!reg) return;
+        watch(reg);
+        var check = function () { reg.update().catch(function () {}); };
+        setInterval(check, 30 * 60 * 1000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+      }).catch(function (e) { console.log('SW error', e); });
+    });
+  })();
+}
+</script>
+<meta name="mobile-web-app-capable" content="yes">
+<script>
+/* Install button (Android/Chrome/Edge) + iPhone hint. */
+(function () {
+  var deferred = null, KEY = 'pwa_install_dismissed';
+  var ur = /^ur/i.test(document.documentElement.lang || '');
+  var T = ur ? {android: '\uD83D\uDCF2 ایپ انسٹال کریں — ہوم اسکرین سے سیدھی کھلے گی', ios: 'آئی فون: شیئر \u2B06\uFE0F دبائیں، پھر <b>Add to Home Screen</b>', btn: 'انسٹال'}
+               : {android: '\uD83D\uDCF2 Install the app \u2014 opens straight from your home screen', ios: 'iPhone: tap Share \u2B06\uFE0F then <b>Add to Home Screen</b>', btn: 'Install'};
+  function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream; }
+  function entries(show) { document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = !show; }); }
+  function standalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+  function bar(html, onclick) {
+    if (document.getElementById('pwa-install-bar')) return;
+    var b = document.createElement('div');
+    b.id = 'pwa-install-bar';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + var(--pwa-lift,0px) + env(safe-area-inset-bottom,0px));z-index:99999;background:#0d6efd;color:#fff;' +
+      'border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);' +
+      'font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto';
+    b.innerHTML = '<span style="flex:1">' + html + '</span>' +
+      (onclick ? '<button id="pwa-yes" style="background:#fff;color:#0d6efd;border:0;border-radius:8px;padding:8px 14px;font-weight:600">' + T.btn + '</button>' : '') +
+      '<button id="pwa-no" aria-label="Close" style="background:transparent;color:#fff;border:0;font-size:20px;line-height:1">&times;</button>';
+    document.body.appendChild(b);
+    document.getElementById('pwa-no').onclick = function () {
+      try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+      b.remove();
+    };
+    if (onclick) document.getElementById('pwa-yes').onclick = function () { onclick(); b.remove(); };
+  }
+  function dismissed() {
+    try { var t = +localStorage.getItem(KEY); return t && Date.now() - t < 7 * 864e5; } catch (e) { return false; }
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (standalone()) return;
+    entries(true);
+    if (window.SHOP_APK_URL) return;   // shop par APK button hai, PWA bar nahi
+    if (dismissed()) return;
+    var show = function () {
+      bar(T.android, function () {
+        deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; entries(false); });
+      });
+    };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  });
+  window.addEventListener('appinstalled', function () {
+    var b = document.getElementById('pwa-install-bar'); if (b) b.remove();
+    entries(false);
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-pwa-install]') : null;
+    if (!b) return;
+    e.preventDefault();
+    if (window.shopMenuClose) window.shopMenuClose();
+    if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; entries(false); }); }
+    else if (isIos()) { var old = document.getElementById('pwa-install-bar'); if (old) old.remove(); bar(T.ios, null); }
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var ios = isIos();
+    if (ios && !standalone()) entries(true);
+    if (ios && !standalone() && !dismissed()) {
+      bar(T.ios, null);
+    }
+  });
+})();
+</script>
+<script src="{% static 'js/pwa_speed.js' %}" defer></script>
+<script src="{% static 'js/pwa_ui.js' %}?v=3" defer></script>
+<script src="{% static 'js/pwa_badge.js' %}" defer></script>

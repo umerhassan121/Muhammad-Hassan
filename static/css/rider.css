@@ -1,0 +1,223 @@
+/* Rider portal ka ek style (Step 4).
+   Rider ke sab pages (base.html ke zariye) isi file se rang, gap, buttons aur cards lete hain.
+   Naye rang / size yahan ke tokens (--...) se lein, page mein hard-coded rang na likhein.
+   Admin / vendor / customer pages ko ye file nahi chhoo-ti (sirf rider/base.html mein load hoti hai).
+
+   Tokens:   rang (--brand, --ink, --ok, --bad, --warn-*, --info-*, --line ...), radius (--r-*), gap (--gap*), tap size (--tap)
+   Buttons:  .btn (.o orange, .l light, .s chhota) aur .hb (bara, poori chaudai) - dono kam az kam 44-48px
+   Menu:     .rnav (neeche ki bar), .rmore (More sheet)
+   Home:     .hsw (Online switch), .alerts/.al, .oc (order card)
+*/
+:root{
+  /* rang */
+  --brand:#ff5a00;--brand2:#ff8a3d;--ink:#1f2937;--ink2:#374151;--ink-strong:#111827;--mut:#6b7280;--bg:#f4f5f7;--card:#fff;
+  --ok:#16a34a;--ok-bg:#dcfce7;--ok-ink:#166534;
+  --bad:#dc2626;--bad-bg:#fee2e2;--bad-ink:#991b1b;--bad-strong:#b91c1c;
+  --warn-bg:#fef3c7;--warn-ink:#92400e;
+  --info-bg:#dbeafe;--info-ink:#1d4ed8;--info-line:#bfdbfe;--info-soft:#eff6ff;
+  --brand-bg:#ffedd5;--brand-ink:#c2410c;--brand-soft:#fff7ed;--brand-line:#fdba74;
+  --line:#e5e7eb;--line2:#d1d5db;--line-soft:#f1f5f9;--chip:#f3f4f6;--soft:#f9fafb;
+  --star:#f59e0b;--yellow:#facc15;--blue:#2563eb;
+  --oa-1:#7c2d12;--oa-2:#ea580c;--oa-3:#9a3412;
+  /* radius, gap, size */
+  --r-sm:10px;--r-md:12px;--r-lg:16px;--r-xl:22px;
+  --gap:12px;--gap-sm:8px;--gap-xs:4px;--pad:14px;
+  --tap:48px;--tap-sm:44px;
+}
+
+/* ===== Base / header / cards / badges ===== */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  body.has-sos{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+  a{color:inherit;text-decoration:none}
+  .top{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 18px;border-radius:0 0 22px 22px}
+  .top-row{display:flex;justify-content:space-between;align-items:center}
+  .hi{font-size:13px;opacity:.9}
+  .nm{font-size:20px;font-weight:800}
+  .sw{border:0;border-radius:30px;min-height:var(--tap);padding:12px 20px;font-weight:800;font-size:15px;color:#fff;background:rgba(0,0,0,.28);font-family:inherit}
+  .sw.on{background:var(--ok)}
+  .wrap{padding:14px 14px 0;max-width:640px;margin:0 auto}
+  .flash{margin:12px 14px 0;padding:12px 14px;border-radius:var(--r-md);font-size:14px;font-weight:600;max-width:640px;margin-left:auto;margin-right:auto}
+  .flash.success{background:var(--ok-bg);color:var(--ok-ink)}.flash.error{background:var(--bad-bg);color:var(--bad-ink)}
+  .flash.warning,.flash.info{background:var(--warn-bg);color:var(--warn-ink)}
+  .card{background:var(--card);border-radius:var(--r-lg);padding:var(--pad);margin-bottom:var(--gap);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:-14px 14px 4px;position:relative;max-width:640px;margin-left:auto;margin-right:auto}
+  .stat{background:#fff;border-radius:var(--r-md);padding:10px 6px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .stat b{display:block;font-size:17px}.stat small{color:var(--mut);font-size:11px}
+  h3{margin:16px 2px 8px;font-size:15px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:4px 0;font-size:14px}
+  .no{font-weight:800;font-size:16px}
+  .pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--brand-bg);color:var(--brand-ink)}
+  .pill.g{background:var(--ok-bg);color:var(--ok-ink)}.pill.b{background:var(--info-bg);color:var(--info-ink)}
+  .sep{border-top:1px dashed var(--line);margin:10px 0}
+  .cod{background:var(--warn-bg);color:var(--warn-ink);border-radius:var(--r-sm);padding:8px 10px;font-weight:700;font-size:14px;margin-top:8px}
+  .paid{background:var(--ok-bg);color:var(--ok-ink);border-radius:var(--r-sm);padding:8px 10px;font-weight:700;font-size:14px;margin-top:8px}
+  .acts{display:flex;gap:var(--gap-sm);margin-top:var(--gap);flex-wrap:wrap}
+  .navbox{background:var(--brand-soft);border:1px solid var(--brand-line);border-radius:var(--r-md);padding:10px;margin-top:10px}
+  .navttl{font-weight:800;font-size:13px;color:var(--brand-ink)}
+  .proof{background:var(--soft);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;margin-bottom:8px}
+  .proof-lbl{display:block;font-weight:800;font-size:13px;margin-bottom:6px}
+  .proof-in{width:100%;padding:9px;border:1px solid var(--line2);border-radius:var(--r-sm);font-size:14px;background:#fff;margin-bottom:6px}
+  .batch{border:1px solid var(--info-line);background:var(--info-soft)}
+  .stops{margin:8px 0 0;padding-inline-start:20px;padding-inline-end:0;font-size:14px;line-height:1.7}
+  .batch-tag{background:var(--info-bg);color:var(--info-ink);font-weight:800;font-size:12px;border-radius:8px;padding:5px 9px;margin-bottom:6px}
+  .goal{background:#fff;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .bar{height:10px;background:var(--line);border-radius:8px;overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--brand);border-radius:8px}.bar i.full{background:var(--ok)}
+  .cash-alert{border-radius:var(--r-md);padding:10px 12px;font-weight:700;font-size:13px;margin-bottom:10px}
+  .cash-alert.warn{background:var(--warn-bg);color:var(--warn-ink)}.cash-alert.over{background:var(--bad-bg);color:var(--bad-ink)}
+  .oa{position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,var(--oa-1),var(--oa-2));color:#fff;display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));overflow:auto}
+  .oa h2{margin:0;font-size:15px;letter-spacing:.5px;opacity:.9;text-align:center}
+  .oa .ring{width:112px;height:112px;border-radius:50%;margin:14px auto;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;background:conic-gradient(#fff var(--p,100%),rgba(255,255,255,.25) 0)}
+  .oa .ring span{width:92px;height:92px;border-radius:50%;background:var(--oa-3);display:flex;align-items:center;justify-content:center}
+  .oa .fee{text-align:center;font-size:34px;font-weight:900}
+  .oa .det{background:rgba(0,0,0,.22);border-radius:var(--r-lg);padding:12px 14px;margin:12px 0;font-size:15px;line-height:1.6}
+  .oa .det small{opacity:.85}
+  .oa .big{display:block;width:100%;border:0;border-radius:var(--r-lg);padding:18px;font-size:19px;font-weight:900;margin-top:10px}
+  .oa .yes{background:var(--ok);color:#fff}.oa .no{background:#fff;color:var(--bad-ink)}.oa .later{background:transparent;color:#fff;font-size:14px;font-weight:700;opacity:.85}
+  .oa .cnt{text-align:center;font-size:12px;opacity:.8}
+  @media (prefers-reduced-motion:no-preference){.oa .ring{animation:oapulse 1s ease-in-out infinite}@keyframes oapulse{50%{transform:scale(1.05)}}}
+  .empty{text-align:center;color:var(--mut);padding:30px 10px}
+  .fee{font-size:20px;font-weight:900;color:var(--ok)}
+  .sosfab{position:fixed;right:12px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:60;width:48px;height:48px;border-radius:50%;border:0;background:var(--bad);color:#fff;font-weight:900;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .sossheet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:70;background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.35)}
+  .sossheet.open{display:block}
+  .sossheet a.call,.sossheet button.go{display:block;width:100%;text-align:center;padding:13px;border-radius:var(--r-md);font-weight:800;font-size:16px;border:0;margin-top:10px;text-decoration:none}
+  .badge{position:absolute;top:4px;left:calc(50% + 8px);background:var(--bad);color:#fff;border-radius:var(--r-sm);font-size:11px;padding:0 6px;line-height:16px}
+  table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 2px;border-bottom:1px solid var(--line-soft)}
+  .toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:12px;right:12px;background:var(--ink-strong);color:#fff;padding:14px;border-radius:var(--r-md);font-weight:700;z-index:50;display:none;text-align:center}
+
+/* ===== Buttons (sab kam az kam 44px; chalti bike par ek haath se dabane ke liye) ===== */
+.btn,.hb{display:block;width:100%;min-height:var(--tap);padding:13px 12px;border-radius:var(--r-md);border:0;font-family:inherit;font-weight:800;font-size:16px;line-height:1.25;color:#fff;background:var(--ok);text-align:center;cursor:pointer}
+.btn{flex:1;min-width:110px;font-size:15px}
+.hb{min-height:52px;margin-top:var(--gap-sm)}
+.btn.o,.hb.o{background:var(--brand)}
+.btn.l,.hb.l{background:#fff;color:var(--ink);border:1px solid var(--line2);font-weight:700;min-height:var(--tap);font-size:15px}
+.btn.s{padding:10px;font-size:14px;min-width:0;min-height:var(--tap-sm)}
+.btn:disabled,.hb:disabled{opacity:.6}
+.hin{min-height:var(--tap);font-size:16px}
+
+/* ===== Neeche ki bar + More sheet ===== */
+  .rnav{position:fixed;left:0;right:0;bottom:0;z-index:55;background:#fff;display:flex;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0)}
+  .rnav a,.rnav button{flex:1;min-width:0;min-height:56px;text-align:center;padding:8px 2px 7px;font-size:12px;line-height:1.2;color:var(--mut);font-weight:700;position:relative;background:none;border:0;font-family:inherit;cursor:pointer;display:block}
+  .rnav .ic{display:block;font-size:22px;line-height:1.1}
+  .rnav .lb{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rnav .on{color:var(--brand)}
+  .rmore-bg{display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45)}
+  .rmore{position:fixed;left:0;right:0;bottom:0;z-index:81;background:#fff;border-radius:18px 18px 0 0;padding:8px 12px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.3);max-height:85vh;overflow:auto;transform:translateY(105%);visibility:hidden;transition:transform .2s,visibility .2s}
+  .rmore.open{transform:none;visibility:visible}
+  .rmore-bg.open{display:block}
+  .rmore .grab{width:40px;height:4px;border-radius:4px;background:var(--line2);margin:4px auto 6px}
+  .rmore h4{margin:12px 6px 4px;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+  .rmore a{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 10px;border-radius:var(--r-md);font-weight:700;font-size:16px}
+  .rmore a:active{background:var(--chip)}
+  .rmore a.on{background:var(--brand-soft);color:var(--brand)}
+  .rmore a .ic{font-size:22px;width:28px;text-align:center}
+  .rmore a .lb{flex:1}
+  .rmore a .pillb{background:var(--bad);color:#fff;border-radius:var(--r-sm);font-size:12px;padding:1px 8px;line-height:18px}
+  .rmore a.out{color:var(--bad-strong);margin-top:6px;border-top:1px solid var(--line-soft);border-radius:0 0 12px 12px}
+
+/* ===== Home (Online switch, alerts, order card) ===== */
+  .hsw{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:56px;margin-top:12px;border:0;border-radius:var(--r-lg);padding:8px 18px;font-family:inherit;font-weight:800;font-size:17px;color:#fff;background:rgba(0,0,0,.32);text-align:left}
+  .hsw small{display:block;font-weight:600;font-size:12px;opacity:.85}
+  .hsw.on{background:var(--ok)}
+  .hsw .tg{width:52px;height:30px;border-radius:30px;background:rgba(255,255,255,.35);position:relative;flex:none}
+  .hsw .tg:after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+  .hsw.on .tg:after{transform:translateX(22px)}
+  .alerts{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .al{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:var(--r-md);padding:10px 12px;font-size:13px;font-weight:700;background:var(--chip);color:var(--ink2)}
+  .al.warn{background:var(--warn-bg);color:var(--warn-ink)}.al.over{background:var(--bad-bg);color:var(--bad-ink)}.al.peak{background:var(--brand-soft);color:var(--brand-ink);border:1px solid var(--brand-line)}
+  .al a{white-space:nowrap;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font-weight:800}
+  .oc .stop{display:flex;gap:10px;align-items:flex-start;padding:10px;margin-top:8px;border-radius:var(--r-md);border:1px solid var(--line);font-size:15px}
+  .oc .stop.now{border-color:var(--brand);background:var(--brand-soft)}
+  .oc .stop small{display:block;color:var(--mut);font-size:13px;font-weight:500}
+  .oc .stop .ic{font-size:20px;line-height:1.2}
+  .oc summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;font-size:14px;color:var(--mut)}
+  .oc summary::-webkit-details-marker{display:none}
+  .oc .next{margin-top:4px}
+  .oc .skip summary{justify-content:center;font-size:13px}
+  .oc .moreact{margin-top:6px;border-top:1px dashed var(--line)}
+  .oc .moreact>summary{justify-content:center;color:var(--ink)}
+  .oc .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .oc .mgrid .hb{margin-top:0;display:flex;align-items:center;justify-content:center;gap:4px}
+  .oc .sub{margin-top:8px;border:1px solid var(--line);border-radius:var(--r-md);padding:0 10px}
+  .oc .sub form{padding-bottom:10px}
+  .oc .items .row{padding-inline-start:6px}
+
+/* ===== Baqi pages (Step 5): history, earnings, shifts, demand, issues, documents, settings, help ===== */
+.mut{color:var(--mut)}.t-ok{color:var(--ok)}.t-bad{color:var(--bad)}.t-brand{color:var(--brand-ink)}.t-star{color:var(--star)}
+.blk{display:block}.mt{margin-top:var(--gap)}
+.pill.bad{background:var(--bad-bg);color:var(--bad-ink)}.pill.wait{background:var(--warn-bg);color:var(--warn-ink)}
+.bar i.bad{background:var(--bad)}.bar i.warn{background:var(--star)}
+.btn.g,.hb.g{background:var(--mut)}
+.btn.inline{display:inline-block;width:auto;flex:none;margin-bottom:var(--gap)}
+.card.link{display:block}
+.card.note{background:var(--warn-bg);color:var(--warn-ink);font-weight:700}
+.tabs{display:flex;gap:var(--gap-sm);margin:0 0 var(--gap);flex-wrap:wrap}
+.pwa-pad{padding-bottom:var(--gap)}
+/* form fields: ek jaise, kam az kam 48px (16px font se iPhone zoom nahi karta) */
+.proof-in,.dform input[type=text],.dform input[type=date],.dform input[type=file],.st input[type=text],.st input[type=password],.st select,.sel,.field{min-height:var(--tap);font-size:16px}
+.field{display:block;width:100%;padding:11px;border:1px solid var(--line2);border-radius:var(--r-md);font:inherit;font-size:16px;background:#fff;margin-bottom:var(--gap-sm)}
+.sel{padding:8px 10px;border-radius:var(--r-sm);border:1px solid var(--line2);background:#fff}
+/* documents */
+.dbox{border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px;font-weight:700;font-size:14px}
+.dbox.ok{background:var(--ok-bg);color:var(--ok-ink)}.dbox.wait{background:var(--warn-bg);color:var(--warn-ink)}.dbox.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.dbox.tight{margin:6px 0 0}
+.dform{margin-top:8px}.dform input[type=text],.dform input[type=date],.dform input[type=file]{width:100%;padding:9px;border:1px solid var(--line2);border-radius:var(--r-sm);background:#fff;margin-bottom:6px}
+.dform label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:3px}
+/* settings */
+.st label{display:block;font-weight:700;font-size:13px;margin:10px 0 4px}
+.st input[type=text],.st input[type=password],.st select{width:100%;padding:11px;border:1px solid var(--line2);border-radius:var(--r-sm);font:inherit;font-size:16px;background:#fff}
+.st h3{margin:0 0 4px}
+/* demand (hotspots) */
+.hs-map{height:300px;border-radius:var(--r-md)}
+.hs-legend{font-size:12px;color:var(--mut);margin:8px 0}.hs-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 8px}
+.hs-legend i.d-bad{background:var(--bad)}.hs-legend i.d-warn{background:var(--star)}.hs-legend i.d-low{background:var(--yellow)}
+.hs-bars{display:flex;align-items:flex-end;gap:2px;height:110px;margin-top:8px}
+.hs-col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.hs-col span{display:block;width:100%;background:var(--brand-line);border-radius:3px 3px 0 0;min-height:2px}
+.hs-col.now span{background:var(--brand)}.hs-col small{font-size:9px;color:var(--mut);height:12px}
+/* help (support chat) */
+.sc-box{display:flex;flex-direction:column;height:60vh;min-height:320px;background:#fff;border-radius:var(--r-md);box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden}
+.sc-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--chip)}
+.sc-m{max-width:80%;padding:8px 11px;border-radius:var(--r-md);font-size:14px;line-height:1.35;white-space:pre-wrap;word-break:break-word}
+.sc-m.me{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+.sc-m.them{align-self:flex-start;background:#fff;color:var(--ink-strong);border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sc-m small{display:block;opacity:.65;font-size:10px;margin-top:2px;text-align:right}
+.sc-day{align-self:center;font-size:11px;color:var(--mut);margin:4px 0}
+.sc-form{display:flex;gap:8px;padding:8px;border-top:1px solid var(--line);background:#fff}
+.sc-form input{flex:1;min-height:var(--tap-sm);border:1px solid var(--line2);border-radius:24px;padding:9px 14px;font-size:16px}
+.sc-form button{min-height:var(--tap-sm);border:0;background:var(--blue);color:#fff;border-radius:24px;padding:0 20px;font-weight:700;font-size:15px}
+.sc-empty{margin:auto;color:var(--mut);font-size:14px;text-align:center}
+
+/* ===== Step 7: internet / GPS patti, loading nishan, khali screens (rider_ux.js ke saath) ===== */
+/* Patti normal flow mein (sticky): neeche ka content (Online switch, language) khisak jata hai, dhakta nahi */
+.r-bars{position:sticky;top:0;z-index:2000}
+.r-bar{display:none;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;font-size:14px;font-weight:700;text-align:center;line-height:1.35}
+.r-bar.is-on{display:block}
+.r-bar--bad{background:var(--bad);color:#fff}
+.r-bar--warn{background:var(--warn-bg);color:var(--warn-ink)}
+.r-toast{display:none;position:fixed;left:12px;right:12px;top:calc(56px + env(safe-area-inset-top,0px));z-index:2001;max-width:560px;margin:0 auto;
+  background:var(--ink-strong);color:#fff;padding:12px 14px;border-radius:var(--r-md);font-size:14px;font-weight:700;text-align:center}
+.r-toast.is-on{display:block}
+.r-toast--error{background:var(--bad)}
+button.is-loading,.is-loading[type="submit"]{position:relative;pointer-events:none;opacity:.75}
+.is-loading::after{content:"";display:inline-block;width:14px;height:14px;margin-inline-start:8px;vertical-align:-2px;
+  border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:r-spin .7s linear infinite}
+@keyframes r-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.is-loading::after{animation-duration:2s}}
+.r-empty{text-align:center;padding:28px 16px}
+.r-empty__icon{font-size:40px;line-height:1}
+.r-empty__title{margin-top:8px;font-size:17px;font-weight:900;color:var(--ink-strong)}
+.r-empty__text{margin-top:4px;font-size:14px;color:var(--mut)}
+
+/* ===== Step 9: bug fixes (Step 8 list) ===== */
+/* W2: header ke language links kam az kam 44px */
+.top .erp-lang-switch{gap:6px !important}
+.top .erp-lang-switch a{display:inline-flex !important;align-items:center;justify-content:center;min-height:var(--tap-sm);min-width:var(--tap-sm);padding:0 14px !important;font-size:.9rem !important}
+/* W6: popup ke buttons */
+.oa .big:disabled{opacity:.6}
+.oa .big.is-loading::after{border-color:currentColor;border-right-color:transparent}
+/* W9: Urdu mein neeche ki bar ke labels paRhne layak, COD pill kate nahi */
+html[lang="ur"] .rnav .lb{font-size:13px;line-height:1.5}
+.pill{white-space:normal;text-align:center}
+.row:has(> .pill){flex-wrap:wrap}

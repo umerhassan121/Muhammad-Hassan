@@ -1,0 +1,24 @@
+{% load portal_i18n %}<div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 8px rgba(0,0,0,.06)">
+  <strong>📍 Your store location</strong>
+  <p style="margin:6px 0;color:#6b7280;font-size:13px">The nearest rider gets the offer first. Press this button while standing at your store.</p>
+  <button type="button" id="setStoreLoc" style="padding:10px 14px;border:0;border-radius:10px;background:#1d4ed8;color:#fff;font-weight:700">
+    {% if profile.lat %}✅ Location is set — set it again{% else %}📍 Set my location{% endif %}</button>
+  <small id="storeLocMsg" style="margin-left:8px"></small>
+</div>
+{% t "Your browser does not support location" as m_nosup %}{% t "Getting your location..." as m_get %}{% t "Saved" as m_ok %}{% t "Could not save" as m_fail %}{% t "Network problem" as m_net %}{% t "Please allow location access" as m_deny %}
+<script>
+(function(){
+  var b=document.getElementById('setStoreLoc'), m=document.getElementById('storeLocMsg');
+  b.addEventListener('click',function(){
+    if(!navigator.geolocation){m.textContent='{{ m_nosup|escapejs }}';return;}
+    m.textContent='{{ m_get|escapejs }}';
+    navigator.geolocation.getCurrentPosition(function(p){
+      var body=new URLSearchParams(); body.append('lat',p.coords.latitude); body.append('lng',p.coords.longitude);
+      fetch("{% url 'vendor_set_location' %}",{method:'POST',credentials:'same-origin',
+        headers:{'X-CSRFToken':"{{ csrf_token }}",'Content-Type':'application/x-www-form-urlencoded'},body:body})
+        .then(function(r){return r.json()}).then(function(d){m.textContent=d.ok?'✅ {{ m_ok|escapejs }}':'❌ {{ m_fail|escapejs }}';})
+        .catch(function(){m.textContent='❌ {{ m_net|escapejs }}';});
+    },function(){m.textContent='❌ {{ m_deny|escapejs }}';},{enableHighAccuracy:true,timeout:20000});
+  });
+})();
+</script>

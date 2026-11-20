@@ -1,0 +1,27 @@
+{% comment %}
+  Store ka ek card. Include karte waqt: {% include 'customer_portal/_store_tile.html' with s=st fee=st.eff_delivery_fee %}
+  s = store, fee = delivery fee abhi ki (0 / None = free), fav_remove = true ho to favourite hatane par card hat jaye.
+  Home aur Stores page dono yahi card dikhate hain (Step 3).
+{% endcomment %}{% load portal_i18n img_tools %}<a class="stl{% if s.status == 'closed' %} is-closed{% endif %}" href="{% url 'store_detail' s.pk %}">
+  <div class="stl-cover"{% if s.cover_image %} style="background-image:url('{{ s.cover_image.url }}')"{% endif %}>
+    {% if s.status == 'closed' %}<span class="stl-flag stl-closed">Closed</span>{% elif s.status == 'busy' %}<span class="stl-flag stl-busy">Busy</span>{% elif fee == 0 or fee is None %}<span class="stl-flag stl-free"><i class="bi bi-bicycle"></i> Free delivery</span>{% endif %}
+    {% if favorites_on %}<button type="button" class="fav-btn stl-fav{% if s.is_fav %} on{% endif %}" aria-label="Favourite" onclick="event.preventDefault();event.stopPropagation();toggleFav(this,'{% url 'favorite_store_toggle' s.pk %}',{% if fav_remove %}true{% else %}false{% endif %})"><i class="bi {% if s.is_fav %}bi-heart-fill{% else %}bi-heart{% endif %}"></i></button>{% endif %}
+    <span class="stl-logo">{% if s.logo %}<img src="{{ s.logo|thumb:160 }}" alt="" loading="lazy">{% else %}{{ s.business_name|slice:":1"|upper }}{% endif %}</span>
+  </div>
+  <div class="stl-body">
+    {% if s.is_dark_store %}<span class="stl-spons" style="background:#fff3bf;color:#7c5a00;">⚡ Mart &middot; Fast delivery</span>{% elif s.sponsored %}<span class="stl-spons">Sponsored</span>{% endif %}
+    <div class="stl-name">{{ s.business_name }}</div>
+    {% if s.store_category or s.cuisine_list or s.tags or s.city %}<div class="stl-tags">{% if s.store_category %}{{ s.store_category.icon }} {{ s.store_category.name }}{% if s.cuisine_list or s.tags or s.city %} &middot; {% endif %}{% endif %}{% if s.cuisine_list %}{% for c in s.cuisine_list %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% elif s.tags %}{{ s.tags|join:", " }}{% endif %}{% if s.city %}{% if s.cuisine_list or s.tags %} &middot; {% endif %}{{ s.city }}{% endif %}</div>{% endif %}
+    {% if s.matched_items %}<div class="stl-line stl-found"><i class="bi bi-search"></i> {{ s.matched_items|join:", " }}</div>{% endif %}
+    {% if s.max_discount %}<div class="stl-line stl-off"><i class="bi bi-tag-fill"></i> {% t "Up to {}% off" s.max_discount|floatformat:0 %}</div>{% endif %}
+    {% if s.offer %}<div class="stl-line stl-code"><i class="bi bi-ticket-perforated-fill"></i> {{ s.offer.badge }} &middot; {{ s.offer.code }}</div>{% endif %}
+    <div class="stl-meta">
+      {% if s.rating_avg %}<span class="stl-rate"><i class="bi bi-star-fill"></i> {{ s.rating_avg }} <small>({{ s.rating_count }})</small></span>{% else %}<span class="stl-new">New</span>{% endif %}
+      <span><i class="bi bi-clock"></i> {{ s.eff_time_min }}-{{ s.eff_time_max }} min</span>
+      <span><i class="bi bi-bicycle"></i> {% if fee == 0 or fee is None %}<span class="stl-ok">Free</span>{% else %}{{ currency|default:"Rs" }} {{ fee|floatformat:0 }}{% endif %}{% if s.distance_km is not None %} <small>&middot; {{ s.distance_km }} km</small>{% endif %}</span>
+      {% if SHOP.shop_pro_enabled and fee %}<span class="stl-pro" title="Pro members get free delivery">PRO</span>{% endif %}
+      {% if s.too_far %}<span class="stl-bad"><i class="bi bi-geo-alt"></i> Too far</span>{% endif %}
+      {% if s.min_order_amount > 0 %}<span><i class="bi bi-basket"></i> {% t "Min {} {}" currency|default:"Rs" s.min_order_amount|floatformat:0 %}</span>{% endif %}
+    </div>
+  </div>
+</a>

@@ -1,0 +1,486 @@
+/* =====================================================================
+   SHOP THEMES  (static/css/shop_themes.css)
+   Customer pages ki 6 extra themes + theme picker panel.
+     body.th-glass    Glassmorphism        body.th-clay     Claymorphism
+     body.th-liquid   Liquid Glass UI      body.th-spatial  Spatial UI (dark)
+     body.th-bento    Bento Grid UI        body.th-soft     Skeuomorphism (soft raised / pressed)
+   Maximalism purani theme hai: body.mx (shop_maximal.css). Is file ke rules sirf body.th ... par lagte hain,
+   is liye vendor / rider pages aur Maximalism par koi asar nahi.
+   Load order: shop.css -> shop.html inline <style> -> shop_maximal.css -> yeh file (sab se END mein).
+   Har theme sirf CSS variables set karti hai (--t-*), neeche ke shared rules unhein istemal karte hain.
+   ===================================================================== */
+
+/* ---------- Theme picker (har theme mein ek jaisa, neutral) ---------- */
+.thp-btn { cursor: pointer; padding: 0; width: 40px; height: 40px; justify-content: center; align-items: center; display: inline-flex; font-size: 1.15rem; }
+.thp-overlay { position: fixed; inset: 0; z-index: 1060; background: rgba(15, 23, 42, .45); opacity: 0; visibility: hidden; transition: opacity .2s; }
+.thp-overlay.open { opacity: 1; visibility: visible; }
+.thp-panel { position: fixed; z-index: 1070; left: 0; right: 0; bottom: 0; max-height: 86vh; max-height: 86dvh; overflow-y: auto;
+  background: #fff; color: #1f2937; border-radius: 22px 22px 0 0; box-shadow: 0 -10px 40px rgba(0, 0, 0, .25);
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.thp-panel[hidden] { display: none; }
+.thp-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 10px; }
+.thp-head b { font-size: 1.05rem; }
+.thp-x { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #f3f4f6; color: #374151; }
+.thp-list { display: grid; gap: 8px; }
+.thp-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: start; padding: 10px 12px; min-height: 56px;
+  background: #fff; color: #1f2937; border: 2px solid #e5e7eb; border-radius: 16px; }
+.thp-opt.on { border-color: #2563eb; background: #eff4ff; }
+.thp-opt .thp-sw { flex: none; width: 38px; height: 38px; border-radius: 12px; border: 1px solid rgba(0, 0, 0, .12); }
+.thp-opt .thp-tx { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.thp-opt .thp-tx b { font-size: .95rem; }
+.thp-opt .thp-tx small { font-size: .76rem; color: #6b7280; }
+.thp-opt.on::after { content: "\2713"; margin-inline-start: auto; color: #2563eb; font-weight: 800; }
+@media (min-width: 992px) {
+  .thp-panel { left: auto; right: 16px; bottom: auto; top: 72px; width: 360px; border-radius: 20px; max-height: calc(100vh - 96px); }
+}
+
+/* Maximalism ki ticker sirf Maximalism mein */
+body.th .mx-ticker { display: none; }
+
+/* =====================================================================
+   SHARED RULES  (variables se)
+   ===================================================================== */
+body.th {
+  font-family: var(--t-font, 'Outfit', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  color: var(--t-text); background: var(--t-bg); background-attachment: fixed; background-color: var(--t-bg-solid);
+  --bs-body-color: var(--t-text); --bs-secondary-color: var(--t-muted); --bs-border-color: var(--t-line);
+}
+body.th, body.th button, body.th input, body.th select, body.th textarea { font-family: var(--t-font, 'Outfit', 'Inter', system-ui, sans-serif); }
+body.th i.bi, body.th .bi::before { font-family: 'bootstrap-icons' !important; }
+body.th .main-content-wrapper { background: transparent; position: relative; z-index: 1; }
+body.th .text-muted, body.th .text-secondary, body.th small.text-muted { color: var(--t-muted) !important; }
+body.th a { color: var(--t-link); }
+body.th h1, body.th h2, body.th h3, body.th h4, body.th h5, body.th h6 { color: var(--t-heading, var(--t-text)); }
+
+/* navbar */
+body.th .shop-navbar { background: var(--t-nav-bg); -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur);
+  border-bottom: 1px solid var(--t-line); box-shadow: var(--t-nav-shadow); }
+body.th .shop-navbar .brand-name, body.th .nav-user-name { color: var(--t-text); font-weight: 800; }
+body.th .nav-user-role { color: var(--t-muted); }
+body.th .erp-lang-switch { color: var(--t-text); }
+body.th .brand-logo-wrap { border-radius: var(--t-radius-sm); box-shadow: var(--t-shadow-sm); border: 1px solid var(--t-line); background: var(--t-surface-solid); }
+body.th .brand-monogram { background: var(--t-btn-bg); color: var(--t-btn-text); }
+body.th .nav-action-btn, body.th .hamburger-btn-navbar, body.th .nav-user {
+  background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); border-radius: var(--t-radius-sm); box-shadow: var(--t-shadow-sm);
+  -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th .nav-user-avatar { background: var(--t-btn-bg); color: var(--t-btn-text); }
+body.th .cart-btn { background: var(--t-btn-bg); color: var(--t-btn-text); border: 1px solid var(--t-line); border-radius: var(--t-radius-sm); box-shadow: var(--t-btn-shadow); }
+body.th .cart-count { background: var(--t-accent); color: #fff; border: 2px solid var(--t-surface-solid); }
+
+/* home header + search */
+body.th .app-header { background: var(--t-header-bg); border-radius: 0 0 var(--t-radius) var(--t-radius); box-shadow: var(--t-shadow); }
+body.th .app-header::after { display: none; }
+body.th .app-location { color: var(--t-header-text); text-shadow: none; }
+body.th .app-location strong { color: var(--t-header-text); }
+body.th .app-search, body.th .shop-top-bar { background: var(--t-input-bg); border: 1px solid var(--t-line); border-radius: 999px; box-shadow: var(--t-input-shadow);
+  -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th .app-search input { color: var(--t-text); background: transparent; }
+body.th .app-search input::placeholder { color: var(--t-muted); }
+body.th .app-search i.search-icon, body.th .app-search .search-action-btn { color: var(--t-accent); }
+body.th .voice-lang-btn { background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); border-radius: 9px; }
+
+/* surfaces */
+body.th .card, body.th .product-card, body.th .rw-card, body.th .reco-card, body.th .recently-viewed-card, body.th .deal-card,
+body.th .cat-tile, body.th .info-chip, body.th .modal-content, body.th .list-group-item, body.th .dropdown-menu {
+  background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); border-radius: var(--t-radius); box-shadow: var(--t-shadow);
+  -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th .card-header, body.th .card-footer { background: transparent; border-color: var(--t-line); color: var(--t-text); }
+body.th .product-card { overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
+body.th .product-card:hover { transform: translateY(-4px); box-shadow: var(--t-shadow-hover); }
+body.th .product-card.has-cart-item { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+body.th .product-image { background: var(--t-img-bg); border-radius: var(--t-radius) var(--t-radius) 0 0; }
+body.th .product-name a, body.th .product-category, body.th .product-brand { color: var(--t-text); }
+body.th .product-category, body.th .product-brand { opacity: .75; }
+body.th .product-price { color: var(--t-text); font-weight: 800; }
+body.th .product-price .currency { color: var(--t-accent); }
+body.th .original-price-strike { color: var(--t-muted); }
+body.th .discount-badge { background: var(--t-btn-bg); color: var(--t-btn-text); border-radius: 12px; box-shadow: var(--t-btn-shadow); border: 0; }
+body.th .strip-badge { border-radius: 999px; border: 1px solid var(--t-line); box-shadow: none; }
+body.th .cat-tile { color: var(--t-text); transition: transform .2s ease, box-shadow .2s ease; }
+body.th .cat-tile:hover { transform: translateY(-3px); box-shadow: var(--t-shadow-hover); color: var(--t-text); }
+body.th .cat-tile i, body.th .cat-name { color: var(--t-text) !important; }
+body.th .cat-icon { background: var(--t-surface); border-radius: 50%; box-shadow: var(--t-shadow-sm); }
+body.th .promo-card { border: 1px solid var(--t-line); border-radius: var(--t-radius); box-shadow: var(--t-shadow); overflow: hidden; }
+body.th .promo-card .promo-cta { background: var(--t-btn-bg); color: var(--t-btn-text); border: 0; border-radius: 999px; box-shadow: var(--t-btn-shadow); }
+body.th .promo-dots span.on { background: var(--t-accent); }
+body.th .row-head h2, body.th .rw-head h2 { color: var(--t-heading, var(--t-text)); background: none; -webkit-text-fill-color: currentColor; font-weight: 800; }
+body.th .row-head a { color: var(--t-accent); background: var(--t-surface); border: 1px solid var(--t-line); border-radius: 999px; }
+body.th .rw-head i { color: var(--t-accent); }
+body.th .rw-btn { background: var(--t-btn-bg); color: var(--t-btn-text); border: 0; box-shadow: var(--t-btn-shadow); }
+body.th .filter-chip { background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); }
+body.th .live-visitors-banner { background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); border-radius: var(--t-radius-sm); }
+
+/* buttons */
+body.th .btn-primary, body.th .btn-add-cart, body.th .btn-buy-now, body.th .btn-cart-view {
+  background: var(--t-btn-bg); color: var(--t-btn-text); border: var(--t-btn-border, 0); border-radius: var(--t-btn-radius); box-shadow: var(--t-btn-shadow);
+  font-weight: 800; transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+body.th .btn-primary:hover, body.th .btn-primary:focus, body.th .btn-add-cart:hover, body.th .btn-buy-now:hover, body.th .btn-cart-view:hover {
+  background: var(--t-btn-bg); color: var(--t-btn-text); filter: brightness(1.06); transform: translateY(-1px); box-shadow: var(--t-btn-shadow-hover, var(--t-btn-shadow)); }
+body.th .btn-primary:active, body.th .btn-add-cart:active, body.th .btn-buy-now:active { transform: translateY(1px); filter: brightness(.97); }
+body.th .btn-add-cart.success { background: #16a34a; color: #fff; }
+body.th .btn-outline-primary, body.th .btn-outline-secondary, body.th .btn-light {
+  background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); border-radius: var(--t-btn-radius); box-shadow: var(--t-shadow-sm); font-weight: 700; }
+body.th .btn-outline-primary:hover, body.th .btn-outline-secondary:hover, body.th .btn-light:hover { background: var(--t-surface); color: var(--t-accent); border-color: var(--t-accent); }
+
+/* forms */
+body.th .form-control, body.th .form-select, body.th .input-group-text {
+  background: var(--t-input-bg); color: var(--t-text); border: 1px solid var(--t-line); border-radius: var(--t-radius-sm); box-shadow: var(--t-input-shadow); }
+body.th .form-control::placeholder { color: var(--t-muted); }
+body.th .form-control:focus, body.th .form-select:focus { border-color: var(--t-accent); box-shadow: 0 0 0 3px var(--t-focus); background: var(--t-input-bg); color: var(--t-text); }
+body.th .alert { border-radius: var(--t-radius-sm); border: 1px solid var(--t-line); box-shadow: var(--t-shadow-sm); }
+body.th .page-link { background: var(--t-surface); color: var(--t-text); border: 1px solid var(--t-line); }
+body.th .page-item.active .page-link { background: var(--t-btn-bg); color: var(--t-btn-text); border-color: transparent; }
+body.th .table { --bs-table-color: var(--t-text); --bs-table-bg: transparent; --bs-table-border-color: var(--t-line); }
+
+/* bottom bar + account sheet */
+body.th .sm-bar { background: var(--t-bar-bg); -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); border-top: 1px solid var(--t-line); box-shadow: var(--t-nav-shadow); }
+body.th .sm-tab { color: var(--t-muted); }
+body.th .sm-tab:hover { color: var(--t-text); }
+body.th .sm-tab.active { color: var(--t-accent); }
+body.th .sm-badge { background: var(--t-accent); color: #fff; }
+body.th .sm-sheet { background: var(--t-sheet-bg); color: var(--t-text); -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); border: 1px solid var(--t-line); }
+body.th .sm-who b, body.th .sm-item { color: var(--t-text); }
+body.th .sm-who span, body.th .sm-item small, body.th .sm-title { color: var(--t-muted); }
+body.th .sm-item:hover, body.th .sm-item:active { background: var(--t-surface); color: var(--t-text); }
+body.th .sm-item .sm-ic, body.th .sm-x, body.th .sm-lang a { background: var(--t-surface); color: var(--t-text); border-color: var(--t-line); }
+body.th .sm-lang a.on { background: var(--t-btn-bg); color: var(--t-btn-text); border-color: transparent; }
+body.th .sm-avatar { background: var(--t-btn-bg); color: var(--t-btn-text); }
+body.th .sm-grab { background: var(--t-line); }
+@media (max-width: 991.98px) {
+  body.th.has-shop-bar .sm-bar { left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); border-radius: 26px; border: 1px solid var(--t-line); padding-bottom: 4px; }
+}
+@media (min-width: 992px) { body.th .sm-bar { background: transparent; box-shadow: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* footer */
+body.th .shop-footer { background: var(--t-footer-bg); color: var(--t-footer-text); border-top: 1px solid var(--t-line); }
+body.th .footer-brand, body.th .footer-title { color: var(--t-footer-text); }
+body.th .footer-about, body.th .footer-bottom p { color: var(--t-footer-text); opacity: .8; }
+body.th .footer-links a { color: var(--t-footer-text); }
+body.th .footer-links a:hover { color: var(--t-accent); }
+body.th .footer-links i { color: var(--t-accent); }
+
+body.th ::selection { background: var(--t-accent); color: #fff; }
+body.th a:focus-visible, body.th button:focus-visible, body.th input:focus-visible, body.th select:focus-visible { outline: 3px solid var(--t-accent); outline-offset: 2px; }
+
+/* browser blur support na ho to surface thodi ghani rakho */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body.th-glass, body.th-liquid, body.th-spatial { --t-surface: var(--t-surface-solid); --t-nav-bg: var(--t-surface-solid); --t-bar-bg: var(--t-surface-solid); --t-sheet-bg: var(--t-surface-solid); }
+}
+
+/* =====================================================================
+   1) GLASSMORPHISM
+   ===================================================================== */
+body.th-glass {
+  --t-bg-solid: #9db4ff;
+  --t-bg: radial-gradient(circle at 12% 8%, #6fb1ff 0, transparent 42%), radial-gradient(circle at 88% 18%, #d28bff 0, transparent 44%),
+          radial-gradient(circle at 62% 92%, #ff8fc7 0, transparent 46%), linear-gradient(135deg, #8ab4ff, #b79bff 55%, #ffa6d8);
+  --t-text: #17143f; --t-muted: #4b4a78; --t-link: #3730a3; --t-heading: #17143f;
+  --t-surface: rgba(255, 255, 255, .38); --t-surface-solid: #eef0ff; --t-sheet-bg: rgba(244, 245, 255, .86);
+  --t-line: rgba(255, 255, 255, .7); --t-blur: blur(18px) saturate(150%);
+  --t-radius: 22px; --t-radius-sm: 14px;
+  --t-shadow: 0 8px 32px rgba(60, 40, 160, .22); --t-shadow-sm: 0 4px 14px rgba(60, 40, 160, .14); --t-shadow-hover: 0 14px 40px rgba(60, 40, 160, .32);
+  --t-accent: #4f46e5; --t-focus: rgba(79, 70, 229, .3);
+  --t-btn-bg: linear-gradient(135deg, #5b6bff, #a15cff); --t-btn-text: #fff; --t-btn-radius: 14px; --t-btn-shadow: 0 6px 18px rgba(91, 70, 255, .4);
+  --t-nav-bg: rgba(255, 255, 255, .35); --t-nav-shadow: 0 4px 24px rgba(60, 40, 160, .15); --t-bar-bg: rgba(255, 255, 255, .5);
+  --t-header-bg: linear-gradient(135deg, rgba(80, 100, 255, .75), rgba(170, 90, 255, .75)); --t-header-text: #fff;
+  --t-input-bg: rgba(255, 255, 255, .55); --t-input-shadow: inset 0 1px 0 rgba(255, 255, 255, .8); --t-img-bg: rgba(255, 255, 255, .5);
+  --t-footer-bg: rgba(23, 20, 63, .78); --t-footer-text: #fff;
+}
+body.th-glass::before, body.th-glass::after { content: ""; position: fixed; z-index: -1; border-radius: 50%; pointer-events: none; }
+body.th-glass::before { width: 300px; height: 300px; top: 14%; right: -90px;
+  background: radial-gradient(circle at 30% 28%, #fff 0, rgba(255, 255, 255, .15) 14%, transparent 15%), radial-gradient(circle at 40% 40%, #ff7ad1, #8e44ff 70%); opacity: .75; }
+body.th-glass::after { width: 220px; height: 220px; bottom: 8%; left: -70px;
+  background: radial-gradient(circle at 30% 28%, #fff 0, rgba(255, 255, 255, .15) 14%, transparent 15%), radial-gradient(circle at 40% 40%, #58e0d0, #3b82f6 70%); opacity: .7; }
+body.th-glass .card, body.th-glass .product-card, body.th-glass .cat-tile, body.th-glass .rw-card, body.th-glass .app-search {
+  box-shadow: var(--t-shadow), inset 0 1px 0 rgba(255, 255, 255, .8); }
+
+/* =====================================================================
+   2) CLAYMORPHISM
+   ===================================================================== */
+body.th-clay {
+  --t-bg-solid: #ebe6ff; --t-bg: linear-gradient(180deg, #e6e0ff, #f4f0ff 60%, #ece6ff);
+  --t-text: #2b2358; --t-muted: #6a6395; --t-link: #5a47e6; --t-heading: #2b2358;
+  --t-surface: #f6f3ff; --t-surface-solid: #f6f3ff; --t-sheet-bg: #f6f3ff; --t-line: transparent; --t-blur: none;
+  --t-radius: 28px; --t-radius-sm: 18px;
+  --t-clay: 9px 9px 20px rgba(110, 90, 200, .28), inset -6px -6px 12px rgba(110, 90, 200, .14), inset 6px 6px 12px rgba(255, 255, 255, .95);
+  --t-shadow: var(--t-clay); --t-shadow-sm: 5px 5px 12px rgba(110, 90, 200, .24), inset -3px -3px 7px rgba(110, 90, 200, .12), inset 3px 3px 7px rgba(255, 255, 255, .95);
+  --t-shadow-hover: 12px 14px 26px rgba(110, 90, 200, .34), inset -6px -6px 12px rgba(110, 90, 200, .14), inset 6px 6px 12px rgba(255, 255, 255, .95);
+  --t-accent: #6a55f0; --t-focus: rgba(106, 85, 240, .28);
+  --t-btn-bg: linear-gradient(145deg, #8a78ff, #5a47e6); --t-btn-text: #fff; --t-btn-radius: 20px;
+  --t-btn-shadow: 7px 7px 16px rgba(90, 71, 230, .38), inset -4px -4px 9px rgba(50, 30, 170, .35), inset 4px 4px 9px rgba(255, 255, 255, .45);
+  --t-nav-bg: #f1edff; --t-nav-shadow: 0 8px 18px rgba(110, 90, 200, .18); --t-bar-bg: #f1edff;
+  --t-header-bg: linear-gradient(145deg, #6a55f0, #4b36d6); --t-header-text: #fff;
+  --t-input-bg: #efebff; --t-input-shadow: inset 4px 4px 9px rgba(110, 90, 200, .22), inset -4px -4px 9px rgba(255, 255, 255, .95); --t-img-bg: #ece7ff;
+  --t-footer-bg: #3a2c8f; --t-footer-text: #fff;
+}
+body.th-clay .app-header { border-radius: 0 0 36px 36px; }
+body.th-clay .cat-tile:nth-child(4n+1) { background: #ffe3ef; } body.th-clay .cat-tile:nth-child(4n+2) { background: #d9f7e8; }
+body.th-clay .cat-tile:nth-child(4n+3) { background: #ffeed2; } body.th-clay .cat-tile:nth-child(4n+4) { background: #dbe8ff; }
+body.th-clay .product-image { margin: 8px 8px 0; border-radius: 22px; box-shadow: inset 3px 3px 8px rgba(110, 90, 200, .15), inset -3px -3px 8px rgba(255, 255, 255, .9); }
+body.th-clay .product-image img { border-radius: 22px; }
+body.th-clay .sm-tab.active { background: #e4defd; border-radius: 18px; box-shadow: inset 2px 2px 6px rgba(110, 90, 200, .22), inset -2px -2px 6px #fff; margin: 2px; }
+
+/* =====================================================================
+   3) LIQUID GLASS UI
+   ===================================================================== */
+body.th-liquid {
+  --t-bg-solid: #ff9aa2;
+  --t-bg: radial-gradient(circle at 18% 12%, #ff7a85 0, transparent 46%), radial-gradient(circle at 85% 70%, #ffe0d6 0, transparent 50%),
+          radial-gradient(circle at 30% 95%, #f7566b 0, transparent 40%), linear-gradient(160deg, #ffd9d9, #ff9aa2 52%, #ee6a7c);
+  --t-text: #2a0a12; --t-muted: #6b2b38; --t-link: #9b1030; --t-heading: #2a0a12;
+  --t-surface: rgba(255, 255, 255, .26); --t-surface-solid: #ffe9e9; --t-sheet-bg: rgba(255, 238, 238, .8);
+  --t-line: rgba(255, 255, 255, .6); --t-blur: blur(26px) saturate(190%) brightness(1.06);
+  --t-radius: 28px; --t-radius-sm: 18px;
+  --t-shine: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(255, 255, 255, .3), inset 1px 0 0 rgba(255, 255, 255, .35), inset -1px 0 0 rgba(255, 255, 255, .2);
+  --t-shadow: var(--t-shine), 0 12px 32px rgba(125, 18, 40, .2); --t-shadow-sm: var(--t-shine), 0 4px 14px rgba(125, 18, 40, .14);
+  --t-shadow-hover: var(--t-shine), 0 18px 42px rgba(125, 18, 40, .3);
+  --t-accent: #c4163a; --t-focus: rgba(196, 22, 58, .28);
+  --t-btn-bg: rgba(255, 255, 255, .42); --t-btn-text: #2a0a12; --t-btn-border: 1px solid rgba(255, 255, 255, .8); --t-btn-radius: 999px;
+  --t-btn-shadow: var(--t-shine), 0 6px 18px rgba(125, 18, 40, .22);
+  --t-nav-bg: rgba(255, 255, 255, .28); --t-nav-shadow: var(--t-shine), 0 6px 24px rgba(125, 18, 40, .14); --t-bar-bg: rgba(255, 255, 255, .38);
+  --t-header-bg: linear-gradient(135deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .14)); --t-header-text: #2a0a12;
+  --t-input-bg: rgba(255, 255, 255, .4); --t-input-shadow: var(--t-shine); --t-img-bg: rgba(255, 255, 255, .45);
+  --t-footer-bg: rgba(60, 8, 22, .72); --t-footer-text: #fff;
+}
+body.th-liquid .app-header { border: 1px solid var(--t-line); border-top: 0; -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th-liquid .cart-count { background: #c4163a; }
+body.th-liquid .btn-primary, body.th-liquid .btn-add-cart, body.th-liquid .btn-buy-now, body.th-liquid .btn-cart-view,
+body.th-liquid .cart-btn, body.th-liquid .promo-card .promo-cta { -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th-liquid .btn-primary:hover, body.th-liquid .btn-add-cart:hover { background: rgba(255, 255, 255, .6); }
+body.th-liquid .sm-tab.active { background: rgba(255, 255, 255, .45); border-radius: 20px; box-shadow: var(--t-shine); margin: 2px; }
+body.th-liquid .product-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .45) 0, rgba(255, 255, 255, 0) 38%); }
+body.th-liquid .product-card { position: relative; }
+
+/* =====================================================================
+   4) SPATIAL UI  (dark, floating panels; <body data-bs-theme="dark">)
+   ===================================================================== */
+body.th-spatial {
+  --t-bg-solid: #0f1524;
+  --t-bg: radial-gradient(1100px 560px at 75% -10%, #2c3a63 0, transparent 62%), radial-gradient(800px 500px at 0% 100%, #1b2c52 0, transparent 60%), linear-gradient(180deg, #0f1524, #182036);
+  --t-text: #eef2ff; --t-muted: #a3aecb; --t-link: #7db0ff; --t-heading: #ffffff;
+  --t-surface: rgba(44, 56, 84, .58); --t-surface-solid: #1d2640; --t-sheet-bg: rgba(24, 32, 54, .92);
+  --t-line: rgba(255, 255, 255, .13); --t-blur: blur(30px) saturate(140%);
+  --t-radius: 28px; --t-radius-sm: 16px;
+  --t-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 18px 44px rgba(0, 0, 0, .45); --t-shadow-sm: inset 0 1px 0 rgba(255, 255, 255, .1), 0 6px 18px rgba(0, 0, 0, .35);
+  --t-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, .16), 0 26px 56px rgba(0, 0, 0, .55);
+  --t-accent: #4c93ff; --t-focus: rgba(76, 147, 255, .35);
+  --t-btn-bg: linear-gradient(180deg, #5da0ff, #2f6fe0); --t-btn-text: #fff; --t-btn-radius: 999px; --t-btn-shadow: 0 8px 22px rgba(47, 111, 224, .45), inset 0 1px 0 rgba(255, 255, 255, .35);
+  --t-nav-bg: rgba(20, 28, 48, .62); --t-nav-shadow: 0 8px 30px rgba(0, 0, 0, .4); --t-bar-bg: rgba(24, 32, 54, .72);
+  --t-header-bg: linear-gradient(135deg, rgba(60, 90, 160, .55), rgba(30, 44, 84, .55)); --t-header-text: #fff;
+  --t-input-bg: rgba(255, 255, 255, .08); --t-input-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); --t-img-bg: rgba(255, 255, 255, .06);
+  --t-footer-bg: #0a0f1d; --t-footer-text: #e6ebff;
+  color-scheme: dark;
+}
+body.th-spatial .app-header { border: 1px solid var(--t-line); border-top: 0; -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+body.th-spatial .product-card, body.th-spatial .card, body.th-spatial .cat-tile { background-image: linear-gradient(160deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, 0) 40%); }
+body.th-spatial .product-image img { background: #fff; }
+body.th-spatial .brand-logo-wrap { background: #fff; }
+body.th-spatial .form-control, body.th-spatial .form-select { color-scheme: dark; }
+body.th-spatial .bg-white, body.th-spatial .bg-light { background: var(--t-surface) !important; color: var(--t-text) !important; }
+body.th-spatial .btn-close { filter: invert(1); }
+body.th-spatial .sm-tab.active { background: rgba(76, 147, 255, .2); border-radius: 18px; margin: 2px; }
+body.th-spatial .alert-success { background: rgba(22, 163, 74, .22); color: #bbf7d0; }
+body.th-spatial .alert-danger { background: rgba(220, 38, 38, .22); color: #fecaca; }
+body.th-spatial .alert-warning { background: rgba(234, 179, 8, .2); color: #fde68a; }
+body.th-spatial .alert-info { background: rgba(59, 130, 246, .22); color: #bfdbfe; }
+
+/* =====================================================================
+   5) BENTO GRID UI
+   ===================================================================== */
+body.th-bento {
+  --t-bg-solid: #ece8ff; --t-bg: linear-gradient(180deg, #ece8ff, #f6f3ff);
+  --t-text: #1e1650; --t-muted: #615a92; --t-link: #4a2fe0; --t-heading: #1e1650;
+  --t-surface: #ffffff; --t-surface-solid: #ffffff; --t-sheet-bg: #ffffff; --t-line: #ddd6ff; --t-blur: none;
+  --t-radius: 24px; --t-radius-sm: 16px;
+  --t-shadow: 0 1px 0 rgba(30, 22, 80, .04); --t-shadow-sm: none; --t-shadow-hover: 0 12px 28px rgba(60, 43, 214, .18);
+  --t-accent: #5b3df5; --t-focus: rgba(91, 61, 245, .25);
+  --t-btn-bg: #5b3df5; --t-btn-text: #fff; --t-btn-radius: 16px; --t-btn-shadow: none;
+  --t-nav-bg: #ffffff; --t-nav-shadow: none; --t-bar-bg: #ffffff;
+  --t-header-bg: linear-gradient(135deg, #3b2bd6, #5b3df5 60%, #8a63ff); --t-header-text: #fff;
+  --t-input-bg: #ffffff; --t-input-shadow: none; --t-img-bg: #f3efff;
+  --t-footer-bg: #1e1650; --t-footer-text: #fff;
+}
+body.th-bento .products-grid { gap: 12px; grid-auto-flow: dense; }
+body.th-bento .product-card:nth-child(4n+2) { background: #5b3df5; border-color: #5b3df5; color: #fff; }
+body.th-bento .product-card:nth-child(4n+2) .product-name a, body.th-bento .product-card:nth-child(4n+2) .product-price,
+body.th-bento .product-card:nth-child(4n+2) .product-price .currency, body.th-bento .product-card:nth-child(4n+2) .product-category,
+body.th-bento .product-card:nth-child(4n+2) .product-brand, body.th-bento .product-card:nth-child(4n+2) .original-price-strike { color: #fff; }
+body.th-bento .product-card:nth-child(4n+2) .btn-add-cart { background: #fff; color: #3b2bd6; }
+body.th-bento .product-card:nth-child(4n+3) { background: #d9d0ff; border-color: #d9d0ff; }
+body.th-bento .product-card:nth-child(4n+3) .btn-add-cart { background: #1e1650; color: #fff; }
+body.th-bento .product-image { background: rgba(255, 255, 255, .55); }
+@media (min-width: 992px) { body.th-bento #productsGrid .product-card:nth-child(9n+1) { grid-column: span 2; } }
+body.th-bento .cat-tile:nth-child(3n+1) { background: #5b3df5; border-color: #5b3df5; }
+body.th-bento .cat-tile:nth-child(3n+1) i, body.th-bento .cat-tile:nth-child(3n+1) .cat-name { color: #fff !important; }
+body.th-bento .cat-tile:nth-child(3n+2) { background: #d9d0ff; border-color: #d9d0ff; }
+body.th-bento .sm-tab.active { background: #ece8ff; border-radius: 16px; margin: 2px; }
+body.th-bento .app-header { border-radius: 0 0 32px 32px; box-shadow: none; }
+
+/* =====================================================================
+   6) SKEUOMORPHISM  (soft raised / pressed surfaces)
+   ===================================================================== */
+body.th-soft {
+  --t-bg-solid: #e4eaf4; --t-bg: linear-gradient(145deg, #e9eef7, #dfe6f2);
+  --t-text: #2d3a54; --t-muted: #6c7a96; --t-link: #3d5be0; --t-heading: #24304a;
+  --t-surface: #e4eaf4; --t-surface-solid: #e4eaf4; --t-sheet-bg: #e4eaf4; --t-line: transparent; --t-blur: none;
+  --t-radius: 24px; --t-radius-sm: 16px;
+  --t-shadow: 9px 9px 20px #c3ccdb, -9px -9px 20px #ffffff; --t-shadow-sm: 5px 5px 11px #c3ccdb, -5px -5px 11px #ffffff;
+  --t-shadow-hover: 13px 13px 26px #bac4d5, -13px -13px 26px #ffffff;
+  --t-accent: #ff6a3d; --t-focus: rgba(255, 106, 61, .25);
+  --t-btn-bg: linear-gradient(145deg, #ff8a4c, #ff4f8b); --t-btn-text: #fff; --t-btn-radius: 18px;
+  --t-btn-shadow: 6px 6px 14px #c3ccdb, -6px -6px 14px #ffffff; --t-btn-shadow-hover: 8px 8px 18px #bac4d5, -8px -8px 18px #ffffff;
+  --t-nav-bg: #e4eaf4; --t-nav-shadow: 0 6px 16px #c3ccdb; --t-bar-bg: #e4eaf4;
+  --t-header-bg: #e4eaf4; --t-header-text: #24304a;
+  --t-input-bg: #e4eaf4; --t-input-shadow: inset 4px 4px 9px #c3ccdb, inset -4px -4px 9px #ffffff; --t-img-bg: #dde4f0;
+  --t-footer-bg: #d3dbea; --t-footer-text: #2d3a54;
+}
+body.th-soft .app-header { border-radius: 0 0 32px 32px; }
+body.th-soft .app-search { box-shadow: var(--t-input-shadow); }
+body.th-soft .product-image { margin: 8px 8px 0; border-radius: 18px; box-shadow: inset 3px 3px 8px #c3ccdb, inset -3px -3px 8px #ffffff; }
+body.th-soft .product-image img { border-radius: 18px; }
+body.th-soft .cart-count { background: #ff4f8b; }
+body.th-soft .sm-tab.active { box-shadow: inset 3px 3px 7px #c3ccdb, inset -3px -3px 7px #fff; border-radius: 16px; margin: 2px; }
+body.th-soft .sm-item .sm-ic, body.th-soft .sm-x { box-shadow: var(--t-shadow-sm); }
+body.th-soft .btn-outline-primary, body.th-soft .btn-light { border: 0; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  body.th .product-card, body.th .cat-tile, body.th .btn-primary, body.th .btn-add-cart, .thp-overlay { transition: none; }
+  body.th .product-card:hover, body.th .cat-tile:hover { transform: none; }
+}
+
+/* =====================================================================
+   BUY-FLOW PIECES  (sab 10 themes: Add to cart bar, cart bar, free-delivery bar, trust strip)
+   ===================================================================== */
+body.th .pd-add, body.th .cb-btn { background: var(--t-btn-bg); color: var(--t-btn-text); border: var(--t-btn-border, 0); border-radius: var(--t-btn-radius); box-shadow: var(--t-btn-shadow); }
+body.th .pd-add.done { background: #16a34a; color: #fff; }
+body.th .cb-btn:hover { background: var(--t-btn-bg); color: var(--t-btn-text); filter: brightness(1.06); }
+body.th .cb-n { background: var(--t-surface-solid); color: var(--t-accent); }
+body.th .pd-qty { background: var(--t-input-bg); border: 1px solid var(--t-line); box-shadow: var(--t-input-shadow); }
+body.th .pd-qty button { background: var(--t-surface-solid); color: var(--t-accent); }
+body.th .pd-qty span { color: var(--t-text); }
+body.th .pd-buy { border-color: var(--t-accent); color: var(--t-accent); background: transparent; }
+body.th .pd-note { color: var(--t-text); }
+@media (max-width: 991.98px) {
+  body.th .pd-bar { background: var(--t-bar-bg); -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); border-top: 1px solid var(--t-line); box-shadow: var(--t-nav-shadow); }
+  body.th .cb { background: var(--t-bar-bg); -webkit-backdrop-filter: var(--t-blur); backdrop-filter: var(--t-blur); }
+}
+body.th .free-ship { background: var(--t-surface); border: 1px solid var(--t-line); border-radius: var(--t-radius-sm); box-shadow: var(--t-shadow-sm); }
+body.th .free-ship-text, body.th .free-ship.unlocked .free-ship-text { color: var(--t-text); }
+body.th .free-ship-bar { background: var(--t-line); }
+body.th .free-ship-fill { background: var(--t-btn-bg); }
+
+.trust-strip { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0; padding: 10px 12px; border-radius: 14px;
+  background: rgba(127, 127, 127, .08); border: 1px solid rgba(127, 127, 127, .18); font-size: .8rem; font-weight: 600; }
+.trust-strip a, .trust-strip span { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.trust-strip i { color: #16a34a; font-size: 1rem; }
+body.th .trust-strip { background: var(--t-surface); border-color: var(--t-line); color: var(--t-text); border-radius: var(--t-radius-sm); }
+body.th .trust-strip i { color: var(--t-accent); }
+
+/* =====================================================================
+   7) CLEAN MINIMAL
+   ===================================================================== */
+body.th-minimal {
+  --t-bg-solid: #fafafa; --t-bg: #fafafa;
+  --t-text: #111827; --t-muted: #6b7280; --t-link: #111827; --t-heading: #111827;
+  --t-surface: #ffffff; --t-surface-solid: #ffffff; --t-sheet-bg: #ffffff; --t-line: #e5e7eb; --t-blur: none;
+  --t-radius: 16px; --t-radius-sm: 12px;
+  --t-shadow: 0 1px 2px rgba(17, 24, 39, .05); --t-shadow-sm: none; --t-shadow-hover: 0 10px 26px rgba(17, 24, 39, .1);
+  --t-accent: #ea580c; --t-focus: rgba(234, 88, 12, .22);
+  --t-btn-bg: #111827; --t-btn-text: #fff; --t-btn-radius: 12px; --t-btn-shadow: none;
+  --t-nav-bg: #ffffff; --t-nav-shadow: none; --t-bar-bg: #ffffff;
+  --t-header-bg: #ffffff; --t-header-text: #111827;
+  --t-input-bg: #f3f4f6; --t-input-shadow: none; --t-img-bg: #f9fafb;
+  --t-footer-bg: #111827; --t-footer-text: #f9fafb;
+}
+body.th-minimal .app-header { border-bottom: 1px solid var(--t-line); border-radius: 0; box-shadow: none; }
+body.th-minimal .app-search { border-color: transparent; }
+body.th-minimal .app-search i.search-icon, body.th-minimal .app-search .search-action-btn { color: #6b7280; }
+body.th-minimal .product-card { border-color: transparent; }
+body.th-minimal .product-card:hover { transform: none; }
+body.th-minimal .product-image img { background: transparent; mix-blend-mode: multiply; }
+body.th-minimal .discount-badge { background: #ea580c; box-shadow: none; }
+body.th-minimal .cat-tile { background: #fff; }
+body.th-minimal .sm-tab.active { color: #111827; font-weight: 800; }
+body.th-minimal .row-head a { background: transparent; border: 0; text-decoration: underline; }
+
+/* =====================================================================
+   8) MODERN MARKETPLACE  (app jaisa, bold brand rang)
+   ===================================================================== */
+body.th-market {
+  --t-bg-solid: #f4f4f6; --t-bg: #f4f4f6;
+  --t-text: #1f2430; --t-muted: #6b7280; --t-link: #e84c00; --t-heading: #1f2430;
+  --t-surface: #ffffff; --t-surface-solid: #ffffff; --t-sheet-bg: #ffffff; --t-line: #ececf0; --t-blur: none;
+  --t-radius: 18px; --t-radius-sm: 12px;
+  --t-shadow: 0 2px 10px rgba(31, 36, 48, .06); --t-shadow-sm: 0 1px 4px rgba(31, 36, 48, .06); --t-shadow-hover: 0 10px 26px rgba(255, 90, 0, .18);
+  --t-accent: #ff5a00; --t-focus: rgba(255, 90, 0, .25);
+  --t-btn-bg: linear-gradient(135deg, #ff7a1a, #ff5a00); --t-btn-text: #fff; --t-btn-radius: 14px; --t-btn-shadow: 0 6px 16px rgba(255, 90, 0, .35);
+  --t-nav-bg: #ffffff; --t-nav-shadow: 0 2px 10px rgba(31, 36, 48, .06); --t-bar-bg: #ffffff;
+  --t-header-bg: linear-gradient(135deg, #ff7a1a, #ff4d00); --t-header-text: #fff;
+  --t-input-bg: #ffffff; --t-input-shadow: none; --t-img-bg: #fff6ef;
+  --t-footer-bg: #1f2430; --t-footer-text: #fff;
+}
+body.th-market .app-header { border-radius: 0 0 28px 28px; box-shadow: 0 8px 22px rgba(255, 90, 0, .28); }
+body.th-market .discount-badge { background: #e11d48; color: #fff; box-shadow: none; border-radius: 8px; }
+body.th-market .product-card { border-color: transparent; }
+body.th-market .sm-tab.active { color: #ff5a00; }
+body.th-market .sm-tab.active .sm-ico { background: #fff1e8; border-radius: 14px; }
+body.th-market .cat-tile:nth-child(6n+1) { background: #fff1e8; } body.th-market .cat-tile:nth-child(6n+2) { background: #eaf7ee; }
+body.th-market .cat-tile:nth-child(6n+3) { background: #eef2ff; } body.th-market .cat-tile:nth-child(6n+4) { background: #fff7d6; }
+body.th-market .cat-tile:nth-child(6n+5) { background: #fde8ee; } body.th-market .cat-tile:nth-child(6n+6) { background: #e6f6fb; }
+
+/* =====================================================================
+   9) DARK LUXURY  (<body data-bs-theme="dark">)
+   ===================================================================== */
+body.th-luxury {
+  --t-bg-solid: #0b0b0d; --t-bg: radial-gradient(900px 480px at 80% -10%, #231d0e 0, transparent 60%), #0b0b0d;
+  --t-text: #f5efe0; --t-muted: #b8ad95; --t-link: #e6c35c; --t-heading: #f5e6b8;
+  --t-surface: #151518; --t-surface-solid: #151518; --t-sheet-bg: #121215; --t-line: rgba(212, 175, 55, .28); --t-blur: none;
+  --t-radius: 16px; --t-radius-sm: 12px;
+  --t-shadow: 0 10px 30px rgba(0, 0, 0, .5); --t-shadow-sm: 0 4px 12px rgba(0, 0, 0, .4); --t-shadow-hover: 0 16px 40px rgba(212, 175, 55, .16);
+  --t-accent: #d4af37; --t-focus: rgba(212, 175, 55, .3);
+  --t-btn-bg: linear-gradient(135deg, #f0d27a, #b8902a); --t-btn-text: #1a1405; --t-btn-radius: 12px; --t-btn-shadow: 0 6px 18px rgba(212, 175, 55, .3);
+  --t-nav-bg: #0e0e10; --t-nav-shadow: 0 1px 0 rgba(212, 175, 55, .25); --t-bar-bg: #0e0e10;
+  --t-header-bg: linear-gradient(135deg, #1b1608, #0e0e10); --t-header-text: #f5e6b8;
+  --t-input-bg: #1b1b1f; --t-input-shadow: none; --t-img-bg: #1b1b1f;
+  --t-footer-bg: #050506; --t-footer-text: #e9dfc4;
+  color-scheme: dark;
+}
+body.th-luxury h1, body.th-luxury h2, body.th-luxury h3, body.th-luxury .brand-name, body.th-luxury .product-name a, body.th-luxury .product-price,
+body.th-luxury .row-head h2 { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; letter-spacing: .01em; }
+body.th-luxury .app-header { border-bottom: 1px solid var(--t-line); box-shadow: none; }
+body.th-luxury .product-image img, body.th-luxury .brand-logo-wrap { background: #fff; }
+body.th-luxury .form-control, body.th-luxury .form-select { color-scheme: dark; }
+body.th-luxury .bg-white, body.th-luxury .bg-light { background: var(--t-surface) !important; color: var(--t-text) !important; }
+body.th-luxury .btn-close { filter: invert(1); }
+body.th-luxury .discount-badge { background: #d4af37; color: #1a1405; box-shadow: none; }
+body.th-luxury .cart-count { color: #1a1405; }
+body.th-luxury .sm-tab.active { color: #e6c35c; }
+body.th-luxury .alert-success { background: rgba(22, 163, 74, .2); color: #bbf7d0; }
+body.th-luxury .alert-danger { background: rgba(220, 38, 38, .2); color: #fecaca; }
+body.th-luxury .alert-warning { background: rgba(234, 179, 8, .18); color: #fde68a; }
+body.th-luxury .alert-info { background: rgba(59, 130, 246, .2); color: #bfdbfe; }
+
+/* =====================================================================
+   10) FRESH ORGANIC
+   ===================================================================== */
+body.th-fresh {
+  --t-bg-solid: #f2faf3; --t-bg: linear-gradient(180deg, #e9f7ec, #f7fcf8 55%, #eef8f0);
+  --t-text: #14301f; --t-muted: #5b7a66; --t-link: #15803d; --t-heading: #0f3d24;
+  --t-surface: #ffffff; --t-surface-solid: #ffffff; --t-sheet-bg: #ffffff; --t-line: #d6eedd; --t-blur: none;
+  --t-radius: 22px; --t-radius-sm: 14px;
+  --t-shadow: 0 6px 20px rgba(21, 128, 61, .1); --t-shadow-sm: 0 2px 8px rgba(21, 128, 61, .08); --t-shadow-hover: 0 14px 30px rgba(21, 128, 61, .2);
+  --t-accent: #16a34a; --t-focus: rgba(22, 163, 74, .25);
+  --t-btn-bg: linear-gradient(135deg, #34d058, #15803d); --t-btn-text: #fff; --t-btn-radius: 16px; --t-btn-shadow: 0 6px 16px rgba(21, 128, 61, .32);
+  --t-nav-bg: #ffffff; --t-nav-shadow: 0 2px 12px rgba(21, 128, 61, .08); --t-bar-bg: #ffffff;
+  --t-header-bg: linear-gradient(135deg, #22a559, #15803d); --t-header-text: #fff;
+  --t-input-bg: #ffffff; --t-input-shadow: none; --t-img-bg: #f0faf2;
+  --t-footer-bg: #0f3d24; --t-footer-text: #eafbef;
+}
+body.th-fresh .app-header { border-radius: 0 0 34px 34px; }
+body.th-fresh .discount-badge { background: #f59e0b; color: #fff; box-shadow: none; }
+body.th-fresh .cat-tile:nth-child(4n+1) { background: #e3f6e7; } body.th-fresh .cat-tile:nth-child(4n+2) { background: #fff4d6; }
+body.th-fresh .cat-tile:nth-child(4n+3) { background: #ffe9e0; } body.th-fresh .cat-tile:nth-child(4n+4) { background: #e6f4fb; }
+body.th-fresh .sm-tab.active { color: #15803d; }
+body.th-fresh .product-image img { background: transparent; }

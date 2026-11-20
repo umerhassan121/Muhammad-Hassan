@@ -1,0 +1,960 @@
+{% extends 'customer_portal/base_shop.html' %}
+{% load portal_i18n %}
+{% load img_tools %}
+{% load shop_ui %}
+{% load static %}
+
+{% block title %}Shop - {{ company_name }}{% endblock %}
+
+{% block search_section %}{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_home.css' %}?v=8">{% endblock %}
+
+{% block content %}
+
+{% include 'customer_portal/_store_tile_css.html' %}
+<div class="shop-container">
+    
+    <!-- ========== APP HEADER ========== -->
+    <div class="app-header">
+        <button type="button" class="app-location" id="areaOpen" aria-haspopup="dialog">
+            <i class="bi bi-geo-alt-fill"></i> <strong id="areaLabel">{% if delivery_area %}{{ delivery_area }}{% else %}Choose your area{% endif %}</strong> <i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="hero-copy">
+            <h1>{% t "What do you <em>need</em> today?" %}</h1>
+            <p>Fresh picks, honest prices &mdash; delivered to your door.</p>
+        </div>
+        <form action="{% url 'shop_home' %}" method="GET" id="navbarSearchForm" role="search">
+            <div class="app-search search-input-group" id="searchInputGroup">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" name="search" id="liveSearchInput" placeholder="Search products &amp; more"
+                       aria-label="Search products" enterkeyhint="search" value="{{ search|default:'' }}" autocomplete="off">
+                <div class="search-actions">
+                    <button type="button" class="search-action-btn mic-btn" id="voiceSearchBtn" onclick="toggleVoiceSearch()" aria-label="Voice Search"><i class="bi bi-mic-fill" id="micIcon"></i></button>
+                    <button type="button" class="search-action-btn clear-btn {% if search %}show{% endif %}" id="clearSearchBtn" onclick="clearSearch()" aria-label="Clear"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div class="voice-indicator" id="voiceIndicator"><div class="voice-dot"></div><span id="voiceText">Listening... Speak to search</span></div>
+            <div class="search-results-count {% if search %}has-text{% endif %}" id="searchResultsCount">{% if search %}{% t 'Searching for "<strong>{}</strong>"...' search %}{% endif %}</div>
+        </form>
+    </div>
+
+    {% if reorder_widget %}
+    <!-- ========== REORDER WIDGET (one click) ========== -->
+    <style>
+        .rw-head { display: flex; align-items: center; gap: 8px; margin: 14px 16px 8px; }
+        .rw-head h2 { font-size: 18px; font-weight: 800; margin: 0; }
+        .rw-head i { color: #d9480f; }
+        .rw-track { display: flex; gap: 12px; overflow-x: auto; padding: 2px 16px 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .rw-track::-webkit-scrollbar { display: none; }
+        .rw-card { flex: 0 0 min(88%, 340px); scroll-snap-align: start; background: linear-gradient(135deg,#fff4ec,#fff8f1); border: 1px solid #ffe4d1; border-radius: 18px; padding: 12px; box-shadow: 0 6px 18px rgba(217,72,15,.10); }
+        .rw-card:only-child { flex-basis: 100%; }
+        .rw-top { display: flex; gap: 10px; align-items: center; }
+        .rw-thumbs { display: flex; flex: 0 0 auto; }
+        .rw-thumbs span { width: 46px; height: 46px; border-radius: 12px; background: #e2e8f0 center/cover no-repeat; border: 2px solid #fff; margin-left: -14px; }
+        .rw-thumbs span:first-child { margin-left: 0; }
+        .rw-info { min-width: 0; }
+        .rw-info b { display: block; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rw-info small { display: block; font-size: .74rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rw-meta { display: flex; justify-content: space-between; font-size: .76rem; color: #475569; margin: 8px 2px 0; }
+        .rw-btn { margin-top: 8px; width: 100%; border: 0; border-radius: 12px; padding: 11px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#d9480f,#f59e0b); }
+        .rw-btn[disabled] { opacity: .65; }
+    </style>
+    <div class="rw-head"><i class="bi bi-arrow-repeat"></i><h2>Order again</h2></div>
+    <div class="rw-track">
+        {% for o in reorder_widget %}
+        <div class="rw-card">
+            <div class="rw-top">
+                <div class="rw-thumbs">
+                    {% for img in o.thumbs %}<span style="background-image:url('{{ img|thumb:160 }}')"></span>{% empty %}<span></span>{% endfor %}
+                </div>
+                <div class="rw-info">
+                    <b>{{ o.store_name }}</b>
+                    <small>{{ o.summary }}</small>
+                </div>
+            </div>
+            <div class="rw-meta"><span>{{ o.count }} item{{ o.count|pluralize }} &middot; {{ o.date|date:"d M" }}</span><strong>Rs {{ o.total|floatformat:0 }}</strong></div>
+            <form method="post" action="{% url 'reorder' o.order_id %}" onsubmit="var b=this.querySelector('button');b.disabled=true;b.innerHTML='Adding to cart...';">{% csrf_token %}
+                <button type="submit" class="rw-btn"><i class="bi bi-lightning-charge-fill"></i> Reorder in 1 tap</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not search and not selected_category and not selected_brand %}
+    {% if home_nav.pickup_enabled or home_nav.store_types or home_nav.active_order %}
+    <!-- ========== HOME NAV: Delivery/Pickup + store types + active order (Talabat style) ========== -->
+    <div class="hn">
+        {% if home_nav.pickup_enabled %}
+        <div class="hn-switch" id="hnSwitch" role="group" aria-label="Order type">
+            <button type="button" data-mode="standard" class="{% if home_nav.mode == 'delivery' %}on{% endif %}" aria-pressed="{% if home_nav.mode == 'delivery' %}true{% else %}false{% endif %}"><i class="bi bi-bicycle"></i> Delivery</button>
+            <button type="button" data-mode="pickup" class="{% if home_nav.mode == 'pickup' %}on{% endif %}" aria-pressed="{% if home_nav.mode == 'pickup' %}true{% else %}false{% endif %}"><i class="bi bi-bag-check-fill"></i> Pickup</button>
+        </div>
+        <div class="hn-note" id="hnNote">{% if home_nav.mode == 'pickup' %}Pickup is free. You collect your order from the store.{% endif %}</div>
+        {% endif %}
+        {% if home_nav.store_types %}
+        <div class="hn-tabs" role="navigation" aria-label="Store types">
+            <a href="{% url 'store_list' %}" class="hn-tab"><b>🏬</b> All stores</a>
+            {% for t in home_nav.store_types %}<a href="{% url 'store_list' %}?type={{ t.id }}" class="hn-tab"><b>{{ t.icon }}</b> {{ t.name }}</a>{% endfor %}
+        </div>
+        {% endif %}
+        {% if home_nav.active_order %}
+        <a class="hn-track" href="{% url 'order_detail_customer' home_nav.active_order.id %}">
+            <span class="hn-track-ic"><i class="bi bi-truck"></i></span>
+            <span class="hn-track-tx"><b>{{ home_nav.active_order.label }}</b><small>Order {{ home_nav.active_order.no }}</small></span>
+            <span class="hn-track-go">Track</span>
+        </a>
+        {% endif %}
+    </div>
+    <script>
+    (function(){
+        var box=document.getElementById('hnSwitch'); if(!box) return;
+        function csrf(){var m=document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);return m?decodeURIComponent(m[1]):'';}
+        var note=document.getElementById('hnNote');
+        box.addEventListener('click',function(e){
+            var b=e.target.closest('button[data-mode]'); if(!b||b.classList.contains('on')) return;
+            var mode=b.getAttribute('data-mode'), prev=box.querySelector('button.on');
+            function paint(el){Array.prototype.forEach.call(box.querySelectorAll('button'),function(x){var on=x===el;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});}
+            paint(b); if(note) note.textContent=mode==='pickup'?'Pickup is free. You collect your order from the store.':'';
+            fetch('{% url "set_delivery_type" %}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({delivery_type:mode})})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(!d||!d.success) throw new Error('fail'); })
+            .catch(function(){ paint(prev); if(note) note.textContent='Could not change the order type. Please try again.'; });
+        });
+    })();
+    </script>
+    {% endif %}
+
+    <!-- ========== PROMO CAROUSEL ========== -->
+    <div class="promo-track" id="promoTrack">
+        {% if banners %}
+            {% for b in banners %}
+            {% if b.target %}<a href="{{ b.target }}" class="promo-card promo-img" aria-label="{{ b.title }}">{% else %}<div class="promo-card promo-img">{% endif %}
+                <img src="{{ b.image|thumb:1080 }}" alt="{{ b.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+            {% if b.target %}</a>{% else %}</div>{% endif %}
+            {% endfor %}
+        {% else %}
+        <a href="#products-section" class="promo-card promo-a">
+            <h3>{% if delivery_settings.free_enabled %}Free delivery{% else %}Fast delivery{% endif %}</h3>
+            <p>{% if delivery_settings.free_enabled %}{% t "On orders over Rs {}" delivery_settings.free_threshold|floatformat:0 %}{% else %}{% t "Right to your door" %}{% endif %}</p>
+            <span class="promo-cta">Shop now</span>
+            <span class="promo-emoji"><i class="bi bi-truck"></i></span>
+        </a>
+        <a href="#deals" class="promo-card promo-b">
+            <h3>Today's deals</h3>
+            <p>Save more on your favourites</p>
+            <span class="promo-cta">See deals</span>
+            <span class="promo-emoji"><i class="bi bi-tags-fill"></i></span>
+        </a>
+        {% if SHOP.shop_stores_enabled %}
+        <a href="{% url 'store_list' %}" class="promo-card promo-c">
+            <h3>Browse stores</h3>
+            <p>Order from local vendors near you</p>
+            <span class="promo-cta">View stores</span>
+            <span class="promo-emoji"><i class="bi bi-shop-window"></i></span>
+        </a>
+        {% endif %}
+        {% endif %}
+        {% for c in club_cards %}
+        <a href="{% url c.url %}" class="promo-card {{ c.css }}">
+            <h3>{{ c.title }}</h3>
+            <p>{{ c.text }}</p>
+            <span class="promo-cta">{{ c.cta }}</span>
+            <span class="promo-emoji"><i class="bi {{ c.icon }}"></i></span>
+        </a>
+        {% endfor %}
+    </div>
+    <div class="promo-dots" id="promoDots"></div>
+
+    {% if home_nav.cuisines %}
+    <!-- ========== CUISINE ICONS (Talabat style) ========== -->
+    <div class="cz" role="navigation" aria-label="Cuisines">
+        {% for c in home_nav.cuisines %}
+        <a href="{% url 'store_list' %}?cuisine={{ c.id }}" class="cz-i"><span>{{ c.icon }}</span><em>{{ c.name }}</em></a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ========== CATEGORY TILES ========== -->
+    <div class="app-section">
+        <div class="cat-grid">
+            {% for cat in categories|slice:":7" %}
+            <a href="?category={{ cat.id }}#products-section" class="cat-tile c{{ forloop.counter }}">
+                <span class="cat-icon"><i class="bi {{ cat.name|cat_icon:forloop.counter0 }}"></i></span>
+                <span class="cat-name">{{ cat.name }}</span>
+            </a>
+            {% endfor %}
+            <a href="#products-section" class="cat-tile c8">
+                <span class="cat-icon"><i class="bi bi-grid-fill"></i></span>
+                <span class="cat-name">All Products</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ========== INFO STRIP ========== -->
+    <div class="info-strip">
+        <div class="info-chip"><i class="bi bi-clock-history"></i> {% if store_eta %}{{ store_eta }}{% else %}{{ delivery_settings.standard_time|default:"Fast delivery" }}{% endif %}</div>
+        {% if delivery_settings.pickup_enabled %}<div class="info-chip"><i class="bi bi-bag-check-fill"></i> Store pickup</div>{% endif %}
+        <div class="info-chip"><i class="bi bi-cash-coin"></i> Cash on delivery</div>
+        {% if company_whatsapp_url %}<a class="info-chip info-wa" href="{{ company_whatsapp_url }}?text=Hello%20{{ company_name|urlencode }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp support</a>{% endif %}
+    </div>
+
+
+
+    {% if featured_stores %}
+    <!-- ========== STORES NEAR YOU (Talabat style: vertical list) ========== -->
+    <div class="hn-chips" role="navigation" aria-label="Filter stores">
+        <a href="{% url 'store_list' %}?open=1" class="hn-chip"><i class="bi bi-clock"></i> Open now</a>
+        <a href="{% url 'store_list' %}?free=1" class="hn-chip"><i class="bi bi-bicycle"></i> Free delivery</a>
+        <a href="{% url 'store_list' %}?rating=4" class="hn-chip"><i class="bi bi-star-fill"></i> 4+</a>
+        <a href="{% url 'store_list' %}?deals=1" class="hn-chip"><i class="bi bi-tag-fill"></i> Deals</a>
+        <a href="{% url 'store_list' %}?sort=fastest" class="hn-chip"><i class="bi bi-lightning-charge-fill"></i> Fastest</a>
+    </div>
+    <div class="row-head"><h2>Stores near you</h2><a href="{% url 'store_list' %}" aria-label="See all stores"><i class="bi bi-chevron-right"></i></a></div>
+    <div class="stl-grid home-stores">
+        {% for st in featured_stores %}
+        {% include 'customer_portal/_store_tile.html' with s=st fee=st.eff_delivery_fee %}
+        {% endfor %}
+    </div>
+    <div class="home-stores-more"><a href="{% url 'store_list' %}" class="home-stores-btn">See all stores <i class="bi bi-arrow-right"></i></a></div>
+    {% endif %}
+
+    {% for row in home_nav.rows %}
+    <div class="row-head"><h2>{{ row.title }}</h2><a href="{% url 'store_list' %}{{ row.qs }}" aria-label="See all"><i class="bi bi-chevron-right"></i></a></div>
+    <div class="stl-row">
+        {% for st in row.stores %}
+        {% include 'customer_portal/_store_tile.html' with s=st fee=st.eff_delivery_fee %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- ========== PERSONAL RECOMMENDATIONS ========== -->
+    {% if reco %}
+    <style>
+        .reco-track { display: flex; gap: 12px; overflow-x: auto; padding: 4px 16px 12px; scroll-snap-type: x proximity; scrollbar-width: none; }
+        .reco-track::-webkit-scrollbar { display: none; }
+        .reco-card { flex: 0 0 150px; scroll-snap-align: start; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,.07); overflow: hidden; text-decoration: none; color: inherit; display: block; }
+        .reco-img { height: 100px; background: #f1f5f9 center/cover no-repeat; }
+        .reco-body { padding: 8px 10px 10px; }
+        .reco-name { font-weight: 700; font-size: .86rem; line-height: 1.25; max-height: 2.5em; overflow: hidden; }
+        .reco-sub { font-size: .72rem; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reco-price { font-weight: 800; font-size: .9rem; margin-top: 4px; color: #1c1917; }
+        .reco-again { flex: 0 0 230px; scroll-snap-align: start; background: linear-gradient(135deg,#fff4ec,#fff8f1); border: 1px solid #ffe4d1; border-radius: 16px; padding: 12px 14px; }
+        .reco-again b { display: block; font-size: .95rem; }
+        .reco-again .reco-sub { white-space: normal; }
+        .reco-again button { margin-top: 8px; width: 100%; border: 0; border-radius: 10px; padding: 8px; font-weight: 800; color: #fff; background: linear-gradient(135deg,#d9480f,#f59e0b); }
+    </style>
+    {% if reco.favourites %}
+    <div class="row-head"><h2>Your favourites</h2></div>
+    <div class="reco-track">
+        {% for c in reco.favourites %}
+        <a class="reco-card" href="{% url 'shop_product_detail' c.id %}">
+            <div class="reco-img"{% if c.image %} style="background-image:url('{{ c.image|thumb:320 }}')"{% endif %}></div>
+            <div class="reco-body"><div class="reco-name">{{ c.name }}</div><div class="reco-sub">{{ c.store_name }}</div><div class="reco-price">Rs {{ c.price|floatformat:0 }}</div></div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if reco.trending %}
+    <div class="row-head"><h2>{% if reco.area %}{% t "Trending in {}" reco.area %}{% else %}{% t "Trending near you" %}{% endif %}</h2></div>
+    <div class="reco-track">
+        {% for c in reco.trending %}
+        <a class="reco-card" href="{% url 'shop_product_detail' c.id %}">
+            <div class="reco-img"{% if c.image %} style="background-image:url('{{ c.image|thumb:320 }}')"{% endif %}></div>
+            <div class="reco-body"><div class="reco-name">{{ c.name }}</div><div class="reco-sub">{{ c.store_name }}</div><div class="reco-price">Rs {{ c.price|floatformat:0 }}</div></div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- ========== DEALS ROW ========== -->
+    <div id="deals"></div>
+    <div class="row-head" id="dealsHead" style="display:none"><h2>Hot deals</h2><a href="#products-section" aria-label="See all"><i class="bi bi-chevron-right"></i></a></div>
+    <div class="deal-track" id="dealsTrack" style="display:none">
+        {% for product in page_obj %}{% if product.has_discount %}
+        <a href="{% url 'shop_product_detail' product.pk %}" class="deal-card">
+            <div class="deal-img">
+                {% if product.image %}<img src="{{ product.image|thumb:480 }}" alt="{{ product.name }}" loading="lazy">{% else %}<i class="bi bi-bag"></i>{% endif %}
+                <span class="deal-off">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+            </div>
+            <div class="deal-name">{{ product.name }}</div>
+            <div class="deal-price">Rs {{ product.price|floatformat:0 }} <s>{{ product.original_price|floatformat:0 }}</s></div>
+        </a>
+        {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row-head" style="margin-bottom:2px"><h2>{% if search %}Results{% elif selected_category_name %}{{ selected_category_name }}{% else %}All products{% endif %}</h2></div>
+
+    <!-- Typo Correction Banner -->
+    {% if typo_corrected %}
+    <div class="typo-correction-banner">
+        <i class="bi bi-magic"></i>
+        <span>Showing results for </span>
+        <strong>"{{ typo_corrected }}"</strong>
+        <span class="text-muted"> {% t '(searched for "{}")' original_search %}</span>
+    </div>
+    {% endif %}
+    
+    <!-- Top Bar (FIX: id moved here for proper anchor scroll) -->
+    <div class="shop-top-bar" id="products-section">
+        <span class="results-count" id="topResultsCount">
+            <strong>{{ total_products }}</strong> {% if total_products == 1 %}product{% else %}products{% endif %} found
+        </span>
+        
+        {% if search or selected_category or selected_brand or selected_sort and selected_sort != 'newest' %}
+        <div class="active-filters">
+            {% if search %}
+            <a href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}{% endif %}" 
+               class="filter-chip">
+                <span class="chip-icon">🔍</span>
+                <span>"<span class="chip-value">{{ search }}</span>"</span>
+                <span class="chip-close"><i class="bi bi-x"></i></span>
+            </a>
+            {% endif %}
+            
+            {% if selected_category %}
+            <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}{% endif %}" 
+               class="filter-chip">
+                <span class="chip-icon">📂</span>
+                <span>Category: <span class="chip-value">{{ selected_category_name|default:"Selected" }}</span></span>
+                <span class="chip-close"><i class="bi bi-x"></i></span>
+            </a>
+            {% endif %}
+            
+            {% if selected_brand %}
+            <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}{% endif %}" 
+               class="filter-chip">
+                <span class="chip-icon">🏆</span>
+                <span>Brand: <span class="chip-value">{{ selected_brand_name|default:"Selected" }}</span></span>
+                <span class="chip-close"><i class="bi bi-x"></i></span>
+            </a>
+            {% endif %}
+            
+            {% if selected_sort and selected_sort != 'newest' %}
+            <a href="?{% if search %}search={{ search|urlencode }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}{% endif %}" 
+               class="filter-chip">
+                <span class="chip-icon">📊</span>
+                <span>Sort: <span class="chip-value">
+                    {% if selected_sort == 'price_low' %}Price ↑
+                    {% elif selected_sort == 'price_high' %}Price ↓
+                    {% elif selected_sort == 'name' %}Name A-Z
+                    {% endif %}
+                </span></span>
+                <span class="chip-close"><i class="bi bi-x"></i></span>
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'shop_home' %}" class="clear-all-filters">
+                <i class="bi bi-x-circle-fill"></i>
+                Clear All
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Products Grid -->
+    {% if page_obj %}
+    <div class="products-grid" id="productsGrid">
+        {% for product in page_obj %}
+        <div class="product-card {% if product.in_cart %}has-cart-item{% endif %}"
+             data-product-id="{{ product.id }}"
+             data-name="{{ product.name|lower|escapejs }}"
+             data-category="{{ product.category.name|lower|escapejs|default:'' }}"
+             data-brand="{{ product.brand.name|lower|escapejs|default:'' }}"
+             data-serial="{{ product.serial_no|lower|escapejs|default:'' }}"
+             data-barcode="{{ product.barcode|lower|escapejs|default:'' }}">
+            
+            {% if product.has_discount %}
+            <div class="discount-badge">
+                <span class="discount-percent">{{ product.discount_percentage|floatformat:0 }}%</span>
+                <span class="discount-off">OFF</span>
+            </div>
+            {% endif %}
+            
+            <div class="product-image">
+                <div class="product-image-static">
+                    {% if product.image %}
+                    <img src="{{ product.image|thumb:480 }}" alt="{{ product.name }}" loading="lazy"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="product-placeholder" style="display:none;"><i class="bi bi-box"></i></div>
+                    {% else %}
+                    <div class="product-placeholder"><i class="bi bi-box"></i></div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="product-info-strip">
+                {% if product.available_stock > 0 %}
+                    {% if product.available_stock < 10 %}
+                        <span class="strip-badge badge-low">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Low Stock
+                        </span>
+                    {% endif %}
+                {% else %}
+                    <span class="strip-badge badge-out">
+                        <i class="bi bi-x-circle-fill"></i> Out of Stock
+                    </span>
+                {% endif %}
+                
+                {% if product.has_batch_price %}
+                <span class="strip-badge badge-best">
+                    <i class="bi bi-tag-fill"></i> Best Price
+                </span>
+                {% endif %}
+                
+                {% if product.in_cart %}
+                <span class="strip-badge badge-cart">
+                    <i class="bi bi-cart-check-fill"></i> {% t "In Cart ({})" product.cart_quantity %}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="product-info">
+                {% if search and product.category or search and product.brand %}
+                <div class="product-meta-row">
+                    {% if product.category %}
+                    <span class="product-category">{{ product.category.name }}</span>
+                    {% endif %}
+                    
+                    {% if product.category and product.brand %}
+                    <span class="product-meta-separator"></span>
+                    {% endif %}
+                    
+                    {% if product.brand %}
+                    <span class="product-brand">{{ product.brand.name }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="product-name">
+                    <a href="{% url 'shop_product_detail' product.id %}">{{ product.name }}</a>
+                </div>
+                
+                <div class="product-price-wrapper">
+                    {% if product.price and product.price > 0 %}
+                    <div class="product-price">
+                        <span class="currency">Rs</span>
+                        {{ product.price|floatformat:"-2" }}
+                    </div>
+                    {% else %}
+                    <div class="price-unavailable">Price not set</div>
+                    {% endif %}
+                    {% if product.has_discount and product.original_price and product.original_price > product.price %}
+                    <div class="original-price-strike">
+                        Rs {{ product.original_price|floatformat:"-2" }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {# ✅ PRODUCT ACTION BUTTONS #}
+                {% if product.available_stock > 0 %}
+                    <div class="product-action-container" data-product-id="{{ product.id }}">
+                        {% if product.in_cart %}
+                            <a href="{% url 'cart_view' %}" class="btn btn-cart-view btn-sm w-100">
+                                <i class="bi bi-cart-check-fill"></i> {% t "View Cart ({})" product.cart_quantity %}
+                            </a>
+                        {% else %}
+                            <div class="product-action-buttons">
+                                <button type="button" 
+                                        class="btn btn-add-cart btn-sm"
+                                        onclick="addToCartFromCard({{ product.id }}, this)"
+                                        title="Add to Cart" aria-label="{% t 'Add {} to cart' product.name %}">
+                                    <i class="bi bi-cart-plus"></i>
+                                    <span class="btn-text">Add</span>
+                                </button>
+                                {% if SHOP.shop_ordering_enabled %}
+                                <a href="{% url 'buy_now' product.id %}" 
+                                   class="btn btn-buy-now btn-buy-icon"
+                                   title="Buy Now — Direct Checkout" aria-label="Buy now">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <button class="btn btn-secondary btn-sm w-100" disabled>
+                        <i class="bi bi-x-circle"></i> Out of Stock
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- No Results Message -->
+    <div class="no-results-message" id="noResultsMessage" style="display: none;">
+        <div class="empty-products">
+            <i class="bi bi-search"></i>
+            <h4>No Products Found</h4>
+            <p>No product matched your search.</p>
+            <button onclick="clearSearch()" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise"></i> Clear Search
+            </button>
+        </div>
+    </div>
+    
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3" aria-label="Products pagination">
+        <ul class="pagination justify-content-center flex-wrap">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    
+    {% url 'shop_home' as shop_url %}
+    {% include 'customer_portal/_empty_state.html' with icon='bi-search' title='No Products Found' text='No product was found matching your filter.' cta_url=shop_url cta_label='Clear Filters' %}
+    
+    {% endif %}
+    
+    {% if recently_viewed %}
+    <div class="recently-viewed-section">
+        <div class="recently-viewed-header">
+            <h5>
+                <i class="bi bi-clock-history"></i> 
+                Recently Viewed
+            </h5>
+        </div>
+        <div class="recently-viewed-scroll">
+            {% for product in recently_viewed %}
+            <a href="{% url 'shop_product_detail' product.id %}" class="recently-viewed-card">
+                <div class="recently-viewed-image">
+                    {% if product.image %}
+                    <img src="{{ product.image|thumb:480 }}" alt="{{ product.name }}" loading="lazy"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <i class="bi bi-box" style="display:none;"></i>
+                    {% else %}
+                    <i class="bi bi-box"></i>
+                    {% endif %}
+                    
+                    {# ✅ FIX: Recently viewed cart badge #}
+                    {% if product.in_cart %}
+                    <div class="recently-viewed-cart-badge">
+                        <i class="bi bi-cart-check-fill"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="recently-viewed-info">
+                    <div class="recently-viewed-name">{{ product.name|truncatechars:25 }}</div>
+                    <div class="recently-viewed-price">Rs. {{ product.price|floatformat:2 }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+
+<!-- Location picker -->
+<div class="area-overlay" id="areaOverlay" role="dialog" aria-modal="true" aria-labelledby="areaTitle">
+    <div class="area-sheet">
+        {% csrf_token %}
+        <h3 id="areaTitle">Your area</h3>
+        <p>Choose your city or type an area (e.g. "Gulberg, Lahore").</p>
+        {% if delivery_cities %}
+        <div class="area-chips" id="areaChips">
+            {% for c in delivery_cities %}<button type="button" class="area-chip{% if c == delivery_area %} on{% endif %}" data-area="{{ c }}">{{ c }}</button>{% endfor %}
+        </div>
+        {% endif %}
+        {% if delivery_area_groups %}
+        <select class="area-input" id="areaSelect" aria-label="Choose area">
+            <option value="">Choose your area</option>
+            {% for city, areas in delivery_area_groups %}
+            <optgroup label="{{ city }}">
+                {% for a in areas %}<option value="{{ a }}"{% if a == delivery_area %} selected{% endif %}>{{ a }}</option>{% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+        {% endif %}
+        <input type="text" class="area-input" id="areaInput" maxlength="100" value="{{ delivery_area }}" placeholder="{% if delivery_area_groups %}Not in the list? Type it here{% else %}City or area{% endif %}" autocomplete="off">
+        <div class="area-actions">
+            <button type="button" class="area-clear" id="areaClear">Clear</button>
+            <button type="button" class="area-save" id="areaSave">Save</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Info strip: lagataar (continuous) chalti rehti hai - seamless loop.
+   Touch/mouse/focus par ruk jati hai, chhorne ke baad dobara chal parti hai.
+   Agar sab chips screen par aa jayen (desktop) to chalane ki zarurat nahi. */
+(function () {
+    var s = document.querySelector('.info-strip');
+    if (!s) return;
+    /* APK (Android WebView) mein ye lagataar scrollLeft wali animation page ka touch-scroll rok sakti hai: wahan band rakho */
+    if (/; wv\)|CustomerApp\/|VendorApp\/|RiderApp\//.test(navigator.userAgent)) return;
+    if (window.matchMedia && (matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)) return;   /* installed PWA mein bhi band */
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var orig = Array.prototype.slice.call(s.children);
+    if (!orig.length || s.scrollWidth - s.clientWidth < 8) return;
+    var rtl = getComputedStyle(s).direction === 'rtl';
+    orig.forEach(function (c) {
+        var k = c.cloneNode(true);
+        k.setAttribute('aria-hidden', 'true');
+        k.setAttribute('tabindex', '-1');
+        k.classList.add('info-clone');
+        s.appendChild(k);
+    });
+    var gap = parseFloat(getComputedStyle(s).columnGap || getComputedStyle(s).gap) || 0;
+    var loopW = function () {
+        var w = 0;
+        orig.forEach(function (c) { w += c.getBoundingClientRect().width + gap; });
+        return w;
+    };
+    var SPEED = 32;                       // px per second
+    var pos = 0, last = null, paused = false, resumeT = null;
+    function pause() { paused = true; clearTimeout(resumeT); }
+    function resume(delay) { clearTimeout(resumeT); resumeT = setTimeout(function () { pos = Math.abs(s.scrollLeft); paused = false; last = null; }, delay); }
+    ['touchstart', 'mousedown', 'wheel', 'focusin'].forEach(function (ev) { s.addEventListener(ev, pause, { passive: true }); });
+    ['touchend', 'touchcancel', 'mouseup', 'focusout'].forEach(function (ev) { s.addEventListener(ev, function () { resume(1800); }, { passive: true }); });
+    s.addEventListener('mouseenter', pause);
+    s.addEventListener('mouseleave', function () { resume(300); });
+    document.addEventListener('visibilitychange', function () { last = null; });
+    function step(ts) {
+        if (!paused && !document.hidden) {
+            if (last !== null) {
+                var w = loopW();
+                pos += SPEED * Math.min(0.1, (ts - last) / 1000);
+                if (w > 0 && pos >= w) pos -= w;
+                s.scrollLeft = rtl ? -pos : pos;
+            }
+            last = ts;
+        }
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    /* manual swipe ke waqt loop se bahar na jaye */
+    s.addEventListener('scroll', function () {
+        if (!paused) return;
+        var w = loopW(), x = Math.abs(s.scrollLeft);
+        if (w > 0 && x >= w) s.scrollLeft = rtl ? -(x - w) : (x - w);
+    }, { passive: true });
+})();
+</script>
+<script>
+/* ============================================ */
+/* ✅ FIX #4: Add to Cart WITHOUT page reload   */
+/* ============================================ */
+function addToCartFromCard(productId, btnElement, replaceCart) {
+    if (!productId || !btnElement) return;
+    
+    // ✅ Loading state
+    const originalContent = btnElement.innerHTML;
+    btnElement.classList.add('loading');
+    btnElement.innerHTML = '<i class="bi bi-hourglass-split"></i> <span class="btn-text">Wait</span>';
+    
+    // ✅ AJAX call
+    fetch('{% url "add_to_cart" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: 1,
+            replace_cart: !!replaceCart
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success && data.cart_conflict) {
+            // ✅ Doosre store ka maal: poochho, haan par purana cart khali karke dobara add
+            btnElement.classList.remove('loading');
+            btnElement.innerHTML = originalContent;
+            if (confirm(data.message)) {
+                addToCartFromCard(productId, btnElement, true);
+            }
+            return;
+        }
+        if (!data.success && data.needs_options && data.product_url) {
+            // Size / extras wala product: product page par chunna hoga
+            window.location.href = data.product_url;
+            return;
+        }
+        if (data.success) {
+            // ✅ Success state
+            btnElement.classList.remove('loading');
+            btnElement.classList.add('success');
+            btnElement.innerHTML = '<i class="bi bi-check-lg"></i> <span class="btn-text">Added!</span>';
+            
+            // ✅ Cart count update (top navbar)
+            document.querySelectorAll('.cart-count').forEach(el => {
+                el.textContent = data.cart_count;
+                el.classList.add('pulse');
+                setTimeout(() => el.classList.remove('pulse'), 500);
+            });
+            
+            // ✅ Voice feedback
+            if (typeof voiceAnnouncementEnabled !== 'undefined' && voiceAnnouncementEnabled) {
+                if (typeof announceText === 'function') {
+                    announceText('Added to cart');
+                }
+            }
+            
+            // ✅ Cart bounce animation
+            const cartBtn = document.querySelector('.cart-btn');
+            if (cartBtn) {
+                cartBtn.classList.add('cart-bounce');
+                setTimeout(() => cartBtn.classList.remove('cart-bounce'), 600);
+            }
+            
+            // ✅ FIX: Update card in-place (NO RELOAD!)
+            const card = btnElement.closest('.product-card');
+            if (card) {
+                card.classList.add('has-cart-item');
+                
+                // Update "In Cart" badge
+                const strip = card.querySelector('.product-info-strip');
+                if (strip) {
+                    const existingBadge = strip.querySelector('.badge-cart');
+                    if (existingBadge) {
+                        existingBadge.innerHTML = `<i class="bi bi-cart-check-fill"></i> In Cart (${data.cart_count})`;
+                    } else {
+                        const badge = document.createElement('span');
+                        badge.className = 'strip-badge badge-cart';
+                        badge.innerHTML = `<i class="bi bi-cart-check-fill"></i> In Cart (1)`;
+                        strip.appendChild(badge);
+                    }
+                }
+                
+                // Replace action buttons with "View Cart"
+                const actionContainer = card.querySelector('.product-action-container');
+                if (actionContainer) {
+                    setTimeout(() => {
+                        actionContainer.innerHTML = `
+                            <a href="{% url 'cart_view' %}" class="btn btn-cart-view btn-sm w-100">
+                                <i class="bi bi-cart-check-fill"></i> View Cart (${data.cart_count})
+                            </a>
+                        `;
+                    }, 800);
+                }
+            }
+            
+            // ✅ Reset button after 1.5s (fallback)
+            setTimeout(() => {
+                if (btnElement && btnElement.parentNode) {
+                    btnElement.classList.remove('success');
+                }
+            }, 1500);
+            
+        } else {
+            // ✅ Error state
+            btnElement.classList.remove('loading');
+            btnElement.innerHTML = '<i class="bi bi-x-lg"></i> <span class="btn-text">Error</span>';
+            
+            // ✅ FIX #6: Show proper toast instead of alert
+            showToast('error', data.message || 'Error adding to cart');
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalContent;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Add to cart error:', error);
+        btnElement.classList.remove('loading');
+        btnElement.innerHTML = '<i class="bi bi-x-lg"></i> <span class="btn-text">Error</span>';
+        
+        showToast('error', 'Network error. Please try again.');
+        
+        setTimeout(() => {
+            btnElement.innerHTML = originalContent;
+        }, 2000);
+    });
+}
+
+/* ============================================ */
+/* ✅ FIX #6: Toast helper (proper fallback)    */
+/* ============================================ */
+function showToast(type, message) {
+    // Use the voice toast if it is available
+    if (typeof showVoiceToast === 'function') {
+        showVoiceToast(message);
+        return;
+    }
+    
+    // Fallback: Create a Bootstrap-style toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'error' ? '#ef4444' : '#10b981'};
+        color: white;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        z-index: 9999;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+        max-width: 320px;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Show
+    setTimeout(() => { toast.style.transform = 'translateX(0)'; }, 10);
+    
+    // Hide after 3s
+    setTimeout(() => {
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+/* ✅ CSRF Helper */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<script>
+(function(){
+    var dt=document.getElementById('dealsTrack');
+    if(dt && dt.children.length){dt.style.display='flex';document.getElementById('dealsHead').style.display='flex';}
+    var tr=document.getElementById('promoTrack'), dotBox=document.getElementById('promoDots');
+    if(tr && dotBox){
+        dotBox.innerHTML='';
+        for(var n=0;n<tr.children.length;n++){var sp=document.createElement('span'); if(n===0)sp.className='on'; dotBox.appendChild(sp);}
+        if(tr.children.length<2) dotBox.style.display='none';
+    }
+    var dots=document.querySelectorAll('#promoDots span');
+    if(tr && dots.length){
+        var slides=Array.prototype.slice.call(tr.children);
+        var AUTO_MS=5000, IDLE_MS=7000, lastTouch=0, visible=true, ticking=false;
+        var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Jo slide track ke beech ke sab se qareeb ho (LTR aur Urdu/RTL dono me sahi)
+        function current(){
+            var tb=tr.getBoundingClientRect(), mid=tb.left+tb.width/2, best=0, bestD=1e9;
+            slides.forEach(function(sl,k){
+                var r=sl.getBoundingClientRect(), d=Math.abs(r.left+r.width/2-mid);
+                if(d<bestD){bestD=d;best=k;}
+            });
+            return best;
+        }
+        function paint(){
+            var i=current();
+            dots.forEach(function(d,k){d.classList.toggle('on',k===i);});
+        }
+        // Slide k ko exact beech me laata hai (scrollLeft += delta har direction me theek chalta hai)
+        function goTo(k,smooth){
+            var sl=slides[k]; if(!sl) return;
+            var tb=tr.getBoundingClientRect(), r=sl.getBoundingClientRect();
+            var delta=(r.left+r.width/2)-(tb.left+tb.width/2);
+            tr.scrollTo({left: tr.scrollLeft+delta, behavior: smooth?'smooth':'auto'});
+        }
+        tr.addEventListener('scroll',function(){
+            if(ticking) return; ticking=true;
+            requestAnimationFrame(function(){ticking=false; paint();});
+        },{passive:true});
+
+        // User chhoo/ghumaye to auto-slide ruk jaye, kuch der baad dobara chale
+        function touched(){ lastTouch=Date.now(); }
+        ['touchstart','pointerdown','mousedown','wheel','keydown','focusin'].forEach(function(ev){
+            tr.addEventListener(ev,touched,{passive:true});
+        });
+        tr.addEventListener('mouseenter',touched);
+        dots.forEach(function(d,k){
+            d.addEventListener('click',function(){touched(); goTo(k,true);});
+        });
+
+        // Jab banner screen par na ho ya tab chhupa ho to na chale
+        if('IntersectionObserver' in window){
+            new IntersectionObserver(function(es){visible=es[0].isIntersecting;},{threshold:0.3}).observe(tr);
+        }
+        if(!reduce && slides.length>1){
+            setInterval(function(){
+                if(document.hidden || !visible) return;
+                if(Date.now()-lastTouch<IDLE_MS) return;
+                var i=current(), last=slides.length-1;
+                if(i>=last) goTo(0,false);        // akhir par seedha pehle slide par (saare slides tezi se guzarte nahi)
+                else goTo(i+1,true);
+            },AUTO_MS);
+        }
+        paint();
+    }
+})();
+</script>
+
+<script>
+(function(){
+    var ov=document.getElementById('areaOverlay'); if(!ov) return;
+    var input=document.getElementById('areaInput'), label=document.getElementById('areaLabel');
+    function open(){ov.classList.add('show'); setTimeout(function(){input.focus();},50);}
+    function close(){ov.classList.remove('show');}
+    document.getElementById('areaOpen').addEventListener('click',open);
+    if(/[?&]pick_area=1/.test(location.search)){ open(); try{history.replaceState(null,'',location.pathname);}catch(e){} }
+    ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+    var sel=document.getElementById('areaSelect');
+    if(sel){ sel.addEventListener('change',function(){ input.value=sel.value; }); }
+    var chips=document.querySelectorAll('#areaChips .area-chip');
+    chips.forEach(function(c){ c.addEventListener('click',function(){
+        input.value=c.dataset.area;
+        chips.forEach(function(x){x.classList.toggle('on',x===c);});
+    });});
+    function token(){ var t=ov.querySelector('input[name=csrfmiddlewaretoken]'); return t?t.value:''; }
+    function save(area){
+        var body=new URLSearchParams(); body.append('area',area);
+        fetch('{% url "set_delivery_area" %}',{method:'POST',headers:{'X-CSRFToken':token(),'Content-Type':'application/x-www-form-urlencoded'},body:body})
+          .then(function(r){return r.json();})
+          .then(function(d){
+              if(d.success){ label.textContent=d.area||'Choose your area'; close(); }
+              else shopUx.error('{% t "Could not save your location. Please try again." %}');
+          }).catch(function(){ shopUx.netError(); });
+    }
+    document.getElementById('areaSave').addEventListener('click',function(){ save(input.value.trim()); });
+    document.getElementById('areaClear').addEventListener('click',function(){ input.value=''; if(sel) sel.value=''; chips.forEach(function(x){x.classList.remove('on');}); save(''); });
+})();
+</script>
+{% endblock %}

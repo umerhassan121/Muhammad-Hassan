@@ -1,0 +1,68 @@
+{% load portal_i18n %}
+{# Vendor page: ek group, uske options, aur har option ke neeche sub-choice groups (sirf ek level) #}
+<div class="po-group{% if g.parent_option_id %} po-subgroup{% endif %}">
+    <div class="po-group-head">
+        <div>
+            <div class="po-group-title">{% if g.parent_option_id %}↳ {% endif %}{{ g.name }}</div>
+            <div class="po-tags">
+                {% if g.kind == 'single' %}{% t "Choose one" %}{% else %}{% t "Choose many" %}{% if g.max_select %} ({% t "max {}" g.max_select %}){% endif %}{% endif %}
+                · {% if g.is_required %}Lazmi{% else %}Marzi{% endif %}
+            </div>
+        </div>
+        <form method="post" onsubmit="return confirm('Ye group aur uske sab options (aur sub-choices) hata dun?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_group">
+            <input type="hidden" name="group_id" value="{{ g.id }}">
+            <button class="po-mini po-del" type="submit">Hatayein</button>
+        </form>
+    </div>
+
+    {% for o in g.options.all %}
+    <div class="po-opt">
+        <span class="po-opt-name {% if not o.is_available %}off{% endif %}">{{ o.name }}</span>
+        <span class="po-opt-price">{% if o.extra_price %}+ {{ o.extra_price }}{% else %}Muft{% endif %}</span>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_option">
+            <input type="hidden" name="option_id" value="{{ o.id }}">
+            <button class="po-mini" type="submit">{% if o.is_available %}Sold out{% else %}Back in stock{% endif %}</button>
+        </form>
+        <form method="post" onsubmit="return confirm('Ye option (aur uske sub-choices) hata dun?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_option">
+            <input type="hidden" name="option_id" value="{{ o.id }}">
+            <button class="po-mini po-del" type="submit">✕</button>
+        </form>
+    </div>
+    {% for cg in o.child_groups.all %}{% include 'customer_portal/vendor/_option_group.html' with g=cg %}{% endfor %}
+    {% if not g.parent_option_id %}
+    <details class="po-det">
+        <summary>+ {% t 'Sub-choice when "{}" is chosen' o.name %}</summary>
+        <form method="post" class="po-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_group">
+            <input type="hidden" name="parent_option_id" value="{{ o.id }}">
+            <input type="text" name="name" maxlength="60" placeholder="Jaise: Drink chunein" required>
+            <select name="kind">
+                <option value="single">Choose one</option>
+                <option value="multiple">Choose many</option>
+            </select>
+            <input type="number" name="max_select" min="0" max="50" placeholder="Max (kai ke liye)">
+            <label class="po-check"><input type="checkbox" name="is_required" value="1"> Lazmi</label>
+            <button class="po-btn" type="submit">Sub-group</button>
+        </form>
+    </details>
+    {% endif %}
+    {% empty %}
+    <div class="po-empty">No options yet. Add one below.</div>
+    {% endfor %}
+
+    <form method="post" class="po-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_option">
+        <input type="hidden" name="group_id" value="{{ g.id }}">
+        <input type="text" name="name" maxlength="60" placeholder="Option (jaise Large)" required>
+        <input type="number" name="extra_price" min="0" max="99999.99" step="0.01" placeholder="Extra price">
+        <button class="po-btn" type="submit">+ Jodein</button>
+    </form>
+</div>

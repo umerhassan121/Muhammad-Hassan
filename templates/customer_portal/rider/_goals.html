@@ -1,0 +1,16 @@
+{% load portal_i18n %}
+{# Goals ki progress + cash limit. Context: goal_list, cash #}
+{% if cash and cash.level != 'ok' and not hide_cash %}
+<div class="cash-alert {{ cash.level }}">
+  {% if cash.level == 'over' %}🚨 {% t "You are holding Rs. {} in cash — over the limit (Rs. {}). Please deposit it with the admin now." cash.cash|floatformat:0 cash.limit|floatformat:0 %}
+  {% else %}⚠️ {% t "Cash Rs. {} / Rs. {} — please deposit it soon." cash.cash|floatformat:0 cash.limit|floatformat:0 %}{% endif %}
+</div>
+{% endif %}
+{% for g in goal_list %}
+<div class="goal">
+  <div class="row"><b>🎯 {{ g.label }}</b>
+    <span>{% if g.paid %}<span class="pill g">🏆 {% t "Bonus received Rs. {}" g.bonus|floatformat:0 %}</span>{% elif g.bonus %}<span class="pill">{% t "Bonus Rs. {}" g.bonus|floatformat:0 %}</span>{% endif %}</span></div>
+  <div class="bar"><i style="width:{{ g.pct }}%"{% if g.reached %} class="full"{% endif %}></i></div>
+  <small>{% if not g.reached %}{% t "{} / {} deliveries — {} more" g.done g.goal g.left %}{% else %}{% t "{} / {} deliveries — completed" g.done g.goal %} 🎉{% endif %}</small>
+</div>
+{% endfor %}
