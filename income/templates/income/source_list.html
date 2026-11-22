@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Sources of Income{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="mb-0"><i class="bi bi-cash-coin"></i> Sources of Income</h4>
+            <small class="text-muted">{{ active_count }} active &middot; {{ total_count }} total</small>
+        </div>
+        <a href="{% url 'income:source_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Add income source
+        </a>
+    </div>
+
+    {% if sources %}
+    <div class="row g-3">
+        {% for s in sources %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title mb-1">{{ s.name }}</h5>
+                        {% if s.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+                    </div>
+                    <span class="badge bg-light text-dark border">{{ s.get_source_type_display }}</span>
+                    {% if s.notes %}<p class="text-muted small mt-2 mb-0">{{ s.notes|truncatechars:120 }}</p>{% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-0 text-muted small">Added {{ s.created_at|date:"d M Y" }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="display-4 mb-2"><i class="bi bi-cash-coin"></i></div>
+        <h5>No income sources yet</h5>
+        <p class="text-muted">Add your first source, for example Salary, Shop sales or Rent.</p>
+        <a href="{% url 'income:source_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add income source</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

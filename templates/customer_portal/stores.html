@@ -12,14 +12,14 @@
     .st-hero, .st-search, .st-bar { min-width: 0; }
 
     /* ---- Hero + search ---- */
-    .st-hero { background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%); color: #fff; border-radius: 20px;
+    .st-hero { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #fff; border-radius: 20px;
                padding: 26px 22px; margin-bottom: 18px; }
     .st-hero h1 { font-size: 26px; font-weight: 800; margin: 0 0 4px; }
     .st-hero p { margin: 0 0 16px; opacity: .9; font-size: 14px; }
     .st-search { display: flex; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
     .st-search i { padding: 0 0 0 16px; display: flex; align-items: center; color: #888; font-size: 18px; }
     .st-search input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 14px 12px; font-size: 15px; }
-    .st-search button { border: 0; background: #d9480f; color: #fff; font-weight: 700; padding: 0 22px; cursor: pointer; }
+    .st-search button { border: 0; background: #2563eb; color: #fff; font-weight: 700; padding: 0 22px; cursor: pointer; }
 
 
     /* ---- Promo banner slider ---- */
@@ -32,7 +32,7 @@
     .bn-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .bn-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
     .bn-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; padding: 0; background: #d1d5db; cursor: pointer; }
-    .bn-dot.on { background: #d9480f; width: 22px; border-radius: 6px; }
+    .bn-dot.on { background: #2563eb; width: 22px; border-radius: 6px; }
     @media (min-width: 992px) { .bn-slide { flex-basis: calc(50% - 6px); } }
     @media (max-width: 576px) { .bn-slide { aspect-ratio: 2 / 1; border-radius: 16px; } .bn-track { border-radius: 16px; } }
 
@@ -47,8 +47,8 @@
                     font-weight: 600; font-size: 13px; text-align: center; }
     .st-type span b { font-size: 26px; line-height: 1; font-weight: 400; }
     .st-type span small { font-weight: 500; color: #888; font-size: 11px; }
-    .st-type input:checked + span { border-color: #d9480f; background: #fcefe4; color: #b93a0b; }
-    .st-ctype { color: #d9480f; font-weight: 600; }
+    .st-type input:checked + span { border-color: #2563eb; background: #eef2ff; color: #1d4ed8; }
+    .st-ctype { color: #2563eb; font-weight: 600; }
 
     /* ---- Category chips ---- */
     .st-chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; margin-bottom: 6px;
@@ -58,7 +58,7 @@
     .st-chip input { display: none; }
     .st-chip span { display: inline-block; padding: 8px 16px; border-radius: 22px; border: 2px solid #e5e7eb; background: #fff;
                     font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; transition: all .15s; }
-    .st-chip input:checked + span { background: #d9480f; border-color: #d9480f; color: #fff; }
+    .st-chip input:checked + span { background: #2563eb; border-color: #2563eb; color: #fff; }
 
     /* ---- Filter row ---- */
     .st-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -66,11 +66,11 @@
     .st-pill input { display: none; }
     .st-pill span { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 2px solid #e5e7eb;
                     background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .st-pill input:checked + span { border-color: #d9480f; background: #fbe9dc; color: #1e40af; }
+    .st-pill input:checked + span { border-color: #2563eb; background: #e8edff; color: #1e40af; }
     .st-sort select { padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 12px; background: #fff; font-size: 14px; font-weight: 600; }
     .st-count { font-size: 14px; color: #666; margin-bottom: 12px; }
     .st-count b { color: #222; }
-    .st-clear { margin-left: 10px; font-size: 13px; color: #d9480f; text-decoration: none; font-weight: 600; }
+    .st-clear { margin-left: 10px; font-size: 13px; color: #2563eb; text-decoration: none; font-weight: 600; }
 
     /* ---- Store cards ---- */
     .st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
@@ -79,7 +79,7 @@
     .st-card:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(0,0,0,.12); color: inherit; }
     .st-card.closed .st-cover, .st-card.closed .st-logo { filter: grayscale(1); }
     .st-card.closed .st-body { opacity: .7; }
-    .st-cover { height: 130px; background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%) center/cover no-repeat; position: relative; }
+    .st-cover { height: 130px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) center/cover no-repeat; position: relative; }
     .st-cover-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); color: #fff; display: flex; align-items: center;
                         justify-content: center; font-weight: 800; letter-spacing: .5px; }
     .st-badge { position: absolute; top: 10px; right: 10px; padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: 700; z-index: 2; }
@@ -89,14 +89,14 @@
     .st-open { background: #d4edda; color: #155724; }
     .st-busy { background: #fff3cd; color: #856404; }
     .st-closed { background: #f8d7da; color: #721c24; }
-    .st-logo { width: 64px; height: 64px; border-radius: 16px; border: 3px solid #fff; background: #fbf4ea center/cover no-repeat;
+    .st-logo { width: 64px; height: 64px; border-radius: 16px; border: 3px solid #fff; background: #f1f3fd center/cover no-repeat;
                margin: -32px 0 0 16px; position: relative; z-index: 2; display: flex; align-items: center; justify-content: center;
-               font-weight: 800; color: #d9480f; font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+               font-weight: 800; color: #2563eb; font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
     .st-body { padding: 8px 16px 16px; flex: 1; }
     .st-name { font-weight: 800; font-size: 17px; margin: 6px 0 2px; }
     .st-tags { font-size: 13px; color: #777; min-height: 18px; }
     .st-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f5; font-size: 13px; color: #444; }
-    .st-meta i { color: #d9480f; }
+    .st-meta i { color: #2563eb; }
     .st-meta .free { color: #0a8f4d; font-weight: 700; }
     .st-empty { text-align: center; padding: 60px 10px; color: #888; }
 
@@ -111,19 +111,19 @@
     }
 
     /* ===== App look (brand) ===== */
-    :root { --primary: #d9480f; --secondary: #f59e0b; }
+    :root { --primary: #2563eb; --secondary: #7c3aed; }
     body { background: #fff; }
     @media (min-width: 992px) {}
 
     .st-wrap { margin-top: 0; padding-bottom: 90px; }
-    .st-hero { background: linear-gradient(135deg, #1c1917 0%, #d9480f 52%, #f59e0b 100%); border-radius: 0 0 28px 28px;
+    .st-hero { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 52%, #7c3aed 100%); border-radius: 0 0 28px 28px;
                margin: 0 -15px 16px; padding: 18px 18px 22px; position: relative; overflow: hidden; }
     .st-hero::after { content: ""; position: absolute; right: -50px; top: -50px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,.12); }
     .st-hero h1 { font-size: 22px; } .st-hero p { margin-bottom: 14px; }
     .st-search { border-radius: 30px; height: 50px; position: relative; z-index: 1; }
     .st-search button { border-radius: 30px; margin: 5px; padding: 0 20px; }
     .st-chip span { border: 0; background: #eef1fd; color: #333; }
-    .st-chip input:checked + span { background: #d9480f; color: #fff; }
+    .st-chip input:checked + span { background: #2563eb; color: #fff; }
     .st-pill span { border-radius: 20px; }
     .st-card { border-radius: 22px; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
     .st-cover { height: 140px; }
@@ -137,21 +137,22 @@
     .st-area { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: 14px; text-decoration: none; opacity: .95; margin-bottom: 8px; position: relative; z-index: 1; }
     .st-area strong { font-weight: 800; }
     .st-area:hover { color: #fff; opacity: 1; }
-    .st-note { background: #fbe9dc; color: #1e2a78; border-radius: 14px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 14px;
+    .st-note { background: #e8edff; color: #1e2a78; border-radius: 14px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 14px;
                display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: space-between; }
-    .st-note a { color: #d9480f; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .st-note a { color: #2563eb; font-weight: 700; text-decoration: none; white-space: nowrap; }
 </style>
 
 <div class="st-wrap">
   <form method="get" id="stForm">
 
     <div class="st-hero">
-      <a href="{% url 'shop_home' %}?pick_area=1" class="st-area"><i class="bi bi-geo-alt-fill"></i> <strong>{% if delivery_area %}{{ delivery_area }}{% else %}Choose your area{% endif %}</strong> <i class="bi bi-chevron-down"></i></a>
+      <a href="{% url 'shop_home' %}?pick_area=1" class="st-area"><i class="bi bi-geo-alt-fill"></i> Deliver to <strong>{% if delivery_area %}{{ delivery_area }}{% else %}Select location{% endif %}</strong> <i class="bi bi-chevron-down"></i></a>
       <h1><i class="bi bi-shop"></i> Order from your favourite stores</h1>
       <p>Fast delivery from local stores near you</p>
       <div class="st-search">
         <i class="bi bi-search"></i>
         <input type="text" name="q" id="stQ" value="{{ search }}" placeholder="Search stores or products...">
+        <button type="button" class="voice-lang-btn" data-voice-lang-btn onclick="toggleVoiceLang()" title="Voice language: English / اردو" aria-label="Voice language">EN</button>
         <button type="button" class="st-mic" id="stMic" onclick="toggleVoiceSearch('stQ','stMic',true)" title="Voice Search" aria-label="Voice Search"><i class="bi bi-mic-fill"></i></button>
         <button type="submit">Search</button>
       </div>
@@ -206,7 +207,6 @@
 
     <div class="st-bar">
       <div class="st-pills">
-        {% if mart_count %}<label class="st-pill"><input type="checkbox" name="mart" value="1" {% if mart_only %}checked{% endif %} onchange="this.form.submit()"><span>⚡ Mart <small>{{ mart_count }}</small></span></label>{% endif %}
         <label class="st-pill"><input type="checkbox" name="open" value="1" {% if open_only %}checked{% endif %} onchange="this.form.submit()"><span><i class="bi bi-clock"></i> Open now</span></label>
         <label class="st-pill"><input type="checkbox" name="free" value="1" {% if free_only %}checked{% endif %} onchange="this.form.submit()"><span><i class="bi bi-bicycle"></i> Free delivery</span></label>
         <label class="st-pill"><input type="checkbox" name="deals" value="1" {% if deals_only %}checked{% endif %} onchange="this.form.submit()"><span><i class="bi bi-tag"></i> Deals</span></label>
@@ -236,7 +236,7 @@
 
   <div class="st-count">
     <b>{{ store_total }}</b> {% if store_total == 1 %}{% t "store found" %}{% else %}{% t "stores found" %}{% endif %}
-    {% if search or selected_category or selected_type or selected_cuisine or open_only or free_only or deals_only or mart_only or rating_min or fav_only %}<a class="st-clear" href="{% url 'store_list' %}">Clear filters</a>{% endif %}
+    {% if search or selected_category or selected_type or selected_cuisine or open_only or free_only or deals_only or rating_min or fav_only %}<a class="st-clear" href="{% url 'store_list' %}">Clear filters</a>{% endif %}
   </div>
 
   {% if stores %}
@@ -309,39 +309,5 @@
     c.onclick = function () { save([]); box.style.display = 'none'; };
     box.appendChild(c);
   })();
-</script>
-<script>
-/* Filter strip (Open now / Free delivery / Deals ...): khud aaram se aage-peeche chalti rehti hai.
-   Touch/mouse/focus par ruk jati hai, chhorne ke baad dobara chalti hai. Chips duplicate nahi hote (form safe). */
-(function () {
-    var s = document.querySelector('.st-pills');
-    if (!s || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    var rtl = getComputedStyle(s).direction === 'rtl';
-    var pos = 0, dir = 1, last = null, hold = 0, paused = false, t = null, SPEED = 28;
-    function pause() { paused = true; clearTimeout(t); }
-    function resume(d) { clearTimeout(t); t = setTimeout(function () { pos = Math.abs(s.scrollLeft); last = null; paused = false; }, d); }
-    ['touchstart', 'mousedown', 'wheel', 'focusin'].forEach(function (e) { s.addEventListener(e, pause, { passive: true }); });
-    ['touchend', 'touchcancel', 'mouseup', 'focusout'].forEach(function (e) { s.addEventListener(e, function () { resume(2500); }, { passive: true }); });
-    s.addEventListener('mouseenter', pause);
-    s.addEventListener('mouseleave', function () { resume(400); });
-    function step(ts) {
-        if (!paused && !document.hidden) {
-            var max = s.scrollWidth - s.clientWidth;
-            if (max > 8 && last !== null) {
-                var dt = Math.min(0.1, (ts - last) / 1000);
-                if (hold > 0) { hold -= dt; }
-                else {
-                    pos += dir * SPEED * dt;
-                    if (pos >= max) { pos = max; dir = -1; hold = 0.8; }
-                    else if (pos <= 0) { pos = 0; dir = 1; hold = 0.8; }
-                    s.scrollLeft = rtl ? -pos : pos;
-                }
-            }
-            last = ts;
-        } else { last = null; }
-        requestAnimationFrame(step);
-    }
-    setTimeout(function () { requestAnimationFrame(step); }, 1000);
-})();
 </script>
 {% endblock %}

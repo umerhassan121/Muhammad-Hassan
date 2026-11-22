@@ -25,6 +25,7 @@ urlpatterns = [
     
     # CEO Module
     path('ceo/', include('ceo_module.urls')),
+    path('income/', include('income.urls')),
     
     # Progressive Web App (PWA) URLs
     path('pwa/manifest/<slug:portal>.json', pwa_manifest, name='pwa_manifest'),

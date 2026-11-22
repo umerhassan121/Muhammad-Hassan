@@ -636,8 +636,6 @@ PORTAL_DEFAULTS = [
     ('Welcome to', 'خوش آمدید'),
     ('Shukriya', 'شکریہ'),
     ('Select location', 'مقام منتخب کریں'),
-    ('Your area', 'آپ کا علاقہ'),
-    ('Choose your area', 'اپنا علاقہ چنیں'),
     ('Store pickup', 'اسٹور سے وصولی'),
     ('Secure Payment', 'محفوظ ادائیگی'),
     ('Easy Returns', 'آسان واپسی'),

@@ -86,15 +86,15 @@
 
     body { background: #f3f5ff; }
     .card { border-radius: 20px; border: 0; box-shadow: 0 6px 20px rgba(0,0,0,.06); }
-    .timeline-icon { box-shadow: 0 3px 8px rgba(217,72,15,.25); }
+    .timeline-icon { box-shadow: 0 3px 8px rgba(37, 99, 235,.25); }
 
 
 /* ===== Step 6: pehle inline style="" tha, ab class (dohri class = pehle jaisa zor) ===== */
 .odx1.odx1{font-size:.78rem;opacity:.9;}
 .odx2.odx2{font-size:2rem;font-weight:800;letter-spacing:.5rem;}
 .odx3.odx3{color:#f59e0b;}
-.odx4.odx4{margin:6px 0 4px;background:#f8fafc;border-left:3px solid #d9480f;border-radius:8px;padding:7px 11px;font-size:14px;}
-.odx5.odx5{color:#f59e0b;}
+.odx4.odx4{margin:6px 0 4px;background:#f8fafc;border-left:3px solid #2563eb;border-radius:8px;padding:7px 11px;font-size:14px;}
+.odx5.odx5{color:#7c3aed;}
 
 /* ===== Step 6: tap size 44px+ ===== */
 @media (max-width:991.98px){.btn.btn-sm{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}

@@ -52,7 +52,7 @@ function(){clearTimeout(t);done();},{enableHighAccuracy:true,timeout:3500,maximu
 {% include 'customer_portal/rider/_rider_menu.html' %}
 
 <script>window.RIDER_MSG={locPerm:"{% t 'Location permission is needed. Open Settings?' %}"};</script>
-{% if rider and rider.is_online and active_count or rider and rider.is_online and rider.rider_kind == 'big_vehicle' %}{% include 'customer_portal/rider/_live_location.html' %}{% else %}
+{% if rider and rider.is_online and active_count %}{% include 'customer_portal/rider/_live_location.html' %}{% else %}
 <script>
 /* APK: koi active order nahi / offline - background location watcher (foreground service) band karo */
 (function(){var C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform()||!C.registerPlugin)return;

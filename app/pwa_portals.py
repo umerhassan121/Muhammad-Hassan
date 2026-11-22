@@ -20,7 +20,7 @@ PORTALS = {
     },
     'shop': {
         'prefixes': ('/shop/',), 'suffix': 'Shop', 'short': 'Shop',
-        'start': '/shop/', 'scope': '/shop/', 'theme': '#fbf7f0', 'bg': '#fbf7f0',
+        'start': '/shop/', 'scope': '/shop/', 'theme': '#1e3a8a', 'bg': '#ffffff',
         'desc': 'Order products online with fast delivery.',
     },
     'investor': {

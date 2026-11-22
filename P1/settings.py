@@ -172,6 +172,7 @@ INSTALLED_APPS = [
     'import_export',
     'axes',
     'ceo_module',
+    'income',
 ]
 
 # --- CLOUDINARY CONFIGURATION ---

@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block title %}My Account - {{ company_name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_account.css' %}?v=2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_account.css' %}?v=1">{% endblock %}
 
 {% block content %}
 
@@ -23,16 +23,6 @@
 </div>
 
 <div class="container">
-
-    <!-- Quick links (Talabat style account menu) -->
-    <div class="ql-grid">
-        <a href="{% url 'my_addresses' %}" class="ql-item"><i class="bi bi-geo-alt-fill"></i><span>Addresses</span></a>
-        <a href="{% url 'my_orders' %}" class="ql-item"><i class="bi bi-receipt"></i><span>Orders</span></a>
-        {% if SHOP.shop_favorites_enabled %}<a href="{% url 'favorites_page' %}" class="ql-item"><i class="bi bi-heart-fill"></i><span>Favourites</span></a>{% endif %}
-        {% if SHOP.shop_wallet_enabled %}<a href="{% url 'wallet_page' %}" class="ql-item"><i class="bi bi-wallet2"></i><span>Wallet</span></a>{% endif %}
-        {% if SHOP.shop_pro_enabled %}<a href="{% url 'pro_page' %}" class="ql-item"><i class="bi bi-patch-check-fill"></i><span>Pro</span></a>{% endif %}
-        <a href="{% url 'repeat_plans' %}" class="ql-item"><i class="bi bi-arrow-repeat"></i><span>Repeat</span></a>
-    </div>
 
     <!-- Stats Grid -->
     <div class="stats-grid">

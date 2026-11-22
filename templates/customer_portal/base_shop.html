@@ -6,7 +6,7 @@
 <html lang="{{ LANG_CODE|default:'en' }}" dir="{{ LANG_DIR|default:'ltr' }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no{% if SHOP_MENU_ON %}, viewport-fit=cover{% endif %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0{% if SHOP_MENU_ON %}, viewport-fit=cover{% endif %}">
     <meta name="description" content="{% block meta_description %}{{ company_name }} - Quality products, best prices, fast delivery.{% endblock %}">
     <title>{% block title %}{{ company_name }}{% endblock %}</title>
     {% if company_logo %}<link rel="icon" href="{{ company_logo }}">{% endif %}
@@ -14,24 +14,20 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     {% if LANG_DIR == 'rtl' %}<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">{% else %}<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">{% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <link rel="stylesheet" href="{% static 'css/shop.css' %}?v=4">   {# Customer ka ek style (Step 4) #}
-    <link rel="stylesheet" href="{% static 'css/shop_theme.css' %}?v=5">   {# Naya theme: cream + ink + tangerine, editorial layout — shop.css ke baad #}
+    <link rel="stylesheet" href="{% static 'css/shop.css' %}?v=2">   {# Customer ka ek style (Step 4) #}
+    {% if request.path|slice:":13" != "/shop/vendor/" %}<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="{% static 'css/shop_maximal.css' %}?v=1">{% endif %}   {# Maximalism theme #}
     
-    {% if request.path|slice:":13" != "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/shop_theme_pages.css' %}?v=1">{% endif %}   {# Naya theme baqi saare customer pages par (cart, checkout, product, store, auth, account…); vendor par nahi #}
-    {% if request.path|slice:":13" != "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/shop_polish.css' %}?v=12">{% endif %}   {# v10: header, hero, chips, nav pill, trust row, skeleton, Urdu RTL #}
-    {% if LANG_DIR == 'rtl' %}<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600&display=swap" rel="stylesheet">{% endif %}
     {% if request.path|slice:":13" == "/shop/vendor/" %}<link rel="stylesheet" href="{% static 'css/vendor.css' %}?v=2">{% endif %}   {# Vendor ka ek style #}
     {% block extra_css %}{% endblock %}
 {% if not SHOP.shop_search_enabled %}<style>.shop-search-section,.sidebar-search-box,.app-search,form#navbarSearchForm{display:none !important}</style>{% endif %}
 {% if not SHOP.shop_voice_search_enabled %}<style>.mic-btn,#voiceSearchBtn,.voice-indicator,.voice-lang-btn,.st-mic{display:none !important}</style>{% endif %}
-    {% if SHOP_APK_URL %}<script>window.SHOP_APK_URL = "{{ SHOP_APK_URL }}";</script>{% endif %}
     {% include "pwa/_pwa.html" %}
 </head>
-<body class="{% if SHOP_MENU_ON %}has-shop-menu{% endif %}{% if SHOP_BAR_ON %} has-shop-bar{% endif %}">
+<body class="{% if SHOP_MENU_ON %}has-shop-menu{% endif %}{% if SHOP_BAR_ON %} has-shop-bar{% endif %}{% if request.path|slice:":13" != "/shop/vendor/" %} theme-max{% endif %}">
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
 <noscript>
@@ -46,7 +42,7 @@
         
         <!-- LEFT: Hamburger + Brand -->
         <div class="navbar-left-group">
-            {% if not SHOP_MENU_ON and not SHOP_AUTH_PAGE %}
+            {% if not SHOP_MENU_ON %}
             <button type="button" 
                     class="hamburger-btn-navbar"
                     id="navbarHamburgerBtn"
@@ -71,19 +67,6 @@
         <!-- RIGHT: Track, Chat, Voice, User, Cart -->
         <div class="navbar-right-group">
             {% include 'components/lang_switch.html' %}
-            {% if SHOP_APK_URL and request.resolver_match.url_name == 'shop_home' %}
-            <a href="{{ SHOP_APK_URL }}" class="nav-install-app" id="navInstallApp" download hidden aria-label="Install app">
-                <i class="bi bi-download" aria-hidden="true"></i><span>Install app</span>
-            </a>
-            <script>
-            (function(){
-                var b=document.getElementById('navInstallApp');
-                var android=/android/i.test(navigator.userAgent);
-                var inApp=window.matchMedia('(display-mode: standalone)').matches||/; wv\)/.test(navigator.userAgent);
-                if(b&&android&&!inApp) b.hidden=false;
-            })();
-            </script>
-            {% endif %}
             
             {% if SHOP.order_tracking_enabled %}
             <a href="{% url 'track_order' %}" class="nav-action-btn d-none d-md-inline-flex">
@@ -163,6 +146,8 @@
                            autocomplete="off">
                     
                     <div class="search-actions">
+                        <button type="button" class="voice-lang-btn" data-voice-lang-btn onclick="toggleVoiceLang()"
+                                title="Voice language: English / اردو" aria-label="Voice language">EN</button>
                         <button type="button" 
                                 class="search-action-btn mic-btn" 
                                 id="voiceSearchBtn"
@@ -207,7 +192,7 @@
     <span id="voiceToastText">Result</span>
 </div>
 
-{% if not SHOP_MENU_ON and not SHOP_AUTH_PAGE %}
+{% if not SHOP_MENU_ON %}
 <!-- ============================================ -->
 <!-- SIDEBAR OVERLAY                              -->
 <!-- ============================================ -->
@@ -1394,9 +1379,9 @@ window.showVoiceToast = showVoiceToast;
             const typoResult = correctTypo(query);
             if (typoResult.original) {
                 suggestionHTML = `
-                    <div style="margin-top: 15px; padding: 12px 18px; background: #fcefe4; border-radius: 10px; display: inline-block;">
+                    <div style="margin-top: 15px; padding: 12px 18px; background: #eef2ff; border-radius: 10px; display: inline-block;">
                         <span style="color: #64748b; font-size: 0.85rem;">Did you mean: </span>
-                        <strong style="color: #d9480f; cursor: pointer; font-size: 0.9rem;" 
+                        <strong style="color: #2563eb; cursor: pointer; font-size: 0.9rem;" 
                                 onclick="applyCorrection('${typoResult.corrected}')">
                             ${typoResult.corrected}
                         </strong>
@@ -1507,9 +1492,12 @@ function clearSearch() {
 let voiceRecognition = null;
 let voiceRecognitionActive = false;
 
-/* Voice language ab site ki zubaan ke saath chalti hai (alag EN/اردو button hata diya). */
+/* Voice language: English (en-US) ya Urdu (ur-PK). Choice browser mein yaad rehti hai; pehli dafa site ki zubaan se. */
 function getVoiceLang() {
-    return '{% if LANG_CODE == 'ur' %}ur-PK{% else %}en-US{% endif %}';   /* ek hi zubaan ka option: header ka English / اردو */
+    var saved = null;
+    try { saved = localStorage.getItem('shopVoiceLang'); } catch (e) {}
+    if (saved === 'ur-PK' || saved === 'en-US') return saved;
+    return '{% if LANG_CODE == 'ur' %}ur-PK{% else %}en-US{% endif %}';
 }
 function refreshVoiceLangButtons() {
     var ur = getVoiceLang() === 'ur-PK';
@@ -1704,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% include 'customer_portal/_push_prompt.html' %}
 {% include 'customer_portal/_native_push.html' %}   {# Vendor APK: Firebase push (browser mein kuch nahi karta) #}
 
-{% if request.path|slice:":13" != "/shop/vendor/" %}<script src="{% static 'js/shop_ux.js' %}?v=1"></script><script src="{% static 'js/shop_polish.js' %}?v=1" defer></script>{% endif %}   {# Step 8: internet patti, toast, spinner #}
+{% if request.path|slice:":13" != "/shop/vendor/" %}<script src="{% static 'js/shop_ux.js' %}?v=1"></script>{% endif %}   {# Step 8: internet patti, toast, spinner #}
 
 {% block extra_js %}{% endblock %}
 

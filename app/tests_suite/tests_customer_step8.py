@@ -35,6 +35,24 @@ class CustomerStep8Assets(SimpleTestCase):
             self.assertIn('_empty_state.html', _read(TPL / page), page)
 
 
+class CustomerStep8TemplatesCompile(SimpleTestCase):
+    def test_no_multiline_hash_comments(self):
+        # {# #} sirf ek line ka comment hai; do line ka hissa asli tag ban jata hai (500 error)
+        bad = []
+        for f in TPL.rglob('*.html'):
+            for i, line in enumerate(_read(f).split('\n'), 1):
+                pos = line.find('{#')
+                if pos != -1 and '#}' not in line[pos:]:
+                    bad.append((f.name, i))
+        self.assertEqual([b for b in bad if b[0] != '_rider_menu.html'], [])
+
+    def test_all_customer_templates_compile(self):
+        from django.template import engines
+        eng = engines['django']
+        for f in sorted(TPL.glob('*.html')):
+            eng.get_template('customer_portal/' + f.name)
+
+
 class CustomerStep8NoAlerts(SimpleTestCase):
     def test_no_alert_in_customer_flow(self):
         for page in ('cart.html', 'checkout.html', 'favorites.html', 'product_detail.html', 'order_detail.html',

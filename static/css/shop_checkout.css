@@ -14,11 +14,11 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     background: #fff;
 }
 .payment-option:hover {
-    border-color: #d9480f;
+    border-color: #2563eb;
     background: #f8f9fc;
 }
 .payment-option input[type="radio"] {
-    accent-color: #d9480f;
+    accent-color: #2563eb;
     width: 18px;
     height: 18px;
     margin-top: 3px;
@@ -26,9 +26,9 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     flex-shrink: 0;
 }
 .payment-option.selected {
-    border-color: #d9480f;
+    border-color: #2563eb;
     background: #f0f4ff;
-    box-shadow: 0 0 0 3px rgba(217,72,15, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* ✅ DELIVERY OPTION CARDS */
@@ -46,22 +46,22 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     position: relative;
 }
 .delivery-option:hover {
-    border-color: #d9480f;
+    border-color: #2563eb;
     background: #f8f9fc;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(217,72,15, 0.1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
 }
 .delivery-option input[type="radio"] {
-    accent-color: #d9480f;
+    accent-color: #2563eb;
     width: 20px;
     height: 20px;
     cursor: pointer;
     flex-shrink: 0;
 }
 .delivery-option.selected {
-    border-color: #d9480f;
-    background: linear-gradient(135deg, #f0f4ff 0%, #fcefe4 100%);
-    box-shadow: 0 0 0 3px rgba(217,72,15, 0.15);
+    border-color: #2563eb;
+    background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 .delivery-option.selected::before {
     content: '✓';
@@ -70,7 +70,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     right: 12px;
     width: 22px;
     height: 22px;
-    background: #d9480f;
+    background: #2563eb;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -91,7 +91,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     flex-shrink: 0;
 }
 .delivery-icon.standard {
-    background: linear-gradient(135deg, #ffe4d1 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1e40af;
 }
 .delivery-icon.express {
@@ -123,7 +123,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
 .delivery-price {
     font-weight: 800;
     font-size: 1rem;
-    color: #d9480f;
+    color: #2563eb;
     white-space: nowrap;
     text-align: right;
 }
@@ -430,7 +430,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -451,8 +451,8 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
 }
 .change-address-btn {
     background: white;
-    border: 1.5px solid #d9480f;
-    color: #d9480f;
+    border: 1.5px solid #2563eb;
+    color: #2563eb;
     font-size: 0.78rem;
     font-weight: 700;
     padding: 7px 14px;
@@ -467,10 +467,10 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     white-space: nowrap;
 }
 .change-address-btn:hover {
-    background: #d9480f;
+    background: #2563eb;
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(217,72,15, 0.3);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 .address-detail-row {
     display: flex;
@@ -482,7 +482,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     line-height: 1.5;
 }
 .address-detail-row i {
-    color: #d9480f;
+    color: #2563eb;
     font-size: 0.95rem;
     margin-top: 2px;
     flex-shrink: 0;
@@ -500,7 +500,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     overflow: hidden;
 }
 .address-modal-header {
-    background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     color: white;
     padding: 20px 24px;
     border-bottom: none;
@@ -553,8 +553,8 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     transition: all 0.2s;
 }
 .form-control-custom:focus {
-    border-color: #d9480f;
-    box-shadow: 0 0 0 4px rgba(217,72,15, 0.1);
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
     outline: none;
 }
 .form-control-custom:disabled,
@@ -573,7 +573,7 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     justify-content: flex-end;
 }
 .btn-save-address {
-    background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     color: white;
     border: none;
     padding: 11px 24px;
@@ -586,11 +586,11 @@ body { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     gap: 6px;
     cursor: pointer;
     transition: all 0.25s;
-    box-shadow: 0 4px 12px rgba(217,72,15, 0.3);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 .btn-save-address:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(217,72,15, 0.45);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
     color: white;
 }
 .btn-cancel-address {

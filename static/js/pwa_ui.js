@@ -28,7 +28,7 @@
     '.pwa-sk{display:block;border-radius:10px;background:linear-gradient(90deg,var(--pwa-sk-a) 25%,var(--pwa-sk-b) 50%,var(--pwa-sk-a) 75%);background-size:200% 100%;animation:pwa-shimmer 1.3s linear infinite;color:transparent!important;pointer-events:none;user-select:none}',
     '@keyframes pwa-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}',
     '#pwa-nav-bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--pwa-accent);z-index:100002;opacity:0;transition:width .25s ease,opacity .2s;pointer-events:none;padding-top:env(safe-area-inset-top,0)}',
-    '#pwa-sk-overlay{position:fixed;inset:0;z-index:100001;background:var(--pwa-sk-bg);padding:calc(14px + env(safe-area-inset-top,0px)) 14px 14px;opacity:0;transition:opacity .2s;overflow:hidden;pointer-events:none}',
+    '#pwa-sk-overlay{position:fixed;inset:0;z-index:100001;background:var(--pwa-sk-bg);padding:calc(14px + env(safe-area-inset-top,0px)) 14px 14px;opacity:0;transition:opacity .2s;overflow:hidden;pointer-events:all}',
     '#pwa-sk-overlay.on{opacity:1}',
     '#pwa-sk-overlay .row{background:var(--pwa-card);border-radius:14px;padding:12px;margin-top:12px;display:flex;gap:12px;align-items:center}',
     '#pwa-sk-overlay .row .pwa-sk.t{height:64px;width:64px;flex:none;border-radius:12px}',
@@ -119,7 +119,7 @@
     navBar(true);
     clearTimeout(skTimer); clearTimeout(safety);
     if (withSkeleton) skTimer = setTimeout(showOverlay, 400);     // tez page par skeleton dikhta hi nahi
-    safety = setTimeout(clearNav, 6000);                          // download jaisi navigation jo page nahi badalti
+    safety = setTimeout(clearNav, 12000);                         // download jaisi navigation jo page nahi badalti
   }
 
   function linkOk(a, e) {
@@ -148,7 +148,6 @@
       setTimeout(function () { if (!e.defaultPrevented) ready(function () { startNav(false); }); }, 0);   // sirf progress bar
     }, true);
     window.addEventListener('pageshow', function () { clearNav(); });   // back button (bfcache) par overlay na rahe
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) clearNav(); });
   }
 
   // AJAX ke liye: pwaSkeleton.show(container, rows) ... pwaSkeleton.hide(container)
@@ -180,7 +179,7 @@
 
     // Native (Android) pull-to-refresh band kar ke apna wahi kaam karta hai: har jagah ek jaisa
     var s3 = document.createElement('style');
-    s3.textContent = 'html{overscroll-behavior-y:contain}';   // sirf html par (body par lagane se body scroll-container mein scroll phans jata tha)
+    s3.textContent = 'html,body{overscroll-behavior-y:contain}';
     (document.head || document.documentElement).appendChild(s3);
 
     // Form mein kuch likha ho to refresh nahi (data na jaye)
@@ -225,12 +224,8 @@
       if (!ptrOn || busyPtr) return;
       if ((window.scrollY || document.documentElement.scrollTop) > 0) { ptrOn = false; reset(false); return; }
       var d = e.touches[0].clientY - startY, dx = Math.abs(e.touches[0].clientX - startX);
-      if (d < -4) {                                   // ungli upar ki taraf = page neeche scroll karna hai: refresh nahi, scroll ko mat rokna
-        if (pulling) { pulling = false; armed = false; reset(false); }
-        ptrOn = false; return;
-      }
       if (!pulling) {
-        if (d < 24) return;                           // halki jhatak (10px) par scroll na roko
+        if (d < 10) return;
         if (dx > d) { ptrOn = false; return; }        // side ko scroll (carousel)
         pulling = true;
       }

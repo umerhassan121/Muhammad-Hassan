@@ -115,13 +115,11 @@
 
         {% if SHOP.shop_order_chat_enabled and o.status != 'cancelled' %}<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-primary"
             onclick="OrderChat.open({{ o.id }}, 'vendor')">💬 {% if LANG_CODE == 'ur' %}گاہک سے بات{% else %}Chat with customer{% endif %}<span class="oc-badge" data-chat-badge="{{ o.id }}" data-chat-channel="vendor"></span></button></div>{% endif %}
-        {% if row.sub_text %}<div class="vo-note info">🔁 If an item is out of stock, the customer chose: <b>{{ row.sub_text }}</b></div>{% endif %}
-        {% if o.notes and 'ADDRESS CHANGED' in o.notes %}<div class="vo-note info">📍 Customer ne address badla hai — naya address neeche dekhein.</div>{% endif %}
         <div class="vo-cust">
             <b><i class="bi bi-person"></i> {{ o.customer.name }}</b>
             {% if o.customer.contact_number %} &middot; {% if row.show_contact %}{{ o.customer.contact_number }}{% else %}{{ o.customer.contact_number|mask_phone }}{% endif %}{% endif %}
-            {% if o.ship_address %}
-                {% if row.show_address %}<br><i class="bi bi-geo-alt"></i> {{ o.ship_address }}
+            {% if o.customer.address %}
+                {% if row.show_address %}<br><i class="bi bi-geo-alt"></i> {{ o.customer.address }}
                 {% else %}<br><i class="bi bi-shield-lock"></i> <small class="text-muted">Address hidden for privacy</small>{% endif %}
             {% endif %}
         </div>
@@ -132,28 +130,12 @@
                     <span>{{ it.qty|floatformat:"-2" }} &times; {{ it.product.name }}{% if it.options_text %}<br><small style="color:#6b7280;">{{ it.options_text }}</small>{% endif %}{% if it.note %}<br><small style="color:#b45309;">📝 {{ it.note }}</small>{% endif %}{% if it.note %}<br><small style="color:#b45309;">📝 {{ it.note }}</small>{% endif %}</span>
                     <span>Rs. {{ it.total_amt|floatformat:0 }}</span>
                 </div>
-                {% if row.can_edit_items %}
-                <details style="margin:0 0 6px;font-size:13px;">
-                    <summary style="cursor:pointer;color:#b45309;font-weight:700;">Out of stock?</summary>
-                    <form method="post" action="{% url 'vendor_order_item' o.pk %}" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;">
-                        {% csrf_token %}<input type="hidden" name="item_id" value="{{ it.pk }}"><input type="hidden" name="tab" value="{{ tab|default:'new' }}">
-                        {% if it.cands %}
-                        <select name="product_id" class="form-select form-select-sm" style="max-width:220px;">
-                            {% for c in it.cands %}<option value="{{ c.id }}">{{ c.name }} &mdash; Rs. {{ c.price|floatformat:0 }}</option>{% endfor %}
-                        </select>
-                        <button type="submit" name="change" value="replace" class="btn btn-sm btn-warning">Replace</button>
-                        {% endif %}
-                        {% if row.items|length > 1 %}<button type="submit" name="change" value="remove" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this item from the order?');">Remove</button>{% endif %}
-                    </form>
-                </details>
-                {% endif %}
             {% endfor %}
         </div>
 
         <div class="vo-sum">
             <div><span>Items</span><span>Rs. {{ row.subtotal|floatformat:0 }}</span></div>
             <div><span>Delivery fee</span><span>Rs. {{ o.delivery_fee|floatformat:0 }}</span></div>
-            {% if o.gst_amount > 0 %}<div><span>Includes GST</span><span>Rs. {{ o.gst_amount|floatformat:2 }}</span></div>{% endif %}
             <div class="tot"><span>Total</span><span>Rs. {{ row.total|floatformat:0 }}</span></div>
             {% if row.wallet_paid > 0 %}<div class="tot"><span>👛 Wallet se ada</span><span>- Rs. {{ row.wallet_paid|floatformat:0 }}</span></div><div class="tot"><span><b>Cash lena hai</b></span><span><b>Rs. {{ row.cash_due|floatformat:0 }}</b></span></div>{% endif %}
         </div>
@@ -177,33 +159,12 @@
                 <button type="button" class="vo-btn vo-reject" onclick="voToggle('rej-{{ o.id }}')">❌ Reject</button>
             {% elif o.status == 'confirmed' or o.status == 'processing' %}
                 {% if profile.is_approved %}
-                {% if o.big_vehicle_state == 'proposed' %}
-                <div class="vo-note info" style="flex-basis:100%;">🚚 Bari gari ({{ o.big_vehicle_type }}{% if o.big_vehicle_driver %}: {{ o.big_vehicle_driver.name }}{% endif %}): <b>Rs. {{ o.big_vehicle_fee|floatformat:0 }}</b> &mdash; customer ki manzoori ka intezar hai.{% if o.big_vehicle_driver %} Driver: {% if o.big_vehicle_driver_state == 'accepted' %}✅ accept kar liya{% else %}⏳ jawab ka intezar{% endif %}.{% endif %} Manzoori ke baad hi Ready kar sakte hain.</div>
-                <form method="post" action="{% url 'vendor_big_vehicle' o.id %}" style="display:inline;" onsubmit="return confirm('Gari ka kiraya wapas le kar order rider se bhejna hai?');">
-                    {% csrf_token %}<input type="hidden" name="intent" value="rider">
-                    <button type="submit" class="vo-btn">🏍️ Rider se bhejein (gari nahi)</button>
-                </form>
-                {% elif o.big_vehicle_state == 'approved' %}
-                <div class="vo-note info" style="flex-basis:100%;">🚚 Customer ne bari gari ({{ o.big_vehicle_type }}) ka kiraya <b>Rs. {{ o.big_vehicle_fee|floatformat:0 }}</b> manzoor kar liya hai. Yeh order rider ko nahi jayega.
-                    {% if o.big_vehicle_driver %}<br>🚚 {{ o.big_vehicle_driver.name }}: {% if o.big_vehicle_driver_state == 'accepted' %}✅ driver ne accept kar liya. Ab Ready kar sakte hain.{% else %}⏳ driver ke accept karne ka intezar &mdash; tab tak Ready nahi ho sakta.{% endif %}{% endif %}</div>
-                {% endif %}
-                {% if o.big_vehicle_state != 'proposed' and not o.big_vehicle_state == 'approved' or o.big_vehicle_state == 'approved' and not o.big_vehicle_driver_id or o.big_vehicle_state == 'approved' and o.big_vehicle_driver_state == 'accepted' %}
                 <form method="post" action="{% url 'vendor_order_action' o.id 'ready' %}" style="display:inline;">
                     {% csrf_token %}<input type="hidden" name="tab" value="{{ tab }}">
-                    <button type="submit" class="vo-btn vo-readybtn">{% if o.big_vehicle_state == 'approved' %}📦 Ready (gari se){% else %}🏍️ Ready &mdash; rider se bhejein{% endif %}</button>
+                    <button type="submit" class="vo-btn vo-readybtn">📦 Ready</button>
                 </form>
                 {% endif %}
-                {% if o.big_vehicle_state != 'approved' %}
-                <button type="button" class="vo-btn" onclick="voToggle('bv-{{ o.id }}')">🚚 {% if o.big_vehicle_state == 'proposed' %}Kiraya badlein{% else %}Gari se bhejein{% endif %}</button>
-                {% else %}
-                <button type="button" class="vo-btn" onclick="voToggle('bv-{{ o.id }}')">🚚 Gari ki detail</button>
-                {% endif %}
-                {% endif %}
             {% elif o.status == 'ready' and profile.is_approved %}
-                {% if o.big_vehicle_state == 'approved' %}
-                <div class="vo-note info" style="flex-basis:100%;">🚚 Bari gari ({{ o.big_vehicle_type }}){% if o.big_vehicle_driver %} &middot; {{ o.big_vehicle_driver.name }}{% endif %}, kiraya Rs. {{ o.big_vehicle_fee|floatformat:0 }}{% if o.vehicle_no %} &middot; Gari: <b>{{ o.vehicle_no }}</b>{% endif %}{% if o.big_vehicle_driver_phone %} &middot; Driver: {{ o.big_vehicle_driver_phone }}{% endif %}. Customer ko khud pohnchayein, phir "Delivered" dabayein.</div>
-                <button type="button" class="vo-btn" onclick="voToggle('bv-{{ o.id }}')">🚚 Gari ki detail</button>
-                {% endif %}
                 {% if row.delivery and row.delivery.rider %}
                     <div class="vo-note info" style="flex-basis:100%;">
                         🏍️ Rider: <b>{{ row.delivery.rider.name }}</b> ({{ row.delivery.rider.phone }}) —
@@ -242,54 +203,6 @@
             {% if row.wa_url %}<a class="vo-btn vo-wa" href="{{ row.wa_url }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Customer ko WhatsApp</a>{% endif %}
             {% if row.call_phone %}<a class="vo-btn vo-call" href="tel:{{ row.call_phone }}"><i class="bi bi-telephone"></i> Call</a>{% endif %}
         </div>
-
-        {% if o.status == 'confirmed' or o.status == 'processing' or o.status == 'ready' %}
-        <form class="vo-form" id="bv-{{ o.id }}" method="post" action="{% url 'vendor_big_vehicle' o.id %}">
-            {% csrf_token %}
-            {% if o.big_vehicle_state == 'approved' %}
-            {% if o.big_vehicle_driver_state != 'accepted' %}
-            <div class="vo-note info" style="margin-bottom:8px;">Gari badalni ho to neeche se chunein (driver abhi accept nahi kar saka / ya manual likhna ho).</div>
-            <select form="bvf2-{{ o.id }}" name="driver_id" style="width:100%;padding:8px;border-radius:10px;border:1px solid #cbd5e1;">
-                <option value="">✍️ Manual &mdash; khud likhein</option>
-                {% for v in big_vehicles %}<option value="{{ v.id }}" {% if v.full and o.big_vehicle_driver_id != v.id %}disabled{% endif %} {% if o.big_vehicle_driver_id == v.id %}selected{% endif %}>{% if v.live %}🟢{% else %}⚫{% endif %} {{ v.name }}{% if v.vehicle %} &middot; {{ v.vehicle }}{% endif %}{% if v.vehicle_no %} &middot; {{ v.vehicle_no }}{% endif %}{% if v.dist_km is not None %} &middot; {{ v.dist_km }} km{% endif %}{% if v.rating %} &middot; ⭐{{ v.rating }} ({{ v.rating_n }}){% endif %}{% if v.full %} &middot; busy{% endif %}</option>{% endfor %}
-            </select>
-            <div style="margin:6px 0 12px;"><button type="submit" form="bvf2-{{ o.id }}" class="vo-btn">🔁 Gari badlein</button></div>
-            {% endif %}
-            <input type="hidden" name="intent" value="details">
-            <label for="bvn-{{ o.id }}">Gari ka number (optional)</label>
-            <input type="text" id="bvn-{{ o.id }}" name="vehicle_no" maxlength="30" value="{{ o.vehicle_no|default:'' }}" placeholder="e.g. LEA-1234">
-            <label for="bvp-{{ o.id }}" style="margin-top:8px;">Driver ka phone (optional)</label>
-            <input type="tel" id="bvp-{{ o.id }}" name="driver_phone" maxlength="20" value="{{ o.big_vehicle_driver_phone }}" placeholder="03XX XXXXXXX">
-            <div style="margin-top:10px;"><button type="submit" class="vo-btn vo-accept">Save detail</button></div>
-            {% else %}
-            <div class="vo-note info" style="margin-bottom:8px;">Online gari list se chunein, ya manually likhein. Kiraya likh kar customer ko bhejein; manzoori ke baad hi order aage chalega.</div>
-            <label for="bvd-{{ o.id }}">Gari chunein</label>
-            <select id="bvd-{{ o.id }}" name="driver_id" onchange="bvPick({{ o.id }}, this)" style="width:100%;padding:8px;border-radius:10px;border:1px solid #cbd5e1;">
-                <option value="">✍️ Manual &mdash; khud likhein</option>
-                {% if big_vehicles %}
-                <optgroup label="🟢 Online (nazdeek / behtar rating pehle)">
-                    {% for v in big_vehicles %}{% if v.live %}<option value="{{ v.id }}" data-type="{{ v.vehicle }}" {% if v.full and o.big_vehicle_driver_id != v.id %}disabled{% endif %} {% if o.big_vehicle_driver_id == v.id %}selected{% endif %}>🟢 {{ v.name }}{% if v.vehicle %} &middot; {{ v.vehicle }}{% endif %}{% if v.vehicle_no %} &middot; {{ v.vehicle_no }}{% endif %}{% if v.dist_km is not None %} &middot; {{ v.dist_km }} km{% endif %}{% if v.rating %} &middot; ⭐{{ v.rating }} ({{ v.rating_n }}){% endif %}{% if v.full %} &middot; busy{% endif %}</option>{% endif %}{% endfor %}
-                </optgroup>
-                <optgroup label="⚫ Offline">
-                    {% for v in big_vehicles %}{% if not v.live %}<option value="{{ v.id }}" data-type="{{ v.vehicle }}" {% if v.full and o.big_vehicle_driver_id != v.id %}disabled{% endif %} {% if o.big_vehicle_driver_id == v.id %}selected{% endif %}>⚫ {{ v.name }}{% if v.vehicle %} &middot; {{ v.vehicle }}{% endif %}{% if v.vehicle_no %} &middot; {{ v.vehicle_no }}{% endif %}{% if v.dist_km is not None %} &middot; {{ v.dist_km }} km{% endif %}{% if v.rating %} &middot; ⭐{{ v.rating }} ({{ v.rating_n }}){% endif %}{% if v.full %} &middot; busy{% endif %}</option>{% endif %}{% endfor %}
-                </optgroup>
-                {% endif %}
-            </select>
-            {% if not big_vehicles %}<small class="text-muted">Abhi koi gari registered nahi hai. Manual likh kar bhej sakte hain.</small>{% endif %}
-            <label for="bvt-{{ o.id }}" style="margin-top:8px;">Gari ki qism</label>
-            <input type="text" id="bvt-{{ o.id }}" name="vehicle_type" maxlength="60" required value="{{ o.big_vehicle_type }}" placeholder="e.g. Suzuki, Pickup, Loader">
-            <label for="bvf-{{ o.id }}" style="margin-top:8px;">Kiraya (Rs.)</label>
-            <input type="number" id="bvf-{{ o.id }}" name="fee" min="1" step="1" required inputmode="numeric" value="{% if o.big_vehicle_state == 'proposed' %}{{ o.big_vehicle_fee|floatformat:0 }}{% endif %}" placeholder="e.g. 2500">
-            <label for="bvo-{{ o.id }}" style="margin-top:8px;">Note (optional)</label>
-            <input type="text" id="bvo-{{ o.id }}" name="note" maxlength="200" value="{{ o.big_vehicle_note }}" placeholder="e.g. Loading ka kharcha shamil">
-            <div style="margin-top:10px;"><button type="submit" class="vo-btn vo-accept">Customer ko bhejein</button></div>
-            {% endif %}
-        </form>
-        {% endif %}
-
-        {% if o.big_vehicle_state == 'approved' and o.big_vehicle_driver_state != 'accepted' %}
-        <form id="bvf2-{{ o.id }}" method="post" action="{% url 'vendor_big_vehicle' o.id %}" style="display:none;">{% csrf_token %}<input type="hidden" name="intent" value="driver"></form>
-        {% endif %}
 
         {% if o.status == 'pending' %}
         <form class="vo-form" id="acc-{{ o.id }}" method="post" action="{% url 'vendor_order_action' o.id 'accept' %}">
@@ -346,11 +259,6 @@
     setInterval(tick, 1000);
     tick();
 })();
-function bvPick(id, sel) {
-    var opt = sel.options[sel.selectedIndex];
-    var t = document.getElementById('bvt-' + id);
-    if (t && opt && opt.value && opt.getAttribute('data-type')) t.value = opt.getAttribute('data-type');
-}
 function voToggle(id) {
     var el = document.getElementById(id);
     if (!el) return;

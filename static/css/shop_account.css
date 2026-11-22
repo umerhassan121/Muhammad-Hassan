@@ -3,7 +3,7 @@
     body { padding-bottom: 90px !important; }
     
     .account-header {
-        background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
         color: white;
         padding: 40px 0;
         text-align: center;
@@ -68,14 +68,14 @@
                 box-shadow: 0 4px 20px rgba(0,0,0,.08); border: 1px solid #ede9fe; }
     .ref-card h3 { font-size: 18px; font-weight: 700; margin: 0 0 4px; color: #4c1d95; }
     .ref-card .ref-sub { font-size: 13.5px; color: #6b7280; margin-bottom: 14px; line-height: 1.5; }
-    .ref-code-row { display: flex; gap: 8px; align-items: center; background: #fff8f1; border-radius: 12px;
+    .ref-code-row { display: flex; gap: 8px; align-items: center; background: #f5f3ff; border-radius: 12px;
                     padding: 10px 12px; margin-bottom: 8px; }
-    .ref-code-row .ref-label { font-size: 11px; text-transform: uppercase; color: #f59e0b; font-weight: 700; }
+    .ref-code-row .ref-label { font-size: 11px; text-transform: uppercase; color: #7c3aed; font-weight: 700; }
     .ref-code-row .ref-value { font-family: monospace; font-size: 16px; font-weight: 700; color: #1f2937;
                                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ref-code-row .ref-grow { flex: 1; min-width: 0; }
     .ref-btn { border: 0; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
-               background: #f59e0b; color: #fff; white-space: nowrap; }
+               background: #7c3aed; color: #fff; white-space: nowrap; }
     .ref-btn.copied { background: #059669; }
     .ref-wa { display: block; text-align: center; text-decoration: none; background: #25d366; color: #fff;
               border-radius: 12px; padding: 11px; font-weight: 700; margin: 12px 0; }
@@ -101,7 +101,7 @@
         letter-spacing: 0.5px;
     }
     
-    .stat-card.total .stat-value { color: #d9480f; }
+    .stat-card.total .stat-value { color: #2563eb; }
     .stat-card.pending .stat-value { color: #ff9800; }
     .stat-card.delivered .stat-value { color: #28a745; }
     .stat-card.cancelled .stat-value { color: #dc3545; }
@@ -129,7 +129,7 @@
     
     .menu-item:hover {
         background: #f3f5ff;
-        color: #d9480f;
+        color: #2563eb;
     }
     
     .menu-item .menu-icon {
@@ -144,7 +144,7 @@
         color: white;
     }
     
-    .menu-item .menu-icon.primary { background: linear-gradient(135deg, #d9480f, #f59e0b); }
+    .menu-item .menu-icon.primary { background: linear-gradient(135deg, #2563eb, #7c3aed); }
     .menu-item .menu-icon.success { background: linear-gradient(135deg, #28a745, #20c997); }
     .menu-item .menu-icon.warning { background: linear-gradient(135deg, #ffc107, #ff9800); }
     .menu-item .menu-icon.danger { background: linear-gradient(135deg, #dc3545, #c82333); }
@@ -250,7 +250,7 @@
         align-items: center;
         gap: 8px;
         padding: 12px 24px;
-        background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
         color: white;
         text-decoration: none;
         border-radius: 10px;
@@ -262,7 +262,7 @@
     
     .btn-shop-now:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(217,72,15, 0.4);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
         color: white;
     }
 
@@ -274,9 +274,3 @@
 .ref-btn{min-height:44px}
 .btn-shop-now{min-height:44px}
 @media (max-width:991.98px){.btn.btn-sm{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}
-
-/* ===== Account quick links ===== */
-.ql-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 6px; }
-.ql-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 78px; padding: 10px 6px; border-radius: 16px; background: #fff; border: 1px solid #eadfce; color: #1c1917; text-decoration: none; font-weight: 700; font-size: 12.5px; }
-.ql-item i { font-size: 22px; color: #d9480f; }
-.ql-item:hover { border-color: #d9480f; color: #d9480f; }

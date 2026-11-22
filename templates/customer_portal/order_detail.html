@@ -40,28 +40,6 @@
     </details>
     {% endif %}
 
-    {% if order.big_vehicle_state == 'proposed' %}
-    <div class="card border-warning mb-3">
-        <div class="card-body">
-            <h5 class="card-title mb-1">🚚 Bari gari ka kiraya</h5>
-            <p class="mb-2">Aap ke order ka saman bhaari hai, is liye <b>{{ order.big_vehicle_type }}</b> se bheja jayega.</p>
-            <div class="fs-4 fw-bold mb-1">Rs. {{ order.big_vehicle_fee|floatformat:0 }}</div>
-            {% if order.big_vehicle_note %}<p class="text-muted small mb-2">{{ order.big_vehicle_note }}</p>{% endif %}
-            <p class="small text-muted mb-3">Manzoor karne par yeh kiraya delivery fee ban jayega aur order ka total badal jayega.</p>
-            <div class="d-flex gap-2 flex-wrap">
-                <form method="post" action="{% url 'big_vehicle_respond' order.id %}">{% csrf_token %}<input type="hidden" name="choice" value="approve"><button type="submit" class="btn btn-success">Manzoor hai</button></form>
-                <form method="post" action="{% url 'big_vehicle_respond' order.id %}" onsubmit="return confirm('Order cancel ho jayega. Kya aap cancel karna chahte hain?');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button type="submit" class="btn btn-outline-danger">Order cancel karein</button></form>
-            </div>
-        </div>
-    </div>
-    {% elif order.big_vehicle_state == 'approved' %}
-    <div class="alert alert-info mb-3">
-        🚚 <b>Bari gari:</b> {{ order.big_vehicle_type }} &middot; Kiraya Rs. {{ order.big_vehicle_fee|floatformat:0 }}
-        {% if order.vehicle_no %}<br>Gari ka number: <b>{{ order.vehicle_no }}</b>{% endif %}
-        {% if order.big_vehicle_driver_phone %}<br>Driver: <a href="tel:{{ order.big_vehicle_driver_phone }}">{{ order.big_vehicle_driver_phone }}</a>{% endif %}
-    </div>
-    {% endif %}
-
     <!-- Hero -->
     <div class="so-hero">
         <div>
@@ -330,12 +308,6 @@
                                     <td class="text-end">Rs. {{ order.delivery_fee|floatformat:0 }}</td>
                                 </tr>
                                 {% endif %}
-                                {% if order.gst_amount > 0 %}
-                                <tr>
-                                    <td colspan="3" class="text-end text-muted">Includes GST:</td>
-                                    <td class="text-end text-muted">Rs. {{ order.gst_amount|floatformat:2 }}</td>
-                                </tr>
-                                {% endif %}
                                 {% if order.discount_value > 0 %}
                                 <tr>
                                     <td colspan="3" class="text-end text-success">Coupon discount:</td>
@@ -388,38 +360,11 @@
                         <div class="text-muted small">Phone</div>
                         <div class="fw-bold">{{ order.customer.contact_number }}</div>
                     </div>
-                    {% if order.ship_address %}
+                    {% if order.customer.address %}
                     <div>
-                        <div class="text-muted small">Delivery Address</div>
-                        <div id="orderShipAddress">{{ order.ship_address }}</div>
+                        <div class="text-muted small">Address</div>
+                        <div>{{ order.customer.address }}</div>
                     </div>
-                    {% endif %}
-                    {% if order.can_change_address %}
-                    <form method="post" action="{% url 'change_order_address' order.id %}" class="mt-3" id="changeAddrForm">
-                        {% csrf_token %}
-                        <label class="form-label small fw-bold" for="newShipAddress">Address badlein (sirf is order ke liye)</label>
-                        <textarea name="address" id="newShipAddress" class="form-control" rows="2" maxlength="500" required>{{ order.ship_address }}</textarea>
-                        <input type="hidden" name="lat" id="newShipLat"><input type="hidden" name="lng" id="newShipLng">
-                        <button type="button" id="newShipPinBtn" class="btn btn-sm btn-outline-secondary mt-2">📍 Pin my current location</button>
-                        <button type="submit" class="btn btn-sm btn-primary mt-2">Address update karein</button>
-                        <div class="small mt-1" id="newShipPinMsg"></div>
-                        <script>
-                        (function(){
-                          var b=document.getElementById('newShipPinBtn'),m=document.getElementById('newShipPinMsg');
-                          if(!b)return;
-                          b.addEventListener('click',function(){
-                            if(!navigator.geolocation){m.textContent='Browser location support nahi karta';return;}
-                            m.textContent='Location le raha hoon...';
-                            navigator.geolocation.getCurrentPosition(function(p){
-                              document.getElementById('newShipLat').value=p.coords.latitude;
-                              document.getElementById('newShipLng').value=p.coords.longitude;
-                              m.textContent='✅ Pin lag gaya. Ab "Address update karein" dabayen.';
-                            },function(){m.textContent='❌ Location ki ijazat dein';},{enableHighAccuracy:true,timeout:20000});
-                          });
-                        })();
-                        </script>
-                        <div class="text-muted small mt-1">Store accept karne ke baad address nahi badal sakta. Door ke area mein jane par delivery fee badal sakti hai.</div>
-                    </form>
                     {% endif %}
                 </div>
             </div>

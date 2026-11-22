@@ -189,12 +189,6 @@ class VendorProfile(models.Model):
     delivery_time_max = models.PositiveSmallIntegerField(default=45, help_text="Minutes")
     lat = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     lng = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
-    # Dark store (Talabat Mart jaisa): company ka apna store, sirf delivery ke liye (customer ke jaane ki dukaan nahi).
-    is_dark_store = models.BooleanField(
-        default=False, db_index=True, verbose_name="Dark store (Mart)",
-        help_text="ON = company ka apna tez-delivery store: sirf platform riders, order khud qubool, "
-                  "delivery time is store ka apna (10-20 min), aur shop mein sab se upar \u26a1 Mart nishan ke saath. "
-                  "Stock bhi baqi sab ki tarah default warehouse se chalta hai.")
     # Branch: parent khali = main store; parent bhara = us owner ki branch (alag store, alag products/orders)
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.PROTECT, related_name='branches',
@@ -210,19 +204,6 @@ class VendorProfile(models.Model):
     class Meta:
         verbose_name_plural = '3.2 Vendor Portal Accounts'
         ordering = ['-created_at']
-
-    def save(self, *args, **kwargs):
-        if self.is_dark_store:
-            # Dark store ki tareef: platform riders + khud qubool; commission khali ho to 0 (company apne aap se commission nahi leti)
-            from decimal import Decimal
-            self.delivery_by = 'platform'
-            self.auto_accept = True
-            if self.commission_percent is None:
-                self.commission_percent = Decimal('0')
-            fields = kwargs.get('update_fields')
-            if fields is not None:
-                kwargs['update_fields'] = set(fields) | {'delivery_by', 'auto_accept', 'commission_percent'}
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.business_name} ({'approved' if self.is_approved else 'pending'})"
@@ -268,12 +249,12 @@ class VendorProfile(models.Model):
         return self._platform()['free_radius_km'] if self.uses_platform_delivery else self.free_radius_km
 
     @property
-    def eff_time_min(self):      # dark store: platform rider, lekin delivery time store ka apna (tez)
-        return self._platform()['time_min'] if (self.uses_platform_delivery and not self.is_dark_store) else self.delivery_time_min
+    def eff_time_min(self):
+        return self._platform()['time_min'] if self.uses_platform_delivery else self.delivery_time_min
 
     @property
     def eff_time_max(self):
-        return self._platform()['time_max'] if (self.uses_platform_delivery and not self.is_dark_store) else self.delivery_time_max
+        return self._platform()['time_max'] if self.uses_platform_delivery else self.delivery_time_max
 
     @property
     def eff_time_text(self):

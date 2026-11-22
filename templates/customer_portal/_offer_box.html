@@ -13,7 +13,7 @@
             {% if user.is_authenticated %}
             <form method="post" action="{% url 'apply_coupon' %}" style="display:flex;gap:8px;">{% csrf_token %}<input type="hidden" name="next" value="{{ next_page }}">
                 <input type="text" name="code" maxlength="30" placeholder="Coupon code" autocomplete="off" style="flex:1;min-width:0;padding:9px 12px;border:2px solid #e5e7eb;border-radius:10px;text-transform:uppercase;font-size:15px;">
-                <button type="submit" style="border:0;border-radius:10px;padding:9px 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,#d9480f,#f59e0b);">Apply</button>
+                <button type="submit" style="border:0;border-radius:10px;padding:9px 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);">Apply</button>
             </form>
             {% else %}
             <div style="font-size:13.5px;">{% url 'customer_login' as login_url %}{% t '<a href="{}?next={}">Login</a> to apply a coupon.' login_url request.path %}</div>
@@ -44,5 +44,5 @@
     </div>
     {% endif %}
 </div>
-{% if offer.points_est %}<div style="font-size:13px;color:#f59e0b;margin-top:6px;">⭐ {% t "You will earn ~{} loyalty points after delivery." offer.points_est %}</div>{% endif %}
+{% if offer.points_est %}<div style="font-size:13px;color:#7c3aed;margin-top:6px;">⭐ {% t "You will earn ~{} loyalty points after delivery." offer.points_est %}</div>{% endif %}
 {% endif %}

@@ -52,8 +52,6 @@ class SaleOrder(models.Model):
         help_text="Khali = shop ka apna order. Bhara = is store ke dashboard par dikhega."
     )
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
-    gst_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'),
-                                     help_text="Total mein shamil GST (qeematein tax-inclusive hain)")
     payment_method = models.CharField(max_length=20, blank=True, default='')
     # Offers: wallet se ada hui raqam (cash due = total - wallet) aur Pro se maaf hui delivery fee
     wallet_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -70,23 +68,6 @@ class SaleOrder(models.Model):
     ready_at = models.DateTimeField(null=True, blank=True)
     delivery_lat = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     delivery_lng = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
-    # Order ke waqt ka address (customer profile baad mein badle to bhi is order ka address wahi rahe)
-    delivery_address = models.TextField(blank=True, default='', verbose_name="Delivery Address")
-    # ---- Bari gari (bike se na ho sakne wale bhaari order): store kiraya khud likhta hai, customer manzoor karta hai ----
-    big_vehicle_state = models.CharField(
-        max_length=10, blank=True, default='',
-        help_text="'' = aam order | proposed = customer ki manzoori baqi | approved | declined")
-    big_vehicle_type = models.CharField(max_length=60, blank=True, default='')
-    big_vehicle_fee = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
-    big_vehicle_note = models.CharField(max_length=200, blank=True, default='')
-    big_vehicle_driver_phone = models.CharField(max_length=20, blank=True, default='')
-    vehicle_no = models.CharField(max_length=30, null=True, blank=True, verbose_name="Big vehicle number")
-    big_vehicle_proposed_at = models.DateTimeField(null=True, blank=True)
-    # Store ne list se online gari chuni ho to wo driver (khali = store ne gari manually likhi)
-    big_vehicle_driver = models.ForeignKey(
-        'RiderProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='big_vehicle_jobs')
-    # Chuni hui gari ka jawab: '' = manual / koi driver nahi | pending = driver ke jawab ka intezar | accepted
-    big_vehicle_driver_state = models.CharField(max_length=10, blank=True, default='')
     
     # ✅ NEW field: Client IP (to detect duplicates)
     client_ip = models.GenericIPAddressField(
@@ -109,14 +90,6 @@ class SaleOrder(models.Model):
     def __str__(self):
         return f"Order #{self.order_no} - {self.customer.name}"
     
-    def ship_address(self):
-        """Is order ka delivery address (purane orders: customer ka address)."""
-        return (self.delivery_address or getattr(self.customer, 'address', '') or '').strip()
-
-    def can_change_address(self):
-        """Address sirf tab badal sakta hai jab order abhi pending ho (store ne accept na kiya ho)."""
-        return self.status == 'pending'
-
     def total_amount(self):
         return sum(item.total_amt for item in self.items.all())
     
@@ -182,38 +155,6 @@ class SaleOrder(models.Model):
         super().save(*args, **kwargs)
 
 
-class BigVehicleOffer(models.Model):
-    """Bari gari ke kiraye ki history: store ne kab, kitna kiraya bheja aur customer/system ne kya kiya.
-
-    SaleOrder.big_vehicle_* mein sirf maujooda (aakhri) kiraya hota hai; har bheja gaya kiraya yahan
-    ek row ban kar rehta hai, taake naya kiraya bhejne par purana record zaya na ho.
-    """
-    OUTCOMES = [
-        ('proposed', 'Waiting for the customer'),
-        ('approved', 'Approved by the customer'),
-        ('declined', 'Declined by the customer'),
-        ('expired', 'Expired (no response)'),
-        ('superseded', 'Replaced by a new fare'),
-    ]
-    order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='big_vehicle_offers')
-    vehicle_type = models.CharField(max_length=60)
-    fee = models.DecimalField(max_digits=10, decimal_places=2)
-    note = models.CharField(max_length=200, blank=True, default='')
-    outcome = models.CharField(max_length=12, choices=OUTCOMES, default='proposed')
-    proposed_at = models.DateTimeField(default=now)
-    responded_at = models.DateTimeField(null=True, blank=True)
-    proposed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
-    driver = models.ForeignKey('RiderProfile', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
-
-    class Meta:
-        verbose_name_plural = '5.0.2 Big Vehicle Offers'
-        ordering = ['-proposed_at', '-id']
-        indexes = [models.Index(fields=['order', 'outcome'], name='bigveh_order_outcome_idx')]
-
-    def __str__(self):
-        return f"{self.order_id}: {self.vehicle_type} Rs. {self.fee} ({self.outcome})"
-
-
 class SaleOrderItem(models.Model):
     order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -221,8 +162,6 @@ class SaleOrderItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     total_amt = models.DecimalField(max_digits=15, decimal_places=2, editable=False, default=Decimal('0.0'))
     reserved = models.BooleanField(default=False, help_text="Reserve this stock for the order")
-    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
-                                   help_text="Order ke waqt ka GST % (is qeemat mein shamil)")
     # Product options (size / extras): text order mein dikhane ke liye, key = chune hue option ids
     # (ek hi product alag options ke sath ek order mein do line ban sakta hai), extra = price mein jura hissa
     options_text = models.CharField(max_length=255, blank=True, default='')

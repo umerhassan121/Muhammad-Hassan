@@ -11,8 +11,8 @@
 <nav class="sm-bar{% if not sm_show_bar %} sm-nobar{% endif %}" id="smBar" aria-label="Main menu">
     {% for t in sm_tabs %}
     <a href="{{ t.url }}" class="sm-tab{% if t.active %} active{% endif %}"{% if t.active %} aria-current="page"{% endif %}{% if t.is_account %} id="smAccountTab" aria-haspopup="dialog" aria-controls="smSheet" aria-expanded="false"{% endif %}>
-        <span class="sm-ico"><i class="bi {% if t.active %}{{ t.icon_on }}{% else %}{{ t.icon }}{% endif %}" aria-hidden="true"></i>{% if t.is_cart %}<span class="sm-badge" data-sm-cart{% if not t.badge %} hidden{% endif %}>{{ t.badge }}</span>{% elif t.badge %}<span class="sm-badge">{{ t.badge }}</span>{% endif %}{% if t.live %}<span class="sm-live" aria-hidden="true"></span>{% endif %}</span>
-        <span class="sm-lbl">{{ t.label }}</span>{% if t.live %}<span class="visually-hidden">Order on the way</span>{% endif %}
+        <span class="sm-ico"><i class="bi {% if t.active %}{{ t.icon_on }}{% else %}{{ t.icon }}{% endif %}" aria-hidden="true"></i>{% if t.is_cart %}<span class="sm-badge" data-sm-cart{% if not t.badge %} hidden{% endif %}>{{ t.badge }}</span>{% elif t.badge %}<span class="sm-badge">{{ t.badge }}</span>{% endif %}</span>
+        <span class="sm-lbl">{{ t.label }}</span>
     </a>
     {% endfor %}
 </nav>
@@ -34,13 +34,10 @@
     <div class="sm-body">
         {% if sm_logged_in %}
         <a class="sm-item" href="{% url 'my_account' %}"><span class="sm-ic"><i class="bi bi-person-circle"></i></span><span class="sm-tx">My account<small>Profile, address, security</small></span><i class="bi bi-chevron-right sm-go"></i></a>
-        <div class="sm-title">Quick access</div>
-        <div class="sm-quick">
-            {% if SHOP.shop_wallet_enabled %}<a class="sm-q" href="{% url 'wallet_page' %}"><span class="sm-qi"><i class="bi bi-wallet2"></i></span><span class="sm-qt">Wallet</span></a>{% endif %}
-            {% if SHOP.shop_favorites_enabled %}<a class="sm-q" href="{% url 'favorites_page' %}"><span class="sm-qi"><i class="bi bi-heart"></i></span><span class="sm-qt">Favourites</span></a>{% endif %}
-            <a class="sm-q" href="{% url 'repeat_plans' %}"><span class="sm-qi"><i class="bi bi-arrow-repeat"></i></span><span class="sm-qt">Repeat orders</span></a>
-            {% if SHOP.shop_pro_enabled %}<a class="sm-q" href="{% url 'pro_page' %}"><span class="sm-qi"><i class="bi bi-stars"></i></span><span class="sm-qt">Pro</span></a>{% endif %}
-        </div>
+        {% if SHOP.shop_wallet_enabled %}<a class="sm-item" href="{% url 'wallet_page' %}"><span class="sm-ic"><i class="bi bi-wallet2"></i></span><span class="sm-tx">Wallet</span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% if SHOP.shop_pro_enabled %}<a class="sm-item" href="{% url 'pro_page' %}"><span class="sm-ic"><i class="bi bi-stars"></i></span><span class="sm-tx">Pro</span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        {% if SHOP.shop_favorites_enabled %}<a class="sm-item" href="{% url 'favorites_page' %}"><span class="sm-ic"><i class="bi bi-heart"></i></span><span class="sm-tx">Favourites</span><i class="bi bi-chevron-right sm-go"></i></a>{% endif %}
+        <a class="sm-item" href="{% url 'repeat_plans' %}"><span class="sm-ic"><i class="bi bi-arrow-repeat"></i></span><span class="sm-tx">Repeat orders</span><i class="bi bi-chevron-right sm-go"></i></a>
         {% else %}
         {% if SHOP.customer_login_enabled or SHOP.customer_register_enabled %}
         <div class="sm-cta">
@@ -50,6 +47,10 @@
         {% endif %}
         {% endif %}
 
+        <div class="sm-title">Language</div>
+        <div class="sm-lang" data-no-i18n>
+            {% for l in LANGUAGES %}{% if l.code == 'en' or l.code == 'ur' %}<a href="{% url 'set_language' l.code %}?next={{ request.get_full_path|urlencode }}"{% if l.code == LANG_CODE %} class="on" aria-current="true"{% endif %}>{{ l.native }}</a>{% endif %}{% endfor %}
+        </div>
 
         <div class="sm-title">Help</div>
         <a class="sm-item" href="{% url 'shop_help' %}"><span class="sm-ic"><i class="bi bi-question-circle"></i></span><span class="sm-tx">Help center</span><i class="bi bi-chevron-right sm-go"></i></a>
@@ -136,22 +137,6 @@
     });
     window.addEventListener('pageshow', function (e) { if (e.persisted && isOpen()) close(); });
     window.shopMenuClose = close;
-})();
-/* Safety: APK/WebView mein back ya app-switch ke baad scroll-lock atka reh sakta hai.
-   Agar koi sheet / sidebar khula nahi, to lock hata do taake page hamesha scroll ho. */
-(function () {
-    function unlockIfIdle() {
-        var sheet = document.getElementById('smSheet');
-        var sb = document.querySelector('#adminSidebar.open');
-        if (sheet && sheet.classList.contains('open')) return;
-        if (sb) return;
-        document.body.classList.remove('sm-lock');
-        if (document.body.style.overflow === 'hidden') document.body.style.overflow = '';
-    }
-    window.addEventListener('pageshow', unlockIfIdle);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) unlockIfIdle(); });
-    window.addEventListener('focus', unlockIfIdle);
-    document.addEventListener('touchstart', unlockIfIdle, { passive: true });
 })();
 </script>
 {% endif %}

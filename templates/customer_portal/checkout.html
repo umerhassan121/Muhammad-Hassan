@@ -41,13 +41,6 @@
         <div class="col-lg-8">
             
             <!-- ✅ Delivery Address Card -->
-<style>
-.sa-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed #eadfce}
-.sa-f{margin:0}
-.sa-chip{display:inline-flex;align-items:center;min-height:36px;padding:6px 14px;border-radius:999px;border:1.5px solid #eadfce;background:#fff;color:#1c1917;font-weight:700;font-size:12.5px;cursor:pointer}
-.sa-chip.on{background:#fff4ec;border-color:#d9480f;color:#d9480f}
-.sa-more{font-size:12.5px;font-weight:700;color:#d9480f;text-decoration:none;margin-left:auto}
-</style>
             {% if customer and customer.name %}
             <div class="delivery-address-card" id="deliveryAddressCard">
                 <div class="address-header">
@@ -84,15 +77,6 @@
                     <div id="displayAddress">{{ customer.address }}</div>
                 </div>
                 {% endif %}
-                {% if saved_addresses|length > 1 %}
-                <div class="sa-row" aria-label="Saved addresses">
-                    {% for a in saved_addresses %}
-                    {% if a.is_default %}<span class="sa-chip on">{{ a.get_address_type_display }}</span>
-                    {% else %}<form method="post" action="{% url 'address_set_default' a.pk %}" class="sa-f">{% csrf_token %}<input type="hidden" name="next" value="checkout"><button type="submit" class="sa-chip">{{ a.get_address_type_display }}</button></form>{% endif %}
-                    {% endfor %}
-                    <a href="{% url 'my_addresses' %}" class="sa-more">Manage</a>
-                </div>
-                {% endif %}
             </div>
             {% endif %}
             
@@ -117,7 +101,7 @@
             <!-- ✅ DELIVERY OPTIONS -->
             {% if delivery_options %}
             <div class="card border-0 shadow-sm mb-4">
-                <div class="section-header" style="background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);">
+                <div class="section-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);">
                     <span><i class="bi bi-truck"></i> Delivery Options</span>
                 </div>
                 <div class="section-body">
@@ -370,7 +354,7 @@
 
             {% else %}
                 <div class="card border-0 shadow-sm">
-                    <div class="section-header" style="background: linear-gradient(135deg, #d9480f 0%, #f59e0b 100%);">
+                    <div class="section-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);">
                         <span><i class="bi bi-shield-lock-fill"></i> Verify Your Phone</span>
                     </div>
                     <div class="section-body">
@@ -591,7 +575,7 @@
                                readonly
                                disabled>
                         <small class="text-muted d-block mt-1">
-                            <i class="bi bi-info-circle"></i> {% t "To change the name, go to the" %} <a href="{% url 'my_account' %}" style="color: #d9480f; font-weight: 700; text-decoration: none;">Profile</a> {% t "page." %}
+                            <i class="bi bi-info-circle"></i> {% t "To change the name, go to the" %} <a href="{% url 'my_account' %}" style="color: #2563eb; font-weight: 700; text-decoration: none;">Profile</a> {% t "page." %}
                         </small>
                     </div>
                     

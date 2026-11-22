@@ -11,7 +11,7 @@
 // - Prefetch: user jis link par hath/touch rakhe uska page pehle se 60 sec ke liye save (sirf shop browse pages).
 // - Push: notification (vibration, action buttons, urgent order alerts) + icon par badge; click par sahi app window khulti hai.
 // - Storage hisaab: purani cache entries khud delete; jagah kam ho to media/pages kam kar deta hai.
-var VERSION = 'v18';   // har release par badlein (cache refresh)
+var VERSION = 'v13';   // har release par badlein (cache refresh)
 var SHELL = 'bms-shell-' + VERSION;
 var STATIC = 'bms-static-' + VERSION;
 var SHOP = 'bms-shop-' + VERSION;

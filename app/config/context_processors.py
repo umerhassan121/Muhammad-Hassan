@@ -5,15 +5,6 @@ from app.shop_flags import shop_flags_all
 from app.models import SystemSetting, Purchase, ShareholderDepositRequest, ShareholderWithdrawalRequest, BalanceDividend, Shareholder, CompanyInfo
 
 
-def _shop_apk_url():
-    try:
-        from django.urls import reverse
-        from app.customer.views_info_pages import shop_apk_path
-        return reverse('shop_app_download') if shop_apk_path() else ''
-    except Exception:
-        return ''
-
-
 def _whatsapp_url(number):
     """'0300-1234567' / '+92 300 1234567' -> 'https://wa.me/923001234567'. Number na ho to ''."""
     digits = "".join(ch for ch in (number or "") if ch.isdigit())
@@ -148,8 +139,6 @@ def system_settings(request):
         'BUSINESS_MODE': vis['_mode'],
         # Shop switches (Settings > Shop). Lazy: the DB is only hit if a template uses {{ SHOP.xxx }}.
         'SHOP': SimpleLazyObject(shop_flags_all),
-        # Home tab ka APK download button: sirf tab jab media/apk/shop.apk maujood ho
-        'SHOP_APK_URL': _shop_apk_url(),
         # Lite Edition (simple Urdu-first mode): templates use {% if LITE_MODE %}
         'LITE_MODE': is_lite(),
         # Owner of the customer account (sidebar: Security section is for Administrator / Owner only)

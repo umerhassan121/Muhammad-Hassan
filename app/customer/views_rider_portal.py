@@ -235,7 +235,7 @@ def _card(di):
     store_addr = getattr(o.vendor, 'address', '') if o.vendor_id else ''
     phone = (getattr(cust, 'contact_number', '') or '')
     digits = ''.join(ch for ch in phone if ch.isdigit())
-    cust_addr = o.ship_address()
+    cust_addr = getattr(cust, 'address', '') or ''
     nav_leg, nav = _nav_for_leg(di, o, store_addr, cust_addr)
     from . import delivery_returns, store_issues
     fail = delivery_returns.open_failure(di) if di.status in ('picked_up', 'in_transit') else None
@@ -251,7 +251,7 @@ def _card(di):
         'store': store_orders.store_name(o.vendor_id),
         'store_phone': getattr(o.vendor, 'contact_number', '') if o.vendor_id else '',
         'store_addr': store_addr, 'map_store': _maps(store_addr),
-        'cust_addr': cust_addr, 'map_cust': _maps(cust_addr),
+        'cust_addr': getattr(cust, 'address', '') or '', 'map_cust': _maps(getattr(cust, 'address', '') or ''),
         'map_pin': (f'https://www.google.com/maps/dir/?api=1&destination={o.delivery_lat},{o.delivery_lng}'
                     if o.delivery_lat is not None and o.delivery_lng is not None else ''),
         'cust_phone': phone, 'wa_cust': f'https://wa.me/{digits}' if digits else '',
@@ -260,46 +260,10 @@ def _card(di):
     }
 
 
-def _bv_job_card(o):
-    """Bari gari wale driver ke liye ek job ka card (store se uthao, customer ko do)."""
-    cust = o.customer
-    store_addr = getattr(o.vendor, 'address', '') if o.vendor_id else ''
-    cust_addr = o.ship_address()
-    approved = o.big_vehicle_state == 'approved'
-    phone = (getattr(cust, 'contact_number', '') or '') if approved else ''      # number tab dikhta hai jab kiraya manzoor ho
-    digits = ''.join(ch for ch in phone if ch.isdigit())
-    return {
-        'order': o, 'approved': approved, 'fee': o.big_vehicle_fee,
-        'pending': o.big_vehicle_driver_state == 'pending', 'accepted': o.big_vehicle_driver_state == 'accepted',
-        'store': store_orders.store_name(o.vendor_id), 'store_addr': store_addr, 'map_store': _maps(store_addr),
-        'store_phone': getattr(o.vendor, 'contact_number', '') if o.vendor_id else '',
-        'cust_addr': cust_addr, 'map_cust': _maps(cust_addr),
-        'cust_name': getattr(cust, 'name', '') if approved else '', 'cust_phone': phone,
-        'wa_cust': f'https://wa.me/{digits}' if digits else '',
-        'items_count': o.items.count(),
-        'total': store_orders.order_cash_due(o) if approved else None,
-        # Driver sirf apna kiraya leta hai; baqi raqam (items) store ki hai
-        'items_due': max((store_orders.order_cash_due(o) or Decimal('0')) - (o.big_vehicle_fee or Decimal('0')), Decimal('0')) if approved else None,
-        'is_cod': (o.payment_method or 'cod') == 'cod',
-        'ready': o.status == 'ready',
-    }
-
-
-def _bv_jobs(rider):
-    """Is gari ke maujooda jobs: customer ki manzoori ka intezar (proposed) ya manzoor (approved), jab tak deliver na ho."""
-    if rider.rider_kind != 'big_vehicle':
-        return []
-    qs = (SaleOrder.objects.filter(big_vehicle_driver=rider, big_vehicle_state__in=('proposed', 'approved'),
-                                   status__in=('confirmed', 'processing', 'ready'))
-          .select_related('customer', 'vendor').prefetch_related('items').order_by('-big_vehicle_proposed_at'))
-    return [_bv_job_card(o) for o in qs[:30]]
-
-
 def _offers_qs():
     """Ready orders jinka abhi koi rider nahi."""
     taken = DeliveryInfo.objects.filter(rider__isnull=False, sale_order__isnull=False).values('sale_order_id')
     return (SaleOrder.objects.filter(status='ready', vendor__isnull=False)
-            .exclude(big_vehicle_state__in=['proposed', 'approved'])   # bari gari: store khud deliver karta hai
             .exclude(pk__in=taken).select_related('customer', 'vendor')
             .prefetch_related('items__product').order_by('vendor_responded_at')[:20])
 
@@ -319,7 +283,7 @@ def _batch_info(o):
         'store_addr': getattr(o.vendor, 'address', '') if o.vendor_id else '',
         'cust_name': getattr(cust, 'name', '') or '',
         'drop_ll': _ll(o.delivery_lat, o.delivery_lng),
-        'cust_addr': o.ship_address(),
+        'cust_addr': getattr(cust, 'address', '') or '',
     }
 
 
@@ -337,7 +301,7 @@ def _offer_card(o, rider, actives=None):
     return {
         'order': o, 'items_count': sum(1 for _ in o.items.all()),
         'store': store_orders.store_name(o.vendor_id), 'store_addr': store_addr,
-        'cust_addr': o.ship_address(),
+        'cust_addr': getattr(cust, 'address', '') or '',
         'total': store_orders.order_cash_due(o),
         'is_cod': (o.payment_method or 'cod') == 'cod',
         'fee': Decimal(rider.per_delivery_fee or 0) + _peak,
@@ -494,10 +458,8 @@ def _rider_ctx(request, nav, **extra):
             offer_n = len(dispatch.visible_orders(_offers_qs(), rider, MAX_ACTIVE_ORDERS, ACTIVE_STATUSES))
     except Exception:
         offer_n = 0
-    bv_n = rider.big_vehicle_jobs.filter(big_vehicle_state='approved',
-                                         status__in=('confirmed', 'processing', 'ready')).count() if rider.rider_kind == 'big_vehicle' else 0
     ctx = {'rider': rider, 'nav': nav, 'company_name': _company_name(),
-           'active_count': active_n + bv_n, 'badge_count': active_n + offer_n + bv_n,
+           'active_count': active_n, 'badge_count': active_n + offer_n,
            'dispute_count': _dispute_pending(rider)}
     try:
         from .rider_support import unread_for_rider
@@ -539,8 +501,7 @@ def rider_home(request):
         request, 'orders', mine=[_card(d) for d in mine], offers=offers, plan=plan,
         today=today, balances=bal, max_active=MAX_ACTIVE_ORDERS,
         goal_list=_goals_ctx(rider), cash=_cash_ctx(rider, bal),
-        gate_msg=gate_msg, doc_warnings=rider_gate.doc_warnings(rider), next_shift=rider_gate.next_shift(rider),
-        bv_jobs=_bv_jobs(rider), is_big_vehicle=(rider.rider_kind == 'big_vehicle')))
+        gate_msg=gate_msg, doc_warnings=rider_gate.doc_warnings(rider), next_shift=rider_gate.next_shift(rider)))
 
 
 DEMAND_CACHE_SECONDS = 300
@@ -718,20 +679,6 @@ def rider_test_push(request):
 
 @rider_login_required
 @require_POST
-def rider_big_vehicle_respond(request, pk):
-    from . import views_big_vehicle
-    return views_big_vehicle.rider_big_vehicle_respond(request, pk)
-
-
-@rider_login_required
-@require_POST
-def rider_big_vehicle_delivered(request, pk):
-    from . import views_big_vehicle
-    return views_big_vehicle.rider_big_vehicle_delivered(request, pk)
-
-
-@rider_login_required
-@require_POST
 def rider_toggle_online(request):
     rider = request.user.rider_profile
     if not rider.is_online:                       # Online jaane se pehle approval / documents / shift check
@@ -789,8 +736,7 @@ def rider_accept_order(request, pk):
 
     try:
         with transaction.atomic():
-            order = (SaleOrder.objects.select_for_update().filter(pk=pk, status='ready')
-                     .exclude(big_vehicle_state__in=['proposed', 'approved']).first())
+            order = SaleOrder.objects.select_for_update().filter(pk=pk, status='ready').first()
             if not order:
                 raise store_orders.OrderActionError('This order is no longer available.')
             if not dispatch.can_take(order, rider, MAX_ACTIVE_ORDERS, ACTIVE_STATUSES):
@@ -996,7 +942,7 @@ def rider_order_action(request, pk, action):
 @require_POST
 def vendor_assign_rider(request, pk):
     vendor = get_vendor_profile(request.user).vendor
-    rider = get_object_or_404(RiderProfile, pk=request.POST.get('rider_id') or 0, is_active=True, approval_status='approved', rider_kind='bike')
+    rider = get_object_or_404(RiderProfile, pk=request.POST.get('rider_id') or 0, is_active=True, approval_status='approved')
 
     try:
         with transaction.atomic():
@@ -1056,8 +1002,6 @@ def rider_manage(request):
             phone_raw = request.POST.get('phone', '').strip()[:20]
             password = request.POST.get('password', '')
             vehicle = request.POST.get('vehicle', '').strip()[:50]
-            kind = 'big_vehicle' if request.POST.get('rider_kind') == 'big_vehicle' else 'bike'
-            vehicle_no = ' '.join(request.POST.get('vehicle_no', '').split())[:30] if kind == 'big_vehicle' else ''
             fee = _money(request.POST.get('fee', '50'))
             if not name or not phone_raw or fee is None:
                 messages.error(request, '❌ Enter name, phone, fee and password.')
@@ -1072,9 +1016,8 @@ def rider_manage(request):
                     with transaction.atomic():
                         user = User.objects.create_user(username=username, password=password, first_name=name[:30])
                         RiderProfile.objects.create(user=user, name=name, phone=phone, vehicle=vehicle,
-                                                    rider_kind=kind, vehicle_no=vehicle_no, per_delivery_fee=fee)
-                    kind_txt = 'Big vehicle driver' if kind == 'big_vehicle' else 'Rider'
-                    messages.success(request, f'✅ {kind_txt} {name} created. Login: {phone}')
+                                                    per_delivery_fee=fee)
+                    messages.success(request, f'✅ Rider {name} created. Login: {phone}')
                 except IntegrityError:
                     messages.error(request, '❌ A rider with this phone already exists.')
         elif action == 'toggle':

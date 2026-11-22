@@ -89,7 +89,6 @@ def store_list(request):
     open_only = request.GET.get('open') == '1'
     free_only = request.GET.get('free') == '1'
     deals_only = request.GET.get('deals') == '1'
-    mart_only = request.GET.get('mart') == '1'              # ⚡ Mart (dark stores)
     rating_min = request.GET.get('rating') == '4'          # "4+" stars
     favorites_on = shop_flag('shop_favorites_enabled')
     fav_only = favorites_on and request.GET.get('fav') == '1'
@@ -110,9 +109,6 @@ def store_list(request):
         is_approved=True, vendor__in=live.values('vendor')
     ).select_related('vendor', 'store_category').prefetch_related('cuisines', 'day_hours')
     base_stores = stores
-    mart_count = stores.filter(is_dark_store=True).count()
-    if mart_only:
-        stores = stores.filter(is_dark_store=True)
 
     # Cuisines (Pizza, Burger, Biryani...) - admin switch ke peeche
     cuisines_on = shop_flag('shop_cuisines_enabled')
@@ -235,7 +231,7 @@ def store_list(request):
         record_impressions(request, [st.pk for st in stores if st.sponsored])
 
     sort_keys = {
-        'recommended': lambda s: (STATUS_ORDER[s.status], 0 if s.is_dark_store else 1, 0 if s.sponsored else 1, s.business_name.lower()),
+        'recommended': lambda s: (STATUS_ORDER[s.status], 0 if s.sponsored else 1, s.business_name.lower()),
         'rating': lambda s: (STATUS_ORDER[s.status], -(s.rating_avg or 0), -s.rating_count, s.business_name.lower()),
         'fastest': lambda s: (STATUS_ORDER[s.status], s.eff_time_min, s.eff_time_max),
         'fee': lambda s: (STATUS_ORDER[s.status], s.fee_now or 0),
@@ -247,7 +243,7 @@ def store_list(request):
     for b in banners:
         b.target = b.get_link()
     # Banner sirf pehle page par (koi search/filter na ho) - warna results ke beech mein jagah gher leta hai
-    show_banners = not (search or category_id or store_type_id or cuisine_id or open_only or free_only or deals_only or rating_min or fav_only or mart_only)
+    show_banners = not (search or category_id or store_type_id or cuisine_id or open_only or free_only or deals_only or rating_min or fav_only)
 
     return render(request, 'customer_portal/stores.html', {
         'banners': banners if (show_banners and shop_flag('shop_banners_enabled')) else [],
@@ -257,8 +253,6 @@ def store_list(request):
         'open_only': open_only,
         'free_only': free_only,
         'deals_only': deals_only,
-        'mart_only': mart_only,
-        'mart_count': mart_count,
         'rating_min': rating_min,
         'fav_only': fav_only,
         'favorites_on': favorites_on,

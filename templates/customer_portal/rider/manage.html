@@ -38,14 +38,7 @@
             <input type="hidden" name="action" value="add">
             <div class="mb-2"><input class="form-control" name="name" placeholder="Name" required></div>
             <div class="mb-2"><input class="form-control" name="phone" placeholder="Phone (03XX XXXXXXX) — this is the login" required></div>
-            <div class="mb-2">
-              <select class="form-select" name="rider_kind" id="rkind" onchange="document.getElementById('bvno').style.display=this.value==='big_vehicle'?'block':'none'">
-                <option value="bike">🏍️ Bike rider</option>
-                <option value="big_vehicle">🚚 Bari gari (Suzuki / Pickup / Loader)</option>
-              </select>
-            </div>
-            <div class="mb-2"><input class="form-control" name="vehicle" placeholder="Vehicle: bike, or Suzuki / Pickup / Loader (optional)"></div>
-            <div class="mb-2" id="bvno" style="display:none"><input class="form-control" name="vehicle_no" maxlength="30" placeholder="Vehicle number (e.g. LEA-1234)"></div>
+            <div class="mb-2"><input class="form-control" name="vehicle" placeholder="Vehicle / bike (optional)"></div>
             <div class="mb-2"><input class="form-control" name="fee" value="50" placeholder="Earning per delivery (Rs.)" required></div>
             <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password (at least 6 characters)" minlength="6" required></div>
             <button class="btn btn-primary w-100" type="submit">Create rider</button>
@@ -76,7 +69,7 @@
                   {% elif r.live %}<span class="badge bg-success">🟢 Online</span>
                   {% else %}<span class="badge bg-light text-dark border">⚫ Offline</span>{% endif %}
                   <a href="{% url 'rider_detail' r.id %}" class="fw-semibold">{{ r.name }}</a><br>
-                  <small class="text-muted">{% if r.rider_kind == 'big_vehicle' %}🚚 Big vehicle · {% endif %}{{ r.phone }}{% if r.vehicle %} · {{ r.vehicle }}{% endif %}{% if r.vehicle_no %} · {{ r.vehicle_no }}{% endif %} · Rs. {{ r.per_delivery_fee|floatformat:0 }}/delivery</small>
+                  <small class="text-muted">{{ r.phone }}{% if r.vehicle %} · {{ r.vehicle }}{% endif %} · Rs. {{ r.per_delivery_fee|floatformat:0 }}/delivery</small>
                 </td>
                 <td class="text-center">{{ r.open_count }}</td>
                 <td class="text-center">{{ r.bal.deliveries }}</td>

@@ -96,8 +96,6 @@ def rate_order(request, order_id):
 
     di = DeliveryInfo.objects.filter(sale_order=order, status='delivered', rider__isnull=False).select_related('rider').first()
     rider = di.rider if di else None
-    if rider is None and order.big_vehicle_state == 'approved' and order.big_vehicle_driver_id:
-        rider = order.big_vehicle_driver          # bari gari ka driver bhi rate ho sakta hai
 
     vendor_stars = _stars(request.POST.get('vendor_rating')) if order.vendor_id else None
     rider_stars = _stars(request.POST.get('rider_rating')) if rider else None

@@ -86,11 +86,6 @@ if ('serviceWorker' in navigator) {
 /* Install button (Android/Chrome/Edge) + iPhone hint. */
 (function () {
   var deferred = null, KEY = 'pwa_install_dismissed';
-  var ur = /^ur/i.test(document.documentElement.lang || '');
-  var T = ur ? {android: '\uD83D\uDCF2 ایپ انسٹال کریں — ہوم اسکرین سے سیدھی کھلے گی', ios: 'آئی فون: شیئر \u2B06\uFE0F دبائیں، پھر <b>Add to Home Screen</b>', btn: 'انسٹال'}
-               : {android: '\uD83D\uDCF2 Install the app \u2014 opens straight from your home screen', ios: 'iPhone: tap Share \u2B06\uFE0F then <b>Add to Home Screen</b>', btn: 'Install'};
-  function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream; }
-  function entries(show) { document.querySelectorAll('[data-pwa-install]').forEach(function (b) { b.hidden = !show; }); }
   function standalone() {
     return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   }
@@ -98,11 +93,11 @@ if ('serviceWorker' in navigator) {
     if (document.getElementById('pwa-install-bar')) return;
     var b = document.createElement('div');
     b.id = 'pwa-install-bar';
-    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(12px + var(--pwa-lift,0px) + env(safe-area-inset-bottom,0px));z-index:99999;background:#0d6efd;color:#fff;' +
+    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0d6efd;color:#fff;' +
       'border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);' +
       'font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto';
     b.innerHTML = '<span style="flex:1">' + html + '</span>' +
-      (onclick ? '<button id="pwa-yes" style="background:#fff;color:#0d6efd;border:0;border-radius:8px;padding:8px 14px;font-weight:600">' + T.btn + '</button>' : '') +
+      (onclick ? '<button id="pwa-yes" style="background:#fff;color:#0d6efd;border:0;border-radius:8px;padding:8px 14px;font-weight:600">Install</button>' : '') +
       '<button id="pwa-no" aria-label="Close" style="background:transparent;color:#fff;border:0;font-size:20px;line-height:1">&times;</button>';
     document.body.appendChild(b);
     document.getElementById('pwa-no').onclick = function () {
@@ -116,38 +111,25 @@ if ('serviceWorker' in navigator) {
   }
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault(); deferred = e;
-    if (standalone()) return;
-    entries(true);
-    if (window.SHOP_APK_URL) return;   // shop par APK button hai, PWA bar nahi
-    if (dismissed()) return;
+    if (standalone() || dismissed()) return;
     var show = function () {
-      bar(T.android, function () {
-        deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; entries(false); });
+      bar('📲 App install karein — home screen se seedha khulegi', function () {
+        deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; });
       });
     };
     if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
   });
   window.addEventListener('appinstalled', function () {
     var b = document.getElementById('pwa-install-bar'); if (b) b.remove();
-    entries(false);
-  });
-  document.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest ? e.target.closest('[data-pwa-install]') : null;
-    if (!b) return;
-    e.preventDefault();
-    if (window.shopMenuClose) window.shopMenuClose();
-    if (deferred) { deferred.prompt(); deferred.userChoice.finally(function () { deferred = null; entries(false); }); }
-    else if (isIos()) { var old = document.getElementById('pwa-install-bar'); if (old) old.remove(); bar(T.ios, null); }
   });
   document.addEventListener('DOMContentLoaded', function () {
-    var ios = isIos();
-    if (ios && !standalone()) entries(true);
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
     if (ios && !standalone() && !dismissed()) {
-      bar(T.ios, null);
+      bar('iPhone: Share ⬆️ dabayein phir <b>Add to Home Screen</b>', null);
     }
   });
 })();
 </script>
 <script src="{% static 'js/pwa_speed.js' %}" defer></script>
-<script src="{% static 'js/pwa_ui.js' %}?v=3" defer></script>
+<script src="{% static 'js/pwa_ui.js' %}" defer></script>
 <script src="{% static 'js/pwa_badge.js' %}" defer></script>

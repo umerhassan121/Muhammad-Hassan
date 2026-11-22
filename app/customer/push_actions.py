@@ -113,8 +113,7 @@ def _rider_action(user, order_id, action):
         return _fail('You already have %d orders.' % MAX_ACTIVE_ORDERS)
     try:
         with transaction.atomic():
-            order = (SaleOrder.objects.select_for_update().filter(pk=order_id, status='ready')
-                     .exclude(big_vehicle_state__in=['proposed', 'approved']).first())
+            order = SaleOrder.objects.select_for_update().filter(pk=order_id, status='ready').first()
             if not order:
                 raise store_orders.OrderActionError('This order is no longer available.')
             if not dispatch.can_take(order, rider, MAX_ACTIVE_ORDERS, ACTIVE_STATUSES):
@@ -214,7 +213,7 @@ def push_offer_to_rider(order, rider_id):
         from ..models import RiderProfile
         from .. import push_service
         from . import store_orders
-        rider = RiderProfile.objects.filter(pk=rider_id, is_active=True, is_online=True, approval_status='approved', rider_kind='bike').select_related('user').first()
+        rider = RiderProfile.objects.filter(pk=rider_id, is_active=True, is_online=True, approval_status='approved').select_related('user').first()
         if not rider or not rider.user_id:
             return
         push_service.send_push_after_commit(

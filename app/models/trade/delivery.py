@@ -110,12 +110,7 @@ class RiderProfile(models.Model):
     )
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20, unique=True)
-    vehicle = models.CharField(max_length=50, blank=True, default='',
-                               help_text="Bike ke liye optional; bari gari ke liye gari ki qism (Suzuki, Pickup, Loader...)")
-    # Bari gari wale driver bhi isi login/online system se chalte hain, lekin bike orders ki dispatch mein nahi aate
-    KINDS = [('bike', 'Bike rider'), ('big_vehicle', 'Bari gari (Suzuki / Pickup / Loader...)')]
-    rider_kind = models.CharField(max_length=12, choices=KINDS, default='bike', db_index=True)
-    vehicle_no = models.CharField(max_length=30, blank=True, default='', help_text="Gari ka number (bari gari ke liye)")
+    vehicle = models.CharField(max_length=50, blank=True, default='')
     is_active = models.BooleanField(default=True)
     is_online = models.BooleanField(default=False, help_text="Rider abhi orders lene ke liye tayyar hai")
     per_delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=50,
@@ -135,10 +130,6 @@ class RiderProfile(models.Model):
     class Meta:
         verbose_name_plural = "🏍️ Riders"
         ordering = ['name']
-
-    @property
-    def is_big_vehicle(self):
-        return self.rider_kind == 'big_vehicle'
 
     def __str__(self):
         return f"{self.name} ({self.phone})"

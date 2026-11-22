@@ -10,8 +10,6 @@ from app.customer import views_product_options
 from app.customer import views_vendor_menu
 from app.customer import views_vendor_performance
 from app.customer import views_favorites
-from app.customer import views_addresses
-from app.customer import views_big_vehicle
 from app.customer import views_order_chat
 from app.customer import views_vendor_tools
 from app.customer import views_coupons
@@ -48,7 +46,6 @@ from app.customer import views_schedule
 from app.customer import views_push
 from app.customer import push_actions
 from app.customer import views_stores
-from app.customer import views_mart
 from app.security import views_admin_otp
 from app.security import views_security
 from app.security import views_totp
@@ -1169,8 +1166,6 @@ urlpatterns = [
      
      path('shop/', views_customer_portal.shop_home, name='shop_home'),
      path('shop/product/<int:pk>/', views_customer_portal.product_detail, name='shop_product_detail'),
-     path('shop/mart/', views_mart.mart_home, name='mart_home'),
-     path('shop/mart/substitution/', views_mart.mart_substitution, name='mart_substitution'),
      path('shop/stores/', views_stores.store_list, name='store_list'),
      path('shop/stores/<int:pk>/', views_stores.store_detail, name='store_detail'),
      path('shop/cart/', views_customer_portal.cart_view, name='cart_view'),
@@ -1185,7 +1180,6 @@ urlpatterns = [
      # ---- Support & trust pages ----
      path('shop/faq/', views_info_pages.faq, name='shop_faq'),
      path('shop/help/', views_info_pages.help_center, name='shop_help'),
-     path('shop/app/download/', views_info_pages.shop_app_download, name='shop_app_download'),
      path('shop/about/', views_info_pages.about_us, name='shop_about'),
      path('shop/terms/', views_info_pages.terms, name='shop_terms'),
      path('shop/privacy/', views_info_pages.privacy, name='shop_privacy'),
@@ -1225,10 +1219,6 @@ urlpatterns = [
      path('shop/pro/wallet/', views_offers.pro_buy_wallet, name='pro_buy_wallet'),
      path('shop/wallet/points/', views_offers.loyalty_redeem, name='loyalty_redeem'),
      path('shop/favourites/', views_favorites.favorites_page, name='favorites_page'),
-     path('shop/addresses/', views_addresses.my_addresses, name='my_addresses'),
-     path('shop/addresses/save/', views_addresses.address_save, name='address_save'),
-     path('shop/addresses/<int:pk>/default/', views_addresses.address_set_default, name='address_set_default'),
-     path('shop/addresses/<int:pk>/delete/', views_addresses.address_delete, name='address_delete'),
      path('shop/favourites/store/<int:pk>/toggle/', views_favorites.favorite_store_toggle, name='favorite_store_toggle'),
      path('shop/favourites/item/<int:pk>/toggle/', views_favorites.wishlist_toggle, name='wishlist_toggle'),
      path('shop/favourites/item/<int:pk>/alert/<str:kind>/', views_favorites.wishlist_alert_toggle, name='wishlist_alert_toggle'),
@@ -1241,8 +1231,6 @@ urlpatterns = [
      path('shop/vendor/pos-api/menu/', views_vendor_pos.pos_menu, name='pos_menu'),
      path('shop/vendor/pos-api/menu/<int:pk>/availability/', views_vendor_pos.pos_product_availability, name='pos_product_availability'),
      path('shop/vendor/orders/<int:pk>/assign-rider/', views_rider_portal.vendor_assign_rider, name='vendor_assign_rider'),
-     path('shop/vendor/orders/<int:pk>/big-vehicle/', views_big_vehicle.vendor_big_vehicle, name='vendor_big_vehicle'),
-     path('shop/vendor/orders/<int:pk>/item/', views_vendor_portal.vendor_order_item, name='vendor_order_item'),
      path('shop/vendor/orders/<int:pk>/<str:action>/', views_vendor_portal.vendor_order_action, name='vendor_order_action'),
      path('shop/vendor/api/orders-poll/', views_vendor_portal.vendor_orders_poll, name='vendor_orders_poll'),
      # ---- Rider portal (Talabat jaisa rider) ----
@@ -1313,9 +1301,6 @@ urlpatterns = [
      path('shop/my-orders/', views_customer_portal.my_orders, name='my_orders'),
      path('shop/order/<int:order_id>/', views_customer_portal.order_detail_customer, name='order_detail_customer'),
      path('shop/order/<int:order_id>/cancel/', views_customer_portal.cancel_order_customer, name='cancel_order_customer'),
-     path('shop/order/<int:order_id>/big-vehicle/', views_big_vehicle.big_vehicle_respond, name='big_vehicle_respond'),
-     path('shop/rider/big-vehicle/<int:pk>/respond/', views_rider_portal.rider_big_vehicle_respond, name='rider_big_vehicle_respond'),
-     path('shop/rider/big-vehicle/<int:pk>/delivered/', views_rider_portal.rider_big_vehicle_delivered, name='rider_big_vehicle_delivered'),
      path('shop/order/<int:order_id>/rate/', views_reviews.rate_order, name='rate_order'),
      path('shop/order/<int:order_id>/tip/', views_reviews.tip_rider, name='tip_rider'),
      path('shop/vendor/reviews/', views_reviews.vendor_reviews, name='vendor_reviews'),
@@ -1364,7 +1349,6 @@ urlpatterns = [
     path('shop/api/otp-remaining/', views_customer_portal.get_otp_remaining_api, name='get_otp_remaining_api'),
     path('shop/buy-now/<int:product_id>/', views_customer_portal.buy_now, name='buy_now'),
     path('shop/update-address/', views_customer_portal.update_delivery_address, name='update_delivery_address'),
-    path('shop/order/<int:order_id>/address/', views_customer_portal.change_order_address, name='change_order_address'),
     path('shop/order-chat/unread/', views_order_chat.order_chat_unread, name='order_chat_unread'),
     path('shop/order-chat/<int:order_id>/<str:channel>/messages/', views_order_chat.order_chat_messages, name='order_chat_messages'),
     path('shop/order-chat/<int:order_id>/<str:channel>/send/', views_order_chat.order_chat_send, name='order_chat_send'),

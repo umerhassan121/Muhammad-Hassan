@@ -421,14 +421,6 @@ CUSTOMER_TAG = [
     ('Scheduled for {}.', 'آرڈر {} کے لیے شیڈول ہو گیا۔'),
     ('left', 'باقی'),
     ('(Time is up, checking...)', '(وقت ختم، چیک ہو رہا ہے...)'),
-    # ---- Part 9: home polish (trust row, Install app) ----
-    ('Cash on delivery', 'کیش آن ڈیلیوری'),
-    ('WhatsApp support', 'واٹس ایپ سپورٹ'),
-    ('Install app', 'ایپ انسٹال کریں'),
-    ('Add to home screen', 'ہوم اسکرین پر شامل کریں'),
-    # ---- Part 10: tab bar / Quick access ----
-    ('Quick access', 'فوری رسائی'),
-    ('Order on the way', 'آرڈر راستے میں ہے'),
 ]
 
 CUSTOMER_CATALOG = [

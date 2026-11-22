@@ -63,19 +63,16 @@ class TabTests(SimpleTestCase):
         self.assertEqual(_labels(tabs), ['Home', 'Stores', 'Cart', 'Account'])
 
     def test_stores_off_gives_four_tabs(self):
-        with mock.patch.object(sm, 'active_orders_count', return_value=0), \
-                mock.patch.object(sm, 'orders_on_the_way', return_value=False):
+        with mock.patch.object(sm, 'active_orders_count', return_value=0):
             tabs = sm.build_tabs(_req('shop_home', authed=True, customer=True), {'shop_stores_enabled': False})
         self.assertEqual(_labels(tabs), ['Home', 'Cart', 'Orders', 'Account'])
 
     def test_customer_has_orders_with_active_badge(self):
-        with mock.patch.object(sm, 'active_orders_count', return_value=2), \
-                mock.patch.object(sm, 'orders_on_the_way', return_value=True):
+        with mock.patch.object(sm, 'active_orders_count', return_value=2):
             tabs = sm.build_tabs(_req('my_orders', authed=True, customer=True), {})
         self.assertEqual(_labels(tabs), ['Home', 'Stores', 'Cart', 'Orders', 'Account'])
         orders = [t for t in tabs if t['key'] == 'orders'][0]
         self.assertEqual(orders['badge'], 2)
-        self.assertTrue(orders['live'])
         self.assertTrue(orders['active'])
 
     def test_cart_is_in_the_middle_with_badge(self):

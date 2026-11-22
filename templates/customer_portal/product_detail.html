@@ -15,13 +15,13 @@
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb pdx1">
             <li class="breadcrumb-item">
-                <a href="{% url 'shop_home' %}" style="color: #d9480f; text-decoration: none;">
+                <a href="{% url 'shop_home' %}" style="color: #2563eb; text-decoration: none;">
                     <i class="bi bi-shop"></i> Shop
                 </a>
             </li>
             {% if product.category %}
             <li class="breadcrumb-item">
-                <a href="{% url 'shop_home' %}?category={{ product.category.id }}" style="color: #d9480f; text-decoration: none;">
+                <a href="{% url 'shop_home' %}?category={{ product.category.id }}" style="color: #2563eb; text-decoration: none;">
                     {{ product.category.name }}
                 </a>
             </li>
@@ -196,7 +196,7 @@
                     {% else %}
                     <div class="pd-out"><i class="bi bi-x-circle"></i> Out of stock</div>
                     {% if favorites_on and SHOP.shop_wishlist_alerts_enabled %}
-                    <button type="button" id="pdNotify" class="fv-chip {% if is_wished %}on{% endif %}" style="margin-top:8px;padding:9px 16px;font-size:14px;border:1.5px solid #6366f1;background:#fcefe4;color:#4338ca;border-radius:999px;font-weight:700;cursor:pointer;"
+                    <button type="button" id="pdNotify" class="fv-chip {% if is_wished %}on{% endif %}" style="margin-top:8px;padding:9px 16px;font-size:14px;border:1.5px solid #6366f1;background:#eef2ff;color:#4338ca;border-radius:999px;font-weight:700;cursor:pointer;"
                             {% if is_wished %}disabled{% endif %}
                             onclick="notifyWhenBack(this,'{% url 'wishlist_toggle' product.pk %}')">
                         <i class="bi bi-bell-fill"></i> <span>{% if is_wished %}{% t "We will notify you when it is back" %}{% else %}{% t "Notify me when it is back" %}{% endif %}</span></button>
@@ -384,8 +384,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 (function(){
     var bar=document.getElementById('pdBar'); if(!bar) return;
-    /* Bar ko <body> mein le jao: koi parent (transform/overflow) fixed bar ko tang ya dhundla na kare */
-    if(bar.parentNode!==document.body && window.matchMedia('(max-width: 991.98px)').matches){ document.body.appendChild(bar); }
     var pid=parseInt(bar.dataset.productId,10), price=parseFloat(bar.dataset.price)||0, max=parseInt(bar.dataset.max,10)||1, qty=1;
     var qEl=document.getElementById('pdQty'), tEl=document.getElementById('pdTotal'), addBtn=document.getElementById('pdAdd'),
         addTxt=document.getElementById('pdAddText'), note=document.getElementById('pdNote'), noteTxt=document.getElementById('pdNoteText');

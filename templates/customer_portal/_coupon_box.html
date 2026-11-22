@@ -1,7 +1,7 @@
 {% load portal_i18n %}
 {% comment %}Promo code box. Context: coupons_on, coupon, coupon_error, coupon_code, discount. Include with next="cart" or next="checkout".{% endcomment %}
 {% if coupons_on %}
-<div class="coupon-box" style="background:#fff8f1;border:1.5px dashed #f59e0b;border-radius:14px;padding:12px 14px;margin:12px 0;">
+<div class="coupon-box" style="background:#f5f3ff;border:1.5px dashed #7c3aed;border-radius:14px;padding:12px 14px;margin:12px 0;">
   {% if coupon %}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <div>
@@ -18,7 +18,7 @@
       <input type="hidden" name="next" value="{{ next|default:'cart' }}">
       <input type="text" name="code" value="{{ coupon_code }}" maxlength="30" autocomplete="off" placeholder="Promo code"
              style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #ddd6fe;border-radius:10px;text-transform:uppercase;">
-      <button type="submit" class="btn btn-sm" style="background:#f59e0b;color:#fff;border-radius:10px;padding:0 16px;">Apply</button>
+      <button type="submit" class="btn btn-sm" style="background:#7c3aed;color:#fff;border-radius:10px;padding:0 16px;">Apply</button>
     </form>
     {% if coupon_error %}
       <div class="text-danger small mt-2">{{ coupon_error }}</div>

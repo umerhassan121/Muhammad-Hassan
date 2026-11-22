@@ -28,7 +28,7 @@
     border-radius: 14px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    border-left: 4px solid #d9480f;
+    border-left: 4px solid #2563eb;
     transition: all 0.2s;
 }
 .order-card:hover {
@@ -37,7 +37,7 @@
 }
 .order-number {
     font-weight: 900;
-    color: #d9480f;
+    color: #2563eb;
     font-size: 1.1rem;
 }
 .order-date {
@@ -60,16 +60,16 @@
     }
 }
 
-.mo-hero { background: linear-gradient(135deg, #1c1917 0%, #d9480f 52%, #f59e0b 100%); color: #fff; border-radius: 24px; padding: 20px 22px;
+.mo-hero { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 52%, #7c3aed 100%); color: #fff; border-radius: 24px; padding: 20px 22px;
            display: flex; justify-content: space-between; align-items: center; gap: 12px; position: relative; overflow: hidden; }
 .mo-hero::after { content: ""; position: absolute; right: -40px; top: -50px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,.14); }
 .mo-hero h2 { font-size: 1.4rem; } .mo-hero p { opacity: .9; font-size: .9rem; }
-.mo-hero-btn { border-radius: 22px; font-weight: 700; color: #d9480f; position: relative; z-index: 1; }
+.mo-hero-btn { border-radius: 22px; font-weight: 700; color: #2563eb; position: relative; z-index: 1; }
 .order-card, .stat-card { border-radius: 18px !important; }
 
 
 /* ===== Step 6: pehle inline style="" tha, ab class (dohri class = pehle jaisa zor) ===== */
-.mox1.mox1{border-color: #d9480f;}
+.mox1.mox1{border-color: #2563eb;}
 .mox2.mox2{border-color: #f2994a;}
 .mox3.mox3{border-color: #10b981;}
 .mox4.mox4{border-color: #ef4444;}

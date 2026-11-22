@@ -59,7 +59,7 @@ def order_info(di):
         'store_addr': getattr(vendor, 'address', '') or '',
         'store_phone': getattr(vendor, 'contact_number', '') or '',
         'cust_name': getattr(cust, 'name', '') or '', 'drop_ll': _ll(o.delivery_lat, o.delivery_lng),
-        'cust_addr': o.ship_address(), 'cust_phone': phone,
+        'cust_addr': getattr(cust, 'address', '') or '', 'cust_phone': phone,
         'items': sum(1 for _ in o.items.all()),
         'is_cod': is_cod, 'cash': float(store_orders.order_cash_due(o)) if is_cod else 0.0,
     }

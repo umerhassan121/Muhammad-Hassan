@@ -45,30 +45,12 @@ class DeliveryAreaAdmin(admin.ModelAdmin):
 
 @admin.register(VendorProfile, site=admin.site)
 class VendorProfileAdmin(admin.ModelAdmin):
-    list_display = ('business_name', 'vendor', 'user', 'city', 'store_category', 'is_approved', 'is_dark_store', 'store_status', 'created_at', 'last_login_at')
-    list_filter = ('is_approved', 'is_dark_store', 'store_status', 'store_category', 'cuisines', 'city')
+    list_display = ('business_name', 'vendor', 'user', 'city', 'store_category', 'is_approved', 'store_status', 'created_at', 'last_login_at')
+    list_filter = ('is_approved', 'store_status', 'store_category', 'cuisines', 'city')
     filter_horizontal = ('cuisines',)
     search_fields = ('business_name', 'vendor__name', 'vendor__contact_number', 'user__email')
     readonly_fields = ('vendor', 'user', 'approved_at', 'last_login_at', 'created_at')
-    actions = ['approve_accounts', 'suspend_accounts', 'make_dark_store', 'remove_dark_store']
-
-    @admin.action(description='⚡ Dark store (Mart) banao: platform riders, auto-accept, 10-20 min')
-    def make_dark_store(self, request, queryset):
-        n = 0
-        for p in queryset:
-            p.is_dark_store = True
-            if p.delivery_time_min == 30 and p.delivery_time_max == 45:      # abhi default hain to tez wale
-                p.delivery_time_min, p.delivery_time_max = 10, 20
-            p.save()
-            n += 1
-        self.message_user(request, f'{n} store(s) ab dark store (Mart) hain. Store ki lat/lng zaroor bharein, '
-                                   'warna rider ki dispatch nazdeeki se nahi hogi.', messages.SUCCESS)
-
-    @admin.action(description='Dark store hata do (aam store)')
-    def remove_dark_store(self, request, queryset):
-        n = queryset.filter(is_dark_store=True).update(is_dark_store=False)
-        self.message_user(request, f'{n} store(s) aam store ban gaye (delivery / auto-accept settings jaisi hain waisi rahengi).',
-                          messages.WARNING)
+    actions = ['approve_accounts', 'suspend_accounts']
 
     PROMO_FIELDS = {'commission_percent', 'commission_promo_percent', 'commission_promo_until'}
 

@@ -1181,7 +1181,7 @@ def vendor_orders(request):
     counts = {key: base.filter(status__in=statuses).count() for key, (_, statuses) in ORDER_TABS.items()}
 
     qs = (base.filter(status__in=ORDER_TABS[tab][1])
-          .select_related('customer', 'big_vehicle_driver').prefetch_related('items__product')
+          .select_related('customer').prefetch_related('items__product')
           .order_by('order_date' if tab == 'new' else '-order_date')[:100])
 
     # Privacy (Talabat jaisa): vendor ko customer ka phone/address sirf tab tak jab tak zaroorat ho.
@@ -1193,14 +1193,6 @@ def vendor_orders(request):
     orders = []
     for o in qs:
         items = list(o.items.all())
-        if o.status in ('pending', 'confirmed', 'processing'):
-            from . import order_item_changes as _oic
-            for _it in items:
-                try:
-                    _it.cands = _oic.candidates(_it)
-                except Exception:
-                    logger.exception('vendor_orders candidates')
-                    _it.cands = []
         delivery = DeliveryInfo.objects.filter(sale_order=o).select_related('rider').first()
         is_final = o.status in final_statuses
         try:
@@ -1217,9 +1209,6 @@ def vendor_orders(request):
         orders.append({
             'order': o,
             'items': items,
-            'can_edit_items': o.status in ('pending', 'confirmed', 'processing') and len(items) > 0,
-            'sub_text': next((ln.split(':', 1)[1].strip() for ln in (o.notes or '').splitlines()
-                              if ln.startswith('If out of stock:')), ''),
             'subtotal': o.total_after_discount(),
             'total': store_orders.order_payable_total(o),
             'cash_due': store_orders.order_cash_due(o),
@@ -1235,8 +1224,7 @@ def vendor_orders(request):
         })
 
     return render(request, 'customer_portal/vendor/orders.html', {
-        'riders': list(RiderProfile.objects.filter(is_active=True, approval_status='approved', rider_kind='bike')),
-        'big_vehicles': store_orders.big_vehicle_choices(getattr(profile, 'lat', None), getattr(profile, 'lng', None)),
+        'riders': list(RiderProfile.objects.filter(is_active=True, approval_status='approved')),
         'page_title': 'Orders',
         'profile': profile,
         'orders': orders,
@@ -1297,36 +1285,6 @@ def vendor_order_action(request, pk, action):
     # accept ke baad order "Chal rahe" mein chala jata hai
     next_tab = {'accept': 'active', 'ready': 'active', 'reject': 'done', 'delivered': 'done'}[action]
     return redirect(f"{reverse('vendor_orders')}?tab={next_tab}")
-
-
-@vendor_login_required
-@flag_required('vendor_can_manage_orders')
-@require_POST
-def vendor_order_item(request, pk):
-    """Out-of-stock item: replace ya remove. POST: item_id, change=replace|remove, product_id (replace par)."""
-    from . import order_item_changes as oic
-    profile = get_vendor_profile(request.user)
-    back = f"{reverse('vendor_orders')}?tab={request.POST.get('tab', 'new')}"
-    if not profile.is_approved:
-        messages.error(request, '❌ You can handle orders only after your account is approved.')
-        return redirect(back)
-    order = get_object_or_404(SaleOrder, pk=pk, vendor=profile.vendor)
-    try:
-        item_id = int(request.POST.get('item_id', ''))
-        change = request.POST.get('change', '')
-        if change == 'remove':
-            oic.remove_item(order, item_id, profile.vendor, request.user)
-            messages.success(request, f'✅ Item removed from order #{order.order_no}. The customer has been told.')
-        elif change == 'replace':
-            oic.replace_item(order, item_id, int(request.POST.get('product_id', '')), profile.vendor, request.user)
-            messages.success(request, f'✅ Item replaced in order #{order.order_no}. The customer has been told.')
-        else:
-            raise oic.OrderChangeError('Choose replace or remove.')
-    except ValueError:
-        messages.error(request, '❌ Choose an item and a replacement.')
-    except oic.OrderChangeError as exc:
-        messages.error(request, f'❌ {exc}')
-    return redirect(back)
 
 
 @vendor_login_required

@@ -85,7 +85,7 @@ def order_payload(order, items, delivery=None):
         'customer': {
             'name': customer.name,
             'phone': (customer.contact_number or '') if show_contact else '',
-            'address': order.ship_address() if show_address else '',
+            'address': (customer.address or '') if show_address else '',
         },
         'items': [{
             'name': it.product.name,

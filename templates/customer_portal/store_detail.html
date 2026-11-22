@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block title %}{{ store.business_name }} - {{ company_name }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_store_detail.css' %}?v=2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/shop_store_detail.css' %}?v=1">{% endblock %}
 
 {% block content %}
 
@@ -21,7 +21,6 @@
         {% if favorites_on %}<button type="button" class="fav-btn {% if is_fav %}on{% endif %}" style="float:right;margin-left:8px;" aria-label="Favourite store"
                 onclick="toggleFav(this,'{% url 'favorite_store_toggle' store.pk %}',false)"><i class="bi {% if is_fav %}bi-heart-fill{% else %}bi-heart{% endif %}"></i></button>{% endif %}
         <div class="sd-name">{{ store.business_name }}
-          {% if store.is_dark_store %}<span class="sd-badge" style="background:#fff3bf;color:#7c5a00;">⚡ Mart</span>{% endif %}
           <span class="sd-badge sd-{{ status }}">{% if status == 'open' %}Open{% elif status == 'busy' %}Busy{% else %}Closed{% endif %}</span>
         </div>
         <div class="sd-sub">{% if store.store_category %}<b>{{ store.store_category.icon }} {{ store.store_category.name }}</b>{% if store_tags or store.city %} &middot; {% endif %}{% endif %}{% if store_tags %}{{ store_tags|join:" &bull; " }}{% endif %}{% if store.city %}{% if store_tags %} &middot; {% endif %}<i class="bi bi-geo-alt"></i> {{ store.city }}{% endif %}</div>
@@ -55,6 +54,7 @@
   <form class="sd-search" method="get">
     {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
     <input type="text" name="q" id="sdQ" value="{{ search }}" placeholder="Search in this store...">
+    <button type="button" class="voice-lang-btn sdx9" data-voice-lang-btn onclick="toggleVoiceLang()" title="Voice language: English / اردو" aria-label="Voice language">EN</button>
     <button type="button" class="st-mic sdx10" id="sdMic" onclick="toggleVoiceSearch('sdQ','sdMic',true)" title="Voice Search" aria-label="Voice Search"><i class="bi bi-mic-fill"></i></button>
     <button type="submit" aria-label="Search"><i class="bi bi-search"></i></button>
   </form>

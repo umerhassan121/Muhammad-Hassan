@@ -3,7 +3,6 @@
 Edit freely; new messages: add one line here (the middleware picks it up on restart)."""
 
 CATALOG = [
-    ('What do you <em>need</em> today?', 'آج آپ کو <em>کیا چاہیے</em>؟'),
     ('Coupon removed.', 'کوپن ہٹا دیا گیا۔'),
     ('Too many attempts. Please try again later.', 'بہت زیادہ کوششیں ہو گئیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔'),
     ('Enter your full name', 'اپنا پورا نام لکھیں'),
@@ -414,26 +413,3 @@ CATALOG = CATALOG + RIDER_CATALOG
 from .customer_step7 import CUSTOMER_TAG, CUSTOMER_CATALOG  # noqa: E402
 TAG_ONLY = TAG_ONLY + CUSTOMER_TAG
 CATALOG = CATALOG + CUSTOMER_CATALOG
-
-
-# Bari gari (big vehicle) fare messages
-BIG_VEHICLE_CATALOG = [
-    ('Enter the fare as a number only.', 'کرایہ صرف نمبر میں لکھیں۔'),
-    ('Enter the vehicle type (for example Suzuki, Pickup, Loader).', 'گاڑی کی قسم لکھیں (جیسے سوزوکی، پک اپ، لوڈر)۔'),
-    ('The fare must be more than 0 and not more than Rs. {}', 'کرایہ 0 سے زیادہ اور زیادہ سے زیادہ Rs. {} ہونا چاہیے۔'),
-    ('You can send at most {} big vehicle fares for one order.', 'ایک آرڈر پر آپ زیادہ سے زیادہ {} بار بڑی گاڑی کا کرایہ بھیج سکتے ہیں۔'),
-    ('You can send the big vehicle fare only after accepting the order.', 'بڑی گاڑی کا کرایہ آرڈر قبول کرنے کے بعد ہی بھیج سکتے ہیں۔'),
-    ('The customer has already approved this fare.', 'کسٹمر یہ کرایہ پہلے ہی منظور کر چکا ہے۔'),
-    ('There is no fare waiting for approval right now.', 'اس وقت منظوری کے لیے کوئی کرایہ نہیں ہے۔'),
-    ('Enter the vehicle details after the fare is approved.', 'کرایہ منظور ہونے کے بعد گاڑی کی تفصیل لکھیں۔'),
-    ('The customer has not approved the big vehicle fare yet. You can mark the order Ready only after approval.', 'کسٹمر نے بڑی گاڑی کا کرایہ ابھی منظور نہیں کیا۔ منظوری کے بعد ہی آرڈر Ready کر سکتے ہیں۔'),
-    ('Order #{}: vehicle details saved.', 'آرڈر #{}: گاڑی کی تفصیل محفوظ ہو گئی۔'),
-    ('Order #{}: fare sent to the customer. Waiting for their approval.', 'آرڈر #{}: کرایہ کسٹمر کو بھیج دیا گیا۔ ان کی منظوری کا انتظار ہے۔'),
-    ('Could not save the fare. Please try again.', 'کرایہ محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔'),
-    ('The time to respond has passed, so the order was cancelled.', 'جواب کا وقت ختم ہو گیا، اس لیے آرڈر منسوخ ہو گیا۔'),
-    ('Fare approved. New total Rs. {}. Cash on delivery: Rs. {}.', 'کرایہ منظور ہو گیا۔ نیا ٹوٹل Rs. {}۔ ڈیلیوری پر کیش: Rs. {}۔'),
-    ('Fare approved. New total Rs. {}.', 'کرایہ منظور ہو گیا۔ نیا ٹوٹل Rs. {}۔'),
-    ('The order has been cancelled.', 'آرڈر منسوخ کر دیا گیا۔'),
-    ('Could not save your response. Please try again.', 'آپ کا جواب محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔'),
-]
-CATALOG = CATALOG + BIG_VEHICLE_CATALOG

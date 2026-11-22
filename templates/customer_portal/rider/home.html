@@ -34,44 +34,6 @@
   </div>
   {% endif %}
 
-  {% if is_big_vehicle %}
-  <h3>🚚 Bari gari jobs ({{ bv_jobs|length }})</h3>
-  {% if not rider.is_online %}
-    <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">⚫</div><div class="r-empty__title">You are offline</div><div class="r-empty__text">Go <b>Online</b> using the switch above so stores can see your vehicle as available.</div></div>
-  {% endif %}
-  {% for j in bv_jobs %}
-  <div class="card">
-    <div class="row"><span class="no">#{{ j.order.order_no }}</span><span class="fee">Rs. {{ j.fee|floatformat:0 }}</span></div>
-    <div class="row"><span class="pill {% if j.approved %}g{% endif %}">{% if j.approved %}✅ Customer approved{% else %}⏳ Waiting for customer{% endif %}</span>{% if j.ready %}<span class="pill g">📦 Ready for pickup</span>{% endif %}</div>
-    {% if j.pending %}
-    <div class="row"><small>The store picked your vehicle. Please accept or reject this job.</small></div>
-    <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}">{% csrf_token %}<input type="hidden" name="choice" value="accept"><button class="hb">✅ Accept job</button></form>
-    <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}" onsubmit="return confirm('Reject this job?');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button class="hb l">Reject</button></form>
-    {% elif j.accepted %}
-    <div class="row"><span class="pill g">👍 You accepted</span></div>
-    {% endif %}
-    <div class="row"><span>📍 <b>{{ j.store }}</b>{% if j.store_addr %}<br><small>{{ j.store_addr }}</small>{% endif %}</span></div>
-    {% if j.map_store %}<a class="hb l" href="{{ j.map_store }}" target="_blank" rel="noopener">🗺️ Store location</a>{% endif %}
-    {% if j.store_phone %}<a class="hb l" href="tel:{{ j.store_phone }}">📞 Call store</a>{% endif %}
-    <div class="row"><span>🏠 {{ j.cust_addr|default:"—" }}</span></div>
-    {% if j.map_cust %}<a class="hb l" href="{{ j.map_cust }}" target="_blank" rel="noopener">🗺️ Customer location</a>{% endif %}
-    {% if j.approved %}
-      {% if j.cust_name or j.cust_phone %}<div class="row"><span>👤 {{ j.cust_name }}</span>{% if j.cust_phone %}<a href="tel:{{ j.cust_phone }}">📞 {{ j.cust_phone }}</a>{% endif %}</div>{% endif %}
-      <div class="row"><small>{{ j.items_count }} item(s)</small>{% if j.is_cod %}<span class="pill g">🚚 Customer se kiraya lein: Rs. {{ j.fee|floatformat:0 }}</span>{% else %}<span class="pill">🚚 Kiraya Rs. {{ j.fee|floatformat:0 }}: customer online ada kar chuka</span>{% endif %}</div>
-      {% if j.is_cod and j.items_due %}<div class="row"><small>🏪 Items ka paisa (store ka): Rs. {{ j.items_due|floatformat:0 }}</small></div>{% endif %}
-      {% if j.accepted and j.ready %}
-      <form method="post" action="{% url 'rider_big_vehicle_delivered' j.order.id %}" onsubmit="return confirm('Did you hand the order to the customer{% if j.is_cod %} and take your fare of Rs. {{ j.fee|floatformat:0 }}{% endif %}?');">{% csrf_token %}
-        <button class="hb">🎉 Delivered</button></form>
-      {% elif j.accepted %}
-      <div class="row"><small>Wait for the store to mark the order Ready, then pick it up.</small></div>
-      <form method="post" action="{% url 'rider_big_vehicle_respond' j.order.id %}" onsubmit="return confirm('Cancel your acceptance? The store will pick another vehicle.');">{% csrf_token %}<input type="hidden" name="choice" value="decline"><button class="hb l">I cannot take this job</button></form>
-      {% endif %}
-    {% endif %}
-  </div>
-  {% empty %}
-    {% if rider.is_online %}<div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">🚚</div><div class="r-empty__title">No jobs right now</div><div class="r-empty__text">Stay online. When a store picks your vehicle you will get a notification.</div></div>{% endif %}
-  {% endfor %}
-  {% else %}
   <h3>🛵 {% t "My deliveries ({}/{})" mine|length max_active %}</h3>
   {% if plan %}
   <div class="card batch">
@@ -112,8 +74,6 @@
     {% empty %}
       <div class="card empty r-empty"><div class="r-empty__icon" aria-hidden="true">🔔</div><div class="r-empty__title">{% t "No new orders right now" %}</div><div class="r-empty__text">{% t "Stay online. You will hear a sound when a new order arrives." %}</div></div>
     {% endfor %}
-  {% endif %}
-
   {% endif %}
 
   {% if goal_list %}

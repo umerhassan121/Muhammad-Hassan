@@ -8,7 +8,6 @@
         </a>
         <div class="sd-pb">
           <a class="sd-pn" href="{% url 'shop_product_detail' p.pk %}">{{ p.name }}</a>
-          {% if p.description %}<div class="sd-pd">{{ p.description|striptags|truncatechars:90 }}</div>{% endif %}
           {% if p.unit %}<div class="sd-pc">{{ p.unit.name }}</div>{% endif %}
           {% if p.sched_text %}<div class="sd-pc">&#128338; {{ p.sched_text }}</div>{% endif %}
           <div class="sd-price">{{ currency }} {{ p.final_price|floatformat:0 }}{% if p.old_price %}<span class="sd-old">{{ p.old_price|floatformat:0 }}</span>{% endif %}</div>

@@ -1,5 +1,7 @@
-{# Khali screen (Step 8). Use: {% include 'customer_portal/_empty_state.html' with icon='bi-cart-x' title='Your cart is empty' text='...' cta_url=url cta_label='Browse shop' %}
-   Optional: cta2_url, cta2_label (doosra button), compact=1. title / text / label ko caller {% t %} se bhejta hai ya yahan seedhe English (catalog mein Urdu). #}
+{% comment %}
+  Khali screen (Step 8). Istemal: include "customer_portal/_empty_state.html" with icon, title, text, cta_url, cta_label.
+  Optional: cta2_url, cta2_label (doosra button), compact=1. Matn caller bhejta hai (Urdu browser dictionary se).
+{% endcomment %}
 <div class="s-empty{% if compact %} s-empty--compact{% endif %}" role="status">
   <div class="s-empty__icon"><i class="bi {{ icon|default:'bi-inbox' }}"></i></div>
   {% if title %}<h3 class="s-empty__title">{{ title }}</h3>{% endif %}

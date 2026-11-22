@@ -57,12 +57,9 @@ from ..decorators import customer_login_required
 from ..security.security_utils import safe_error
 from . import store_orders
 from . import drop_pin
-from . import address_change
 from . import cart_options
 from .voice_terms import q_any
 from . import offers
-from . import substitution
-from . import tax
 from . import coupons as coupon_logic
 from ..models.trade.product_options import resolve_selection
 
@@ -713,103 +710,6 @@ def _home_reorder(request, search, category_id, brand_id):
     return home_reorder(request)
 
 
-def _home_nav(request, search, category_id, brand_id, delivery_settings, featured_stores=()):
-    """
-    Home ke top ki rehnumai (Talabat jaisi): store-type tabs, Delivery/Pickup switch,
-    aur chalte order ki Track strip. Koi hissa kharab ho to sirf wahi khali; home nahi tootta.
-    """
-    nav = {'store_types': [], 'active_order': None, 'mode': 'delivery', 'pickup_enabled': False, 'rows': [], 'cuisines': []}
-    if search or category_id or brand_id or request.GET.get('page', '1') not in ('', '1'):
-        return nav
-    # 1) Delivery / Pickup (session['delivery_type'] wahi hai jo checkout padhta hai)
-    try:
-        nav['pickup_enabled'] = bool(delivery_settings.get('pickup_enabled'))
-        if nav['pickup_enabled'] and request.session.get('delivery_type') == 'pickup':
-            nav['mode'] = 'pickup'
-    except Exception as exc:
-        logger.error('Shop home mode error: %s', exc)
-    # 2) Store-type tabs (Restaurants, Grocery...) - sirf wo jin mein live stores hon
-    try:
-        if shop_flag('shop_stores_enabled'):
-            from django.db.models import Count
-            from ..models import StoreCategory, VendorProfile
-            live_vendors = Product.objects.filter(
-                is_active=True, approval_status='approved', vendor__isnull=False
-            ).values('vendor')
-            counts = dict(
-                VendorProfile.objects.filter(is_approved=True, vendor__in=live_vendors)
-                .exclude(store_category__isnull=True).values('store_category')
-                .annotate(n=Count('id')).values_list('store_category', 'n')
-            )
-            types = [t for t in StoreCategory.objects.filter(is_active=True) if counts.get(t.id)]
-            for t in types:
-                t.store_count = counts[t.id]
-            nav['store_types'] = types
-    except Exception as exc:
-        logger.error('Shop home store types error: %s', exc)
-    # 3b) Cuisine icons (Pizza, Burger, Biryani...) - sirf jin mein live stores hon
-    try:
-        if shop_flag('shop_stores_enabled') and shop_flag('shop_cuisines_enabled'):
-            from django.db.models import Count
-            from ..models import Cuisine, VendorProfile
-            live_vendors = Product.objects.filter(
-                is_active=True, approval_status='approved', vendor__isnull=False
-            ).values('vendor')
-            base = VendorProfile.objects.filter(is_approved=True, vendor__in=live_vendors).values('pk')
-            nav['cuisines'] = list(
-                Cuisine.objects.filter(is_active=True, stores__in=base)
-                .annotate(store_count=Count('stores', distinct=True))[:12]
-            )
-    except Exception as exc:
-        logger.error('Shop home cuisines error: %s', exc)
-    # 3) Chalta order (pichhle 3 din ka sab se naya) -> Track strip
-    try:
-        user = getattr(request, 'user', None)
-        if user is not None and user.is_authenticated and hasattr(user, 'customer_profile'):
-            from datetime import timedelta
-            from django.utils import timezone
-            customer = user.customer_profile.customer
-            o = (SaleOrder.objects.filter(
-                    customer=customer,
-                    status__in=['pending', 'confirmed', 'processing', 'ready', 'partially_delivered'],
-                    order_date__gte=timezone.now() - timedelta(days=3))
-                 .order_by('-order_date').first())
-            if o:
-                label = {
-                    'pending': 'Waiting for the store to accept',
-                    'confirmed': 'Order confirmed',
-                    'processing': 'Being prepared',
-                    'ready': 'Ready - on its way',
-                    'partially_delivered': 'Partly delivered',
-                }.get(o.status, 'In progress')
-                if getattr(o, 'big_vehicle_state', '') == 'proposed':
-                    label = 'Big vehicle fare needs your approval'
-                nav['active_order'] = {'id': o.pk, 'no': o.order_no, 'label': label}
-    except Exception as exc:
-        logger.error('Shop home active order error: %s', exc)
-    # 4) Talabat jaisi rows: Top rated / Fastest / New on the app (featured stores se; kam se kam 2 stores ho tabhi)
-    try:
-        from datetime import timedelta
-        from django.utils import timezone
-        live = [st for st in featured_stores if getattr(st, 'status', 'open') != 'closed']
-        top = sorted([st for st in live if (st.rating_avg or 0) >= 4 and st.rating_count],
-                     key=lambda st: (-(st.rating_avg or 0), -st.rating_count))[:8]
-        fast = sorted(live, key=lambda st: (st.eff_time_min, st.eff_time_max))[:8]
-        cutoff = timezone.now() - timedelta(days=30)
-        new = sorted([st for st in live if st.created_at and st.created_at >= cutoff],
-                     key=lambda st: st.created_at, reverse=True)[:8]
-        for title, icon, qs, items in (
-            ('Top rated', 'bi-star-fill', '?sort=rating', top),
-            ('Fastest delivery', 'bi-lightning-charge-fill', '?sort=fastest', fast),
-            ('New on the app', 'bi-stars', '', new),
-        ):
-            if len(items) >= 2:
-                nav['rows'].append({'title': title, 'icon': icon, 'qs': qs, 'stores': items})
-    except Exception as exc:
-        logger.error('Shop home store rows error: %s', exc)
-    return nav
-
-
 def _club_cards():
     """Homepage par Pro aur Loyalty ke cards. Flag band ho to khali; ghalti homepage nahi rokti."""
     cards = []
@@ -1076,7 +976,6 @@ def shop_home(request):
         'reco': _home_reco(request, search, category_id, brand_id),
         'reorder_widget': _home_reorder(request, search, category_id, brand_id),
         'featured_stores': featured_stores,
-        'home_nav': _home_nav(request, search, category_id, brand_id, delivery_settings, featured_stores),
         'company_name': company.name if company else 'Shop',
         'company': company,
         'products': page_obj,
@@ -1470,10 +1369,6 @@ def cart_view(request):
         'cart_count': get_cart_count_value(request),
         'offer': offer,
         'coupons_on': shop_flag('shop_coupons_enabled'),
-        'gst': tax.cart_gst(data['cart_items'], offer.get('discount', 0)),
-        'show_sub': substitution.cart_is_mart(cart),
-        'sub_pref': substitution.current(request.session),
-        'sub_choices': substitution.CHOICES,
     }
     return render(request, 'customer_portal/cart.html', context)
 
@@ -1711,7 +1606,6 @@ def checkout(request):
         'selected_delivery': delivery_type,
         'cart_count': sum(item['quantity'] for item in cart.values()),
         'customer': customer,
-        'saved_addresses': (list(customer.addresses.all()[:6]) if customer is not None and hasattr(customer, 'addresses') else []),
         'profile': profile,
         'skip_otp': skip_otp,
         'order_verified': order_verified,
@@ -1858,11 +1752,9 @@ def place_order(request):
                 f"Delivery: {delivery_type}\n"
                 f"Delivery Charge: Rs. {delivery_charges}\n"
                 f"Time: {cart_data['delivery_info']['time_estimate']}"
-                + substitution.note_line(request.session, cart)
             ),
             **offers.order_fields(summary),
             **drop_pin.order_fields(request.session),
-            delivery_address=(getattr(customer, 'address', '') or '').strip(),
             advance_payment=delivery_charges,  # Delivery charges as advance
             created_by=request.user if request.user.is_authenticated else None,
         )
@@ -1907,8 +1799,6 @@ def place_order(request):
         # ✅ Final total with delivery (coupon discount ke baad)
         final_total = total_amount - summary['discount'] + delivery_charges
 
-        from . import tax as _tax
-        _tax.stamp_order(order)
         # ✅ Coupon ka istemal likho, wallet se paisa kato, session saaf
         offers.finalize(order, summary, customer, request.session)
         from .sponsored import record_order        # sponsored click ke baad ka order (galti ho to order nahi rukta)
@@ -2247,11 +2137,8 @@ def order_detail_customer(request, order_id):
         'cart_count': sum(item['quantity'] for item in cart.values()),
         'page_title': f'Order #{order.order_no}',
         'review': review,
-        'can_review': order.status in ('delivered', 'invoiced') and review is None and (is_store_order or rider_di is not None),
-        'review_rider': (rider_di.rider if (rider_di and rider_di.status == 'delivered')
-                         else (order.big_vehicle_driver if (order.status in ('delivered', 'invoiced')
-                                                             and order.big_vehicle_state == 'approved'
-                                                             and order.big_vehicle_driver_id) else None)),
+        'can_review': order.status == 'delivered' and review is None and (is_store_order or rider_di is not None),
+        'review_rider': rider_di.rider if (rider_di and rider_di.status == 'delivered') else None,
         'rider_di': rider_di,
         'delivery_otp': _delivery_otp_for(order, rider_di),
         **_tip_ctx(order, customer, rider_di),
@@ -2380,64 +2267,6 @@ def order_success_page(request, order_id):
         'page_title': f'Order #{order.order_no} Placed!',
     }
     return render(request, 'customer_portal/order_success_auto.html', context)
-
-
-# ============================================
-# CHANGE ADDRESS OF ONE ORDER (sirf pending order)
-# ============================================
-
-@customer_login_required
-@require_POST
-def change_order_address(request, order_id):
-    """Customer apne pending order ka address badle (profile ka address nahi badalta).
-    Store accept kar le to nahi badal sakta."""
-    if not hasattr(request.user, 'customer_profile'):
-        messages.error(request, 'Access denied')
-        return redirect('shop_home')
-    customer = request.user.customer_profile.customer
-    order = get_object_or_404(SaleOrder, id=order_id, customer=customer)
-
-    new_addr = ' '.join((request.POST.get('address') or '').split())[:500]
-    if not new_addr:
-        messages.error(request, 'Address likhna zaroori hai.')
-        return redirect('order_detail_customer', order_id=order.id)
-
-    with transaction.atomic():
-        order = SaleOrder.objects.select_for_update().get(pk=order.pk)
-        if not order.can_change_address():
-            messages.error(request, 'Store order accept kar chuka hai, ab address nahi badal sakta. Store se rabta karein.')
-            return redirect('order_detail_customer', order_id=order.id)
-        old_addr = order.ship_address()
-        fee_msg = ''
-        from .views_live_tracking import parse_coords
-        coords = parse_coords(request.POST.get('lat'), request.POST.get('lng'))
-        if new_addr != old_addr or coords:
-            old_fee = Decimal(order.delivery_fee or 0)
-            dist_fee, dist_err = address_change.distance_plan(order, new_addr, coords)
-            if dist_err:
-                messages.error(request, dist_err)
-                return redirect('order_detail_customer', order_id=order.id)
-            if dist_fee is not None:
-                new_fee, fee_changed = dist_fee, dist_fee != old_fee
-            else:
-                new_fee, fee_changed = address_change.fee_for_change(order, old_addr, new_addr)
-            order.delivery_address = new_addr
-            # Naya pin mila to wahi, warna purana pin naye address ka nahi raha
-            order.delivery_lat, order.delivery_lng = (coords if coords else (None, None))
-            fields = ['delivery_address', 'delivery_lat', 'delivery_lng', 'notes', 'updated_at']
-            if fee_changed:
-                if Decimal(order.advance_payment or 0) == old_fee:      # advance = delivery charges
-                    order.advance_payment = new_fee
-                    fields.append('advance_payment')
-                order.delivery_fee = new_fee
-                fields.append('delivery_fee')
-                fee_msg = f' Delivery fee Rs. {old_fee:,.0f} se Rs. {new_fee:,.0f} ho gayi.'
-            order.notes = (order.notes or '') + address_change.note_line(
-                old_addr, new_addr, old_fee, new_fee, now().strftime('%d %b %H:%M'))
-            order.save(update_fields=fields)
-            address_change.notify_vendor(order, old_addr, new_addr, old_fee, new_fee)
-    messages.success(request, '✅ Is order ka address update ho gaya.' + fee_msg)
-    return redirect('order_detail_customer', order_id=order.id)
 
 
 # ============================================

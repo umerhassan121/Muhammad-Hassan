@@ -92,7 +92,7 @@ def _compute_ranking(order, max_active, active_statuses):
     # App band ho to poll nahi hota (last_seen_at purana). Lekin online rider jiske phone mein APK
     # (FCM token) hai usse push se offer mil sakta hai, is liye usse ranking se na nikalo.
     riders = (RiderProfile.objects
-              .filter(is_active=True, is_online=True, approval_status='approved', rider_kind='bike')
+              .filter(is_active=True, is_online=True, approval_status='approved')
               .filter(Q(last_seen_at__gte=now - timedelta(seconds=SEEN_FRESH_SECONDS)) |
                       Q(user__fcm_devices__isnull=False,
                         last_seen_at__gte=now - timedelta(seconds=PUSH_REACHABLE_SECONDS)))
@@ -126,8 +126,6 @@ def get_attempt(order, max_active, active_statuses):
 
 def can_take(order, rider, max_active, active_statuses):
     from django.utils import timezone
-    if getattr(rider, 'rider_kind', 'bike') == 'big_vehicle':
-        return False          # bari gari wale driver ko bike orders ke offers nahi dikhte
     att = get_attempt(order, max_active, active_statuses)
     elapsed = (timezone.now() - att.started_at).total_seconds()
     return is_visible(rider.id, att.ranking, att.declined, elapsed)
