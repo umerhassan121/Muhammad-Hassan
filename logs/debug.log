@@ -24575,3 +24575,16 @@ Traceback (most recent call last):
     )
 django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 2: 't'. Did you forget to register or load this tag?
 WARNING 2026-11-20 17:03:42,540 log Not Found: /favicon.ico
+INFO 2026-11-22 22:50:53,690 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:50:54,195 apps AXES: BEGIN version 8.3.1, blocking by ip_address
+INFO 2026-11-22 22:51:03,550 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:51:03,929 apps AXES: BEGIN version 8.3.1, blocking by ip_address
+INFO 2026-11-22 22:51:04,039 autoreload Watching for file changes with StatReloader
+INFO 2026-11-22 22:51:47,102 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:51:47,442 apps AXES: BEGIN version 8.3.1, blocking by ip_address
+INFO 2026-11-22 22:52:16,286 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:52:16,547 apps AXES: BEGIN version 8.3.1, blocking by ip_address
+INFO 2026-11-22 22:52:47,594 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:52:47,895 apps AXES: BEGIN version 8.3.1, blocking by ip_address
+INFO 2026-11-22 22:54:47,353 signals ✅ All signals loaded successfully
+INFO 2026-11-22 22:54:47,499 apps AXES: BEGIN version 8.3.1, blocking by ip_address
